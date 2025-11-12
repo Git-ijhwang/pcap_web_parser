@@ -1,9 +1,12 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+/pcap_web_parser/target
 
 # dependencies
 /node_modules
+/pcap-web-frontend/node_modules
 /.pnp
 .pnp.js
+/-*.*
 
 # testing
 /coverage
