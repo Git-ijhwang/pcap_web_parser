@@ -109,16 +109,16 @@ pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary) -> IResult
         add += (4);
         let (remaining, payload) = take((msg_len-add) as usize)(input)?;
 
-        let mut print = format!("\tGTP:\n\t\tMessage Type: {} ({})\n",
-                GTPV2_MSG_TYPES[msg_type as usize], msg_type);
-        print.push_str(&format!("\t\tMessage Length: {}\n", msg_len));
-        print.push_str(&format!("\t\tP_Flag: {}, T_Flag: {}\n", p_flag, t_flag));
-        if t_flag {
-            print.push_str(&format!("\t\tTunnel Endpoint: 0x{:x}\n", teid.unwrap()));
-        }
-        print.push_str(&format!("\t\tSequence Number: 0x{:x}\n", seq));
+        // let mut print = format!("\tGTP:\n\t\tMessage Type: {} ({})\n",
+        //         GTPV2_MSG_TYPES[msg_type as usize], msg_type);
+        // print.push_str(&format!("\t\tMessage Length: {}\n", msg_len));
+        // print.push_str(&format!("\t\tP_Flag: {}, T_Flag: {}\n", p_flag, t_flag));
+        // if t_flag {
+        //     print.push_str(&format!("\t\tTunnel Endpoint: 0x{:x}\n", teid.unwrap()));
+        // }
+        // print.push_str(&format!("\t\tSequence Number: 0x{:x}\n", seq));
 
-        println!("{}", print);
+        // println!("{}", print);
     packet.description = format!("{} [{}]", GTPV2_MSG_TYPES[msg_type as usize], msg_type).to_string();
 
     Ok (( remaining, GtpHeader {

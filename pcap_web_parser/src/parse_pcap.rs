@@ -16,6 +16,9 @@ use crate::gtp::gtpv2_types::*;
 pub const IP_HDR_LEN:usize = 20;
 pub const MIN_ETH_HDR_LEN:usize = 14;
 
+use std::time::Instant;
+
+
 #[derive(serde::Serialize)]
 pub struct ParsedResult {
     pub total_packets: usize,
@@ -115,7 +118,7 @@ fn parse_ethernet(data: &[u8]) -> usize
     offset += 6;
 
     let next_type = u16::from_be_bytes([data[offset], data[offset+1]]) as usize;
-    println!("\tMAC:\n\t\t{}\n\t\t{}", src_mac, dst_mac );
+    // println!("\tMAC:\n\t\t{}\n\t\t{}", src_mac, dst_mac );
 
     next_type
 }
@@ -124,9 +127,12 @@ fn print_timestamp(idx:usize, packet: &Packet)
     -> String
 {
     let ts = format_timestamp(packet);
-    println!( "[{:05}] {}\tlen:{}", idx, ts, packet.header.len );
+    // println!( "[{:05}] {}\tlen:{}", idx, ts, packet.header.len );
     format!( "{}",ts).to_string()
 }
+
+
+
 
 pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, String> 
 {
@@ -134,6 +140,7 @@ pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, 
         .map_err(|e| format!("File open error: {}", e))?;
 
     let filename = path;
+    println!("FileName: {:#?}", filename);
 
     //read pcap file line by line
     let mut cap = match Capture::from_file(filename) {
@@ -146,6 +153,8 @@ pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, 
 
     let mut idx: usize = 1;
     let mut packets: Vec<PacketSummary> = Vec::new();
+
+    let start = Instant::now(); // 시간 측정 시작
 
     while let Ok(packet) = cap.next_packet() {
         // Print Time stamp
@@ -200,11 +209,11 @@ pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, 
 
                         if detail {
                             let ies: Vec<GtpIe> = parse_all_ies(hdr.payload);
-                            for ie in ies {
-                                println!("\t\tIE:\n\t\t\tType:{}({}), len:{}, inst:{}",
-                                            GTPV2_IE_TYPES[ie.ie_type as usize],
-                                            ie.ie_type , ie.length, ie.instance);
-                            }
+                            // for ie in ies {
+                                // println!("\t\tIE:\n\t\t\tType:{}({}), len:{}, inst:{}",
+                                //             GTPV2_IE_TYPES[ie.ie_type as usize],
+                                //             ie.ie_type , ie.length, ie.instance);
+                            // }
                         }
                     }
                     Err(e) => println!("ERR {:?}", e),
@@ -215,7 +224,10 @@ pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, 
         packets.push(parsed_packet);
     }
 
-    println!("packet len: {}", packets.len());
+    let duration = start.elapsed(); // 경과 시간 측정
+    println!("Parsing took {:?}", duration);
+
+
     if packets.len() == idx-1 {
         Ok(ParsedResult {
             total_packets: idx-1,

@@ -30,7 +30,8 @@ struct AppState {
 async fn main() {
     // 업로드 저장 경로 (운영 환경에서는 명시적 설정/권한 확인)
     let upload_dir = std::env::temp_dir();
-    // -> /tmp 에 임시로 저장할 경로를 지정함. (특정 디렉토리를 지정할 수 도 있음.)
+    // -> /tmp 에 임시로 저장할 경로를 지정함.
+    // (특정 디렉토리를 지정할 수 도 있음.)
 
     let state = Arc::new(AppState { upload_dir });
     // thread safe한 upload file접근
