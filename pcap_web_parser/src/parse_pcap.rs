@@ -1,26 +1,82 @@
-use std::env;
 use std::process;
+use serde::Serialize;
 
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
-// use tokio::fs::File;
 use std::fs::File;
-use tokio::io::AsyncWriteExt;
-use uuid::Uuid;
-use tower_http::cors::CorsLayer;
 use std::path::Path;
-use chrono::format::format;
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use pcap::{Capture, Packet};
 
-use crate::ipv4::*;
-use crate::ipv6::*;
+use crate::ip::{ipv4::*, ipv6::*};
+// use crate::ipv6::*;
+use crate::ip::*;
+use crate::gtp::gtp::*;
 use crate::l4::*;
-use crate::gtpv2_types::*;
-use crate::gtp::*;
-use crate::{*};
+use crate::gtp::gtpv2_types::*;
 
 pub const IP_HDR_LEN:usize = 20;
 pub const MIN_ETH_HDR_LEN:usize = 14;
+
+#[derive(serde::Serialize)]
+pub struct ParsedResult {
+    pub total_packets: usize,
+    pub packets: Vec<PacketSummary>,
+}
+
+#[derive(Serialize)]
+pub struct PacketSummary {
+    pub id: usize,
+    pub ts: String,
+    pub src_ip: String,
+    pub dst_ip: String,
+    pub src_port: u16,
+    pub dst_port: u16,
+    pub protocol: String,
+    pub length: usize,
+    pub description: String,
+}
+
+impl PacketSummary{
+    pub fn new() -> Self {
+        PacketSummary {
+            id : 0,
+            ts : String::new(),
+            src_ip : String::new(),
+            dst_ip : String::new(),
+            src_port : 0,
+            dst_port : 0,
+            protocol : String::new(),
+            length: 0,
+            description: String::new(),
+        }
+    }
+}
+
+pub struct IpInfo {
+    pub src_port: u16,
+    pub dst_port: u16,
+}
+pub struct UdpInfo {
+    pub src_port: u16,
+    pub dst_port: u16,
+}
+pub struct TcpInfo {
+    pub seq: u32,
+    pub src_port: u16,
+    pub dst_port: u16,
+}
+
+pub struct GtpInfo {
+    pub msgtype: String,
+    pub teid: u32,
+}
+pub struct PacketDetail {
+    pub id: usize,
+    pub ip: IpInfo,
+    pub udp: Option<UdpInfo>,
+    pub tcp: Option<TcpInfo>,
+    pub gtp: Option<GtpInfo>,
+
+}
 
 fn format_timestamp(packet: &Packet) -> String
 {
@@ -72,28 +128,12 @@ fn print_timestamp(idx:usize, packet: &Packet)
     format!( "{}",ts).to_string()
 }
 
-pub async fn parse_file(path: &Path) -> Result<ParsedResult, String> 
+pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, String> 
 {
-    // let args: Vec<String> = env::args().collect();
-
-    // if args.len() < 2 {
-    //     eprintln!("Usage {} Filename of pacp file short|long", args[0]);
-    //     process::exit(1);
-    // }
-
     let file = File::open(path)
         .map_err(|e| format!("File open error: {}", e))?;
 
     let filename = path;
-    // let detail = &args[2];
-    // let mut short: bool = false;
-
-    // if detail.eq("short") {
-        // short = true;
-    // } else {
-        let short = false;
-    // }
-    // println!("short {}", short);
 
     //read pcap file line by line
     let mut cap = match Capture::from_file(filename) {
@@ -121,11 +161,19 @@ pub async fn parse_file(path: &Path) -> Result<ParsedResult, String>
             next_type = parse_ethernet(&packet.data);
         }
 
+        // println!("layer 3: {}", next_type);
         //Parse Layer 3
         // next_type
         let v= match next_type {
             //IPv4
-            0x0800  => Some(parse_ipv4(&packet.data[14..], &mut parsed_packet)),
+            0x0800  => {
+                if detail {
+                    Some(parse_ipv4(&packet.data[14..], &mut parsed_packet))
+                }
+                else  {
+                    Some(parse_ipv4_simple(&packet.data[14..], &mut parsed_packet))
+                }
+            },
             //IPv6
             // 0x86dd  => Some(parse_ipv6(&packet.data[14..], short)),
             //ARP
@@ -141,32 +189,33 @@ pub async fn parse_file(path: &Path) -> Result<ParsedResult, String>
 
         //Parse Layer 4
         let (port_number, l4_hdr_len) =
-            preparse_layer4(next_type, &packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN)..], &mut parsed_packet);
+            preparse_layer4(next_type, &packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN)..], &mut parsed_packet, detail);
 
         idx += 1;
 
         //Parse Application Layer
         match port_number {
-            2123 => {
-                match parse_gtpc(&packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN+l4_hdr_len)..], &mut parsed_packet) {
+            2123 => match parse_gtpc(&packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN+l4_hdr_len)..], &mut parsed_packet ) {
                     Ok((_rest, hdr)) =>  {
 
-                        let ies: Vec<GtpIe> = parse_all_ies(hdr.payload);
-                        for ie in ies {
-                            println!("\t\tIE:\n\t\t\tType:{}({}), len:{}, inst:{}",
-                            GTPV2_IE_TYPES[ie.ie_type as usize],
-                            ie.ie_type , ie.length, ie.instance);
+                        if detail {
+                            let ies: Vec<GtpIe> = parse_all_ies(hdr.payload);
+                            for ie in ies {
+                                println!("\t\tIE:\n\t\t\tType:{}({}), len:{}, inst:{}",
+                                            GTPV2_IE_TYPES[ie.ie_type as usize],
+                                            ie.ie_type , ie.length, ie.instance);
+                            }
                         }
                     }
                     Err(e) => println!("ERR {:?}", e),
                 }
-            }
             _ => {}
-        }
+            }
 
         packets.push(parsed_packet);
     }
 
+    println!("packet len: {}", packets.len());
     if packets.len() == idx-1 {
         Ok(ParsedResult {
             total_packets: idx-1,

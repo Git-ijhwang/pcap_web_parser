@@ -1,5 +1,5 @@
 use std::net::Ipv6Addr;
-use crate::port::*;
+use crate::ip::port::*;
 
 fn parse_ipv6_ext(mut next_hdr: usize, packet: &[u8]) {
     let mut offset = 0;
