@@ -1,8 +1,7 @@
 use std::process;
-use serde::Serialize;
 
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use pcap::{Capture, Packet};
 
@@ -12,80 +11,12 @@ use crate::ip::*;
 use crate::gtp::gtp::*;
 use crate::l4::*;
 use crate::gtp::gtpv2_types::*;
-
-pub const IP_HDR_LEN:usize = 20;
-pub const MIN_ETH_HDR_LEN:usize = 14;
+use crate::types::*;
 
 use std::time::Instant;
 
-
-#[derive(serde::Serialize)]
-pub struct ParsedResult {
-    pub total_packets: usize,
-    pub packets: Vec<PacketSummary>,
-}
-
-#[derive(Serialize)]
-pub struct PacketSummary {
-    pub id: usize,
-    pub ts: String,
-    pub src_ip: String,
-    pub dst_ip: String,
-    pub src_port: u16,
-    pub dst_port: u16,
-    pub protocol: String,
-    pub length: usize,
-    pub description: String,
-}
-
-impl PacketSummary{
-    pub fn new() -> Self {
-        PacketSummary {
-            id : 0,
-            ts : String::new(),
-            src_ip : String::new(),
-            dst_ip : String::new(),
-            src_port : 0,
-            dst_port : 0,
-            protocol : String::new(),
-            length: 0,
-            description: String::new(),
-        }
-    }
-}
-
-pub struct IpInfo {
-    pub src_port: u16,
-    pub dst_port: u16,
-}
-pub struct UdpInfo {
-    pub src_port: u16,
-    pub dst_port: u16,
-}
-pub struct TcpInfo {
-    pub seq: u32,
-    pub src_port: u16,
-    pub dst_port: u16,
-}
-
-pub struct GtpInfo {
-    pub msgtype: String,
-    pub teid: u32,
-}
-pub struct PacketDetail {
-    pub id: usize,
-    pub ip: IpInfo,
-    pub udp: Option<UdpInfo>,
-    pub tcp: Option<TcpInfo>,
-    pub gtp: Option<GtpInfo>,
-
-}
-
 fn format_timestamp(packet: &Packet) -> String
 {
-    // pcap::Packet has a header with ts (timeval) fields on most platforms:
-    // packet.header.ts.tv_sec and packet.header.ts.tv_usec
-    // Use safe fallback if not present.
     let sec = packet.header.ts.tv_sec as i64;
     let usec = packet.header.ts.tv_usec as u32; // microseconds
 
@@ -93,7 +24,6 @@ fn format_timestamp(packet: &Packet) -> String
     let naive = NaiveDateTime::from_timestamp_opt(sec, usec * 1000)
         .unwrap_or_else(|| NaiveDateTime::from_timestamp_opt(sec, 0).unwrap());
 
-    // let dt: DateTime<Local> = TimeZone::from_utc_datetime(naive, *Local::now().offset());
     let dt: DateTime<Local> = Local.from_local_datetime(&naive).unwrap();
 
     dt.format("%Y-%m-%d %H:%M:%S%.6f").to_string()
@@ -132,18 +62,86 @@ fn print_timestamp(idx:usize, packet: &Packet)
 }
 
 
-
-
-pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, String> 
+pub async fn parse_single_packet(path: &PathBuf, id: usize)
+-> Result<ParsedDetail, String>
 {
-    let file = File::open(path)
-        .map_err(|e| format!("File open error: {}", e))?;
 
-    let filename = path;
-    println!("FileName: {:#?}", filename);
+    println!(" Single Packet: {:#?}", path);
+    let mut cap = Capture::from_file(path)
+        .map_err(|e| format!("Failed to open pcap file {}: {}", path.to_string_lossy(), e))?;
+
+    let mut idx: usize = 1;
+    let mut parsed_packet = PacketDetail::new();
+
+    let packet = loop {
+        match cap.next_packet() {
+            Ok(pkt) => {
+                if idx == id {
+                    break pkt; // 스코프 밖으로 packet 반환
+                }
+                idx += 1;
+            },
+            Err(_) => return Err("Packet not found".to_string()),
+        }
+    };
+
+    // --- Parse Layer 2 Ethernet ---
+    let next_type = if packet.data.len() >= MIN_ETH_HDR_LEN {
+        parse_ethernet(&packet.data)
+    } else {
+        return Ok(ParsedDetail { id, packet: parsed_packet });
+    };
+
+    // --- Parse Layer 3 (IPv4) ---
+    let next_type = match next_type {
+        0x0800 => parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet),
+        _ =>         return Ok(ParsedDetail { id, packet: parsed_packet }),
+    };
+
+    // --- Parse Layer 4 ---
+    let (port_number, l4_hdr_len) =
+        preparse_layer4_detail( next_type,
+                &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..],
+                &mut parsed_packet);
+        // match  preparse_layer4_detail( next_type,
+        //         &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..],
+        //         &mut parsed_packet)
+        // { 
+        //     (port, len) if port > 0 && len > 0 => (port, len),
+        //     _ => (0,0),
+        // };
+
+    // if port_number == 0 || l4_hdr_len == 0 {
+        // return Err("Packet not found".to_string());
+    // }
+
+    // --- Parse Application Layer ---
+    if port_number == 2123 {
+        let (rest, mut gtpinfo) = parse_gtpc_detail(
+            &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..]
+        ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
+
+        gtpinfo.ies = parse_all_ies(rest);
+        parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
+    }
+
+    Ok(ParsedDetail {
+        id,
+        packet: parsed_packet
+    })
+}
+
+
+pub async fn parse_pcap_summary(path: &Path, detail: bool)
+-> Result<ParsedResult, String> 
+{
+    // let file = File::open(path)
+    //     .map_err(|e| format!("File open error: {}", e))?;
+
+    // let filename = path;
 
     //read pcap file line by line
-    let mut cap = match Capture::from_file(filename) {
+    let mut cap = match Capture::from_file(path) {
         Ok(c) => c,
         Err(e) => {
             eprintln!("Failed to open pcap file {}", path.to_string_lossy());
@@ -157,31 +155,24 @@ pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, 
     let start = Instant::now(); // 시간 측정 시작
 
     while let Ok(packet) = cap.next_packet() {
-        // Print Time stamp
 
+        // --- Parse TimeStamp ---
         let mut parsed_packet : PacketSummary = PacketSummary::new();
         parsed_packet.id = idx;
         parsed_packet.ts = print_timestamp(idx, &packet);
 
-        //Parse Layer 2 Ethernet
+        // --- Parse Layer 2 Ethernet ---
         let mut next_type = 0;
         if packet.data.len() >= MIN_ETH_HDR_LEN {
             //get next protocol from Ethernet
             next_type = parse_ethernet(&packet.data);
         }
 
-        // println!("layer 3: {}", next_type);
-        //Parse Layer 3
-        // next_type
+        // --- Parse Layer 3 ---
         let v= match next_type {
             //IPv4
             0x0800  => {
-                if detail {
-                    Some(parse_ipv4(&packet.data[14..], &mut parsed_packet))
-                }
-                else  {
                     Some(parse_ipv4_simple(&packet.data[14..], &mut parsed_packet))
-                }
             },
             //IPv6
             // 0x86dd  => Some(parse_ipv6(&packet.data[14..], short)),
@@ -196,46 +187,57 @@ pub async fn parse_pcap_file(path: &Path, detail: bool) -> Result<ParsedResult, 
 
         next_type = v.unwrap();
 
-        //Parse Layer 4
+        // --- Parse Layer 4 ---
         let (port_number, l4_hdr_len) =
             preparse_layer4(next_type, &packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN)..], &mut parsed_packet, detail);
 
         idx += 1;
 
-        //Parse Application Layer
-        match port_number {
-            2123 => match parse_gtpc(&packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN+l4_hdr_len)..], &mut parsed_packet ) {
-                    Ok((_rest, hdr)) =>  {
+        // --- Parse Application Layer ---
+        if port_number == 2123 {
+            let (rest, mut hdr) = parse_gtpc(
+                &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..],
+                &mut parsed_packet
+            ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
-                        if detail {
-                            let ies: Vec<GtpIe> = parse_all_ies(hdr.payload);
-                            // for ie in ies {
-                                // println!("\t\tIE:\n\t\t\tType:{}({}), len:{}, inst:{}",
-                                //             GTPV2_IE_TYPES[ie.ie_type as usize],
-                                //             ie.ie_type , ie.length, ie.instance);
-                            // }
-                        }
-                    }
-                    Err(e) => println!("ERR {:?}", e),
-                }
-            _ => {}
-            }
+        }
+        // match port_number {
+        //     2123 => match parse_gtpc(&packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN+l4_hdr_len)..], &mut parsed_packet ) {
+        //             Ok((_rest, hdr)) =>  {
+
+        //                 if detail {
+        //                     let ies: Vec<GtpIe> = parse_all_ies(hdr.payload);
+        //                     // for ie in ies {
+        //                         // println!("\t\tIE:\n\t\t\tType:{}({}), len:{}, inst:{}",
+        //                         //             GTPV2_IE_TYPES[ie.ie_type as usize],
+        //                         //             ie.ie_type , ie.length, ie.instance);
+        //                     // }
+        //                 }
+        //             }
+        //             Err(e) => println!("ERR {:?}", e),
+        //         }
+        //     _ => {}
+        //     }
 
         packets.push(parsed_packet);
     }
 
+    let packet_len = packets.len();
     let duration = start.elapsed(); // 경과 시간 측정
     println!("Parsing took {:?}", duration);
-
-
-    if packets.len() == idx-1 {
-        Ok(ParsedResult {
+    let result = ParsedResult {
+            file: path.to_string_lossy().to_string(),
             total_packets: idx-1,
-            packets
-        })
+            packets : packets,
+        };
+
+    println!("$$$$$$> {:#?}", result);
+
+    if packet_len == idx-1 {
+        Ok( result )
     }
     else {
-        println!(" Parse Fail. {}:{}", packets.len(), idx );
+        println!(" Parse Fail. {}:{}", packet_len, idx );
         Err("Fail".to_string())
     }
 }

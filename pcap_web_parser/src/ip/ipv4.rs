@@ -1,7 +1,6 @@
 use std::net::Ipv4Addr;
 use crate::ip::port::*;
-use crate::parse_pcap::{IP_HDR_LEN, MIN_ETH_HDR_LEN};
-use crate::parse_pcap::PacketSummary;
+use crate::types::*;
 
 pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
 {
@@ -79,7 +78,7 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
     next_hdr
 }
 
-pub fn parse_ipv4(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
+pub fn parse_ipv4(ip_hdr: &[u8], packet: &mut PacketDetail) -> usize
 {
     let mut next_hdr: usize = 0;
     let mut offset: usize = 0;
@@ -165,8 +164,8 @@ pub fn parse_ipv4(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
         version, ihl, total_len, id, frag_flag, ttl, next_hdr, str_proto, hdr_chk, src_addr, dst_addr);
     println!("{}", ip_print);
 
-    packet.src_ip.push_str(&src_addr.to_string());
-    packet.dst_ip.push_str(&dst_addr.to_string());
+    packet.ip.src_addr.push_str(&src_addr.to_string());
+    packet.ip.dst_addr.push_str(&dst_addr.to_string());
 
     next_hdr
 }

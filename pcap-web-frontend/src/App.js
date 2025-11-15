@@ -4,13 +4,15 @@ import React, { useState } from "react";
 import {Modal, Button} from "react-bootstrap";
 
 
-function PacketTable({ packets, onSelect }) {
+function PacketTable({ packets, currentFile }) {
   // console.log(packets.length);
   // if (!packets || packets.length === 0)
   //   return <p>No packets parsed yet.</p>;
 
     const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  // const [currentFile, setCurrentFile] = useState(null);
+
 
   const handleShow = (pkt) => {
     setSelectedPacket(pkt);
@@ -23,15 +25,29 @@ function PacketTable({ packets, onSelect }) {
   };
 
   const fetchPacketDetail = async (id) => {
-    try {
+    if (!currentFile) {
+      alert("No file selected!");
+      return;
+    }
 
-      const res = await fetch(`/api/packet_detail?id=${encodeURIComponent(id)}`);
+    try {
+      console.log("Current file name is: ", currentFile);
+      console.log("Current id  is: ", id);
+
+      const res = await fetch(
+                    `/api/packet_detail?file=${encodeURIComponent(currentFile)}&id=${encodeURIComponent(id)}`
+      );
+
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(`Server ${res.status}: ${txt}`);
       }
+      console.log(res)
+
       const data = await res.json();
+      console.log(data)
       setSelectedPacket(data);
+      setShowModal(true);
       // return res.json();
     }
     catch (err) {
@@ -195,7 +211,9 @@ function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [currentFile, setCurrentFile] = useState(null);
   const [selectedPacket, setSelectedPacket] = useState(null);
+
 
   const onFileChange = (e) => {
     setFile(e.target.files?.[0] ?? null);
@@ -226,15 +244,20 @@ function App() {
 
       const json = await res.json();
       setResult(json);
+
+      console.log("print out json: ======>", json);
+      setCurrentFile(json.file)
+      console.log("print out currentFile:", currentFile);
+
     } catch (err) {
       console.error(err);
       setResult({ error: String(err) });
+
     } finally {
       setLoading(false);
     }
   };
 
-  // fetch detail function for PacketTable
 
   return (
     // <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12, fontFamily: "Inter, Arial, sans-serif" }}>
@@ -272,10 +295,14 @@ function App() {
           // <div className="alert alert-info mt-3">
           //   Selected <strong>{file.name}</strong> ({file.size} bytes)
           // </div>
-          <PacketTable packets={result.packets} onSelect={setSelectedPacket}/>
+          <PacketTable
+              packets={result.packets}
+              // onSelect={setSelectedPacket}
+              currentFile={currentFile}
+            />
       )}
 
-      <Modal show={selectedPacket} onHide={() => setSelectedPacket(null)} centered size="lg">
+      <Modal show={selectedPacket !== null} onHide={() => setSelectedPacket(null)} centered size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Packet Detail (ID: {selectedPacket?.id}) </Modal.Title>
         </Modal.Header>

@@ -1,5 +1,5 @@
 use crate::ip::port::*;
-use crate::parse_pcap::PacketSummary;
+use crate::types::*;
 
 
 pub fn parse_tcp_simple(tcp: &[u8], packet: & mut PacketSummary) -> u16
@@ -56,7 +56,7 @@ pub fn parse_tcp_simple(tcp: &[u8], packet: & mut PacketSummary) -> u16
     dst_port
 }
 
-pub fn parse_tcp(tcp: &[u8], packet: & mut PacketSummary) -> u16
+pub fn parse_tcp(tcp: &[u8], packet: & mut PacketDetail) -> u16
 {
     if tcp.len() < 20 {
         println!( "TCP header too short");
@@ -104,8 +104,21 @@ pub fn parse_tcp(tcp: &[u8], packet: & mut PacketSummary) -> u16
         if fin{"FIN "} else {""},
         if rst{"RST "} else {""},
     );
-    packet.src_port = src_port;
-    packet.dst_port = dst_port;
+
+    if let Layer4Info::TCP(tcp) = &mut packet.l4 {
+        tcp.seq = seq_num;
+        tcp.src_port = src_port;
+        tcp.dst_port = dst_port;
+    }
+        
+    // packet.l4.tcp.get_or_insert( TcpInfo {
+    //     seq: 0,
+    //     src_port: 0,
+    //     dst_port: 0,
+    // });
+    // tcp.seq = seq_num;
+    // tcp.src_port = src_port;
+    // tcp.dst_port = dst_port;
 
     dst_port
 }
@@ -154,7 +167,7 @@ fn parse_udp_simple (udp: &[u8], packet: & mut PacketSummary) -> u16
     dst_port
 }
 
-fn parse_udp(udp: &[u8], packet: & mut PacketSummary) -> u16
+fn parse_udp(udp: &[u8], packet: & mut PacketDetail) -> u16
 {
     let mut pos = 0;
 
@@ -192,8 +205,14 @@ fn parse_udp(udp: &[u8], packet: & mut PacketSummary) -> u16
 
     println!("{}", print);
 
-    packet.src_port = src_port;
-    packet.dst_port = dst_port;
+    if let Layer4Info::UDP(udp) = &mut packet.l4 {
+    // let udp = packet.udp.get_or_insert( UdpInfo {
+    //     src_port: 0,
+    //     dst_port: 0,
+    // });
+        udp.src_port = src_port;
+        udp.dst_port = dst_port;
+    }
 
     dst_port
 }
@@ -205,26 +224,30 @@ pub fn preparse_layer4(proto_num:usize, l4: &[u8], packet: & mut PacketSummary, 
     packet.protocol = proto.unwrap();
 
     match proto_num {
-        6   => {
-            if detail {
-                return (parse_tcp(l4, packet), 20);
-            }
-            else {
-                return (parse_tcp_simple(l4, packet), 20);
-            }
-        },
-        17  => {
-            if detail {
-                return (parse_udp(l4, packet), 8);
-            }
-            else {
-                return (parse_udp_simple(l4, packet), 8);
-            }
-            },
+        6   =>  return (parse_tcp_simple(l4, packet), 20),
+        17  => return (parse_udp_simple(l4, packet), 8),
         // 1   => println!("ICMP"),
         _   => {
             println!("IP proto {}", proto_num);
             return (0, 0);
+        }
+    }
+}
+
+pub fn preparse_layer4_detail(proto_num:usize, l4: &[u8], packet: & mut PacketDetail)
+// -> Result<(u16, usize), u32>
+-> (u16, usize)
+{
+    let proto= protocol_to_str(proto_num);
+
+    // packet.protocol = proto.unwrap();
+
+    match proto_num {
+        6   =>  (parse_tcp(l4, packet), 20),
+        17  =>  (parse_udp(l4, packet), 8),
+        _   => {
+            println!("IP proto {}", proto_num);
+             (0, 0)
         }
     }
 }
