@@ -137,12 +137,15 @@ pub async fn handle_parse_summary(
     return (StatusCode::BAD_REQUEST, "No 'pcap' file field found").into_response();
 }
 
+
+
 pub async fn handle_packet_detail (
     State(cache): State<Cache>,
     Query(params): Query<PacketQuery> )
 // ) -> (StatusCode, Json<serde_json::Value>)
  -> Response
 {
+
 let filename = std::path::Path::new(&params.file)
     .file_name()
     .and_then(|os| os.to_str())
@@ -157,6 +160,7 @@ let key = filename
     println!("cache로부터 파일 이름 가져오기.{}", params.file);
     println!("cache keys: {:?}", cache_read.keys());
     // let info = match cache_read.get(&params.file) {
+
     let info = match cache_read.get(key) {
         Some(v) => v.clone(),
         None => {
@@ -164,17 +168,18 @@ let key = filename
             return (StatusCode::NOT_FOUND, msg).into_response();
         }
     };
+
     drop(cache_read);
 
     //2. 파일 읽기
     println!("파일 읽기");
-    let data = match tokio::fs::read(&info.path).await {
-        Ok(bytes) => bytes,
-        Err(e) => {
-            let msg = format!("Failed to read file: {}.", e);
-            return (StatusCode::NOT_FOUND, msg).into_response();
-        }
-    };
+    // let data = match tokio::fs::read(&info.path).await {
+    //     Ok(bytes) => bytes,
+    //     Err(e) => {
+    //         let msg = format!("Failed to read file: {}.", e);
+    //         return (StatusCode::NOT_FOUND, msg).into_response();
+    //     }
+    // };
 
     //3. PacketQuery로부터 ID가져오기
     println!(" PacketQuery로부터 ID가져오기");

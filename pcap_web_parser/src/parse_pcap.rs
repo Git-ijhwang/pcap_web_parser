@@ -121,8 +121,11 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
             &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..]
         ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
+        // println!("gtpinfo: {:#?}", gtpinfo);
+
         gtpinfo.ies = parse_all_ies(rest);
         parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
+        // println!("Packet detiled : {:#?}", parsed_packet);
     }
 
     Ok(ParsedDetail {
@@ -231,7 +234,6 @@ pub async fn parse_pcap_summary(path: &Path, detail: bool)
             packets : packets,
         };
 
-    println!("$$$$$$> {:#?}", result);
 
     if packet_len == idx-1 {
         Ok( result )

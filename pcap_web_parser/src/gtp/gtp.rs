@@ -186,7 +186,7 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
     //     gtp.teid = teid.unwrap();
     // }
 
-    let mut info=    GtpInfo {
+    let info=    GtpInfo {
         msg_type,
         msg_type_str:GTPV2_MSG_TYPES[msg_type as usize].to_string(),
         teid: teid.unwrap_or(0),

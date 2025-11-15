@@ -63,7 +63,7 @@ impl PacketSummary{
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct IpInfo {
     pub src_addr: String,
     pub dst_addr: String,
@@ -77,13 +77,13 @@ impl  IpInfo {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub enum Layer4Info {
     UDP(UdpInfo),
     TCP(TcpInfo),
     //ICMP(IcmpInfo),
 }
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct UdpInfo {
     pub src_port: u16,
     pub dst_port: u16,
@@ -97,7 +97,7 @@ impl  UdpInfo {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct TcpInfo {
     pub seq: u32,
     pub src_port: u16,
@@ -113,14 +113,14 @@ impl  TcpInfo {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub enum AppLayerInfo {
     GTP(GtpInfo),
     // HTTP(HttpInfo),
     //ICMP(IcmpInfo),
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct GtpInfo {
     pub msg_type: u8,
     pub msg_type_str: String,
@@ -138,7 +138,7 @@ impl GtpInfo {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct PacketDetail {
     pub id: usize,
     pub ip: IpInfo,

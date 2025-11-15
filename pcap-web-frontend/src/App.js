@@ -114,16 +114,99 @@ function PacketTable({ packets, currentFile }) {
             <Modal.Title>Packet Details</Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            {/*
             {selectedPacket && (
               <>
                 <p><strong>ID:</strong> {selectedPacket.id}</p>
-                <p><strong>Timestamp:</strong> {selectedPacket.ts}</p>
-                <p><strong>Source IP:</strong> {selectedPacket.src_ip}</p>
-                <p><strong>Destination IP:</strong> {selectedPacket.dst_ip}</p>
-                <p><strong>Protocol:</strong> {selectedPacket.protocol}</p>
-                <p><strong>Description:</strong> {selectedPacket.description}</p>
+                <p><strong>Source IP:</strong> {selectedPacket.packet.ip.src_addr}</p>
+                <p><strong>Destination IP:</strong> {selectedPacket.packet.ip.dst_addr}</p>
+                <p><strong>L4 Src port:</strong> {selectedPacket.packet.l4.UDP.src_port}</p>
+                <p><strong>L4 Dst port:</strong> {selectedPacket.packet.l4.UDP.dst_port}</p>
+                <p><strong>GTP:</strong> {selectedPacket.packet.l4.UDP.dst_port}</p>
               </>
             )}
+            */}
+  {selectedPacket && (
+    <div style={{ fontFamily: "monospace", fontSize: "14px" }}>
+
+      {/* Packet ID */}
+      <div className="mb-3">
+        <h5 style={{ borderBottom: "1px solid #ccc", paddingBottom: "4px" }}>
+          Packet #{selectedPacket.id}
+        </h5>
+      </div>
+
+      {/* IP Section */}
+      <div className="card mb-3">
+        <div className="card-header">
+          <strong>IP Layer</strong>
+        </div>
+        <div className="card-body">
+          <div style={{ marginLeft: "12px" }}>
+            <p><strong>Source:</strong> {selectedPacket.packet.ip.src_addr}</p>
+            <p><strong>Destination:</strong> {selectedPacket.packet.ip.dst_addr}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* L4 Section */}
+      <div className="card mb-3">
+        <div className="card-header">
+          <strong>Layer 4 (Transport)</strong>
+        </div>
+        <div className="card-body">
+
+          {"UDP" in selectedPacket.packet.l4 && (
+            <div style={{ marginLeft: "12px" }}>
+              <p><strong>Protocol:</strong> UDP</p>
+              <p><strong>Src Port:</strong> {selectedPacket.packet.l4.UDP.src_port}</p>
+              <p><strong>Dst Port:</strong> {selectedPacket.packet.l4.UDP.dst_port}</p>
+            </div>
+          )}
+
+          {"TCP" in selectedPacket.packet.l4 && (
+            <div style={{ marginLeft: "12px" }}>
+              <p><strong>Protocol:</strong> TCP</p>
+              <p><strong>Seq:</strong> {selectedPacket.packet.l4.TCP.seq}</p>
+              <p><strong>Src Port:</strong> {selectedPacket.packet.l4.TCP.src_port}</p>
+              <p><strong>Dst Port:</strong> {selectedPacket.packet.l4.TCP.dst_port}</p>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* Application Layer (GTP) */}
+      <div className="card">
+        <div className="card-header">
+          <strong>Application Layer (GTP)</strong>
+        </div>
+        <div className="card-body">
+
+          {"GTP" in selectedPacket.packet.app && (
+            <div style={{ marginLeft: "12px" }}>
+              <p><strong>Message Type:</strong> {selectedPacket.packet.app.GTP.msg_type}</p>
+              <p><strong>Description:</strong> {selectedPacket.packet.app.GTP.msg_type_str}</p>
+              <p><strong>TEID:</strong> {selectedPacket.packet.app.GTP.teid}</p>
+
+              {/* IE List */}
+              <div className="mt-3">
+                <strong>Information Elements (IEs):</strong>
+                <ul style={{ marginLeft: "20px" }}>
+                  {selectedPacket.packet.app.GTP.ies.map((ie, index) => (
+                    <li key={index}>
+                      <strong>{ie.name}</strong> → {JSON.stringify(ie.value)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  )}
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={handleClose}>
