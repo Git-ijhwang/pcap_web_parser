@@ -5,8 +5,18 @@ import "./ip.css";
 export default function IpHeader({ ip }) {
     if (!ip) return null;
   return (
+      <div className="card mb-3">
+        <div className="card-header">
+          <strong>Layer 3 (IP)</strong>
+        </div>
+        <div className="card-body">
 <table className="ip-table">
       <tbody>
+        <tr>
+          <th colSpan="33" style={{ textAlign: "center" }}>
+            <b>IP Header</b>
+          </th>
+        </tr>
         {/* Header Row */}
         <tr>
           {/* <th style={{ minWidth: "42px", borderBottom: "none", borderRight: "none" }}><i>Offset</i></th> */}
@@ -43,9 +53,9 @@ export default function IpHeader({ ip }) {
           <th>32</th>
           <td colSpan="16"><i>Identification:</i> {ip.id}</td>
           <td colSpan="3"><i>Flags:</i> {" "}
-  {ip.flags === 2 ? "DF" :
-   ip.flags === 1 ? ", MF" :
-   "0"}
+            {ip.flags === 2 ? "DF" :
+            ip.flags === 1 ? ", MF" :
+            "0"}
           </td>
           <td colSpan="13"><i>Fragment Offset:</i> {ip.fragment_offset}</td>
         </tr>
@@ -55,8 +65,11 @@ export default function IpHeader({ ip }) {
           {/* <th>8</th> */}
           <th>64</th>
           <td colSpan="8"><i>TTL:</i> {ip.ttl}</td>
-          <td colSpan="8"><i>Protocol:</i> {ip.protocol}</td>
-          <td colSpan="16"><i>Header Checksum:</i> {ip.checksum}</td>
+          <td colSpan="8"><i>Protocol:</i> {ip.protocol} ({ip.next})</td>
+          <td colSpan="16"><i>Header Checksum:0x</i>
+            {/* {ip.checksum} */}
+            {ip.checksum != null ? ip.checksum.toString(16).toUpperCase() : "-"}
+          </td>
         </tr>
 
         {/* Row 12 */}
@@ -74,5 +87,7 @@ export default function IpHeader({ ip }) {
         </tr>
       </tbody>
     </table>
+    </div>
+        </div>
   );
 }

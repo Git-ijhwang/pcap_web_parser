@@ -106,33 +106,50 @@ pub enum Layer4Info {
     UDP(UdpInfo),
     TCP(TcpInfo),
     //ICMP(IcmpInfo),
+    None,
 }
 #[derive(Serialize, Debug)]
 pub struct UdpInfo {
     pub src_port: u16,
     pub dst_port: u16,
+    pub length: u16,
+    pub checksum: u16,
 }
 impl  UdpInfo {
     pub fn new() -> Self {
         UdpInfo {
             src_port: 0,
-            dst_port: 0
+            dst_port: 0,
+            length: 0,
+            checksum: 0,
         }
     }
 }
 
 #[derive(Serialize, Debug)]
 pub struct TcpInfo {
-    pub seq: u32,
     pub src_port: u16,
     pub dst_port: u16,
+    pub seq: u32,
+    pub ack: u32,
+    pub header_sz: u8,
+    pub flags: u8,
+    pub window: u16,
+    pub checksum: u16,
+    pub urgent: u16,
 }
 impl  TcpInfo {
     pub fn new() -> Self {
         TcpInfo {
-            seq: 0,
             src_port: 0,
-            dst_port: 0
+            dst_port: 0,
+            seq: 0,
+            ack: 0,
+            header_sz: 0,
+            flags: 0,
+            window: 0,
+            checksum: 0,
+            urgent: 0,
         }
     }
 }
@@ -142,6 +159,7 @@ pub enum AppLayerInfo {
     GTP(GtpInfo),
     // HTTP(HttpInfo),
     //ICMP(IcmpInfo),
+    None,
 }
 
 #[derive(Serialize, Debug)]
@@ -174,8 +192,8 @@ impl PacketDetail{
         PacketDetail {
             id: 0,
             ip: IpInfo::new(),
-            l4: Layer4Info::UDP(UdpInfo::new()),
-            app: AppLayerInfo::GTP(GtpInfo::new()),
+            l4: Layer4Info::None,
+            app: AppLayerInfo::None,
         }
     }
 }

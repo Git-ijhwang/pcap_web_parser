@@ -89,20 +89,52 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
     let next_type = if packet.data.len() >= MIN_ETH_HDR_LEN {
         parse_ethernet(&packet.data)
     } else {
-        return Ok(ParsedDetail { id, packet: parsed_packet });
+        return Err("Layer 2 parsing faile".to_string());
     };
 
+    let mut ip= IpInfo::new();
     // --- Parse Layer 3 (IPv4) ---
     let next_type = match next_type {
-        0x0800 => parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet),
-        _ =>         return Ok(ParsedDetail { id, packet: parsed_packet }),
+        // 0x0800 => parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet),
+        0x0800 => {
+            let result = parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut ip);
+            parsed_packet.ip = ip;
+            result
+        },
+
+        _ => return Err("Layer 3 parsing failed".to_string()),
     };
 
     // --- Parse Layer 4 ---
-    let (port_number, l4_hdr_len) =
-        preparse_layer4_detail( next_type,
-                &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..],
-                &mut parsed_packet);
+    let (port_number, l4_hdr_len)  = {
+        let data_buf = &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..];
+
+        match next_type {
+            6   =>  {
+                let mut tcp = TcpInfo::new();
+                let result= parse_tcp( data_buf , &mut tcp);
+
+                parsed_packet.l4 = Layer4Info::TCP(tcp);
+
+                (result, 20)
+            },
+            17  => {
+                let mut udp = UdpInfo::new();
+                let result = parse_udp( data_buf, &mut udp);
+
+                parsed_packet.l4 = Layer4Info::UDP(udp);
+                (result, 8)
+            }
+            _ => return Err("Layer 4 parsing failed".to_string()),
+
+        }
+    };
+
+    // let (port_number, l4_hdr_len) =
+    //     preparse_layer4_detail( next_type,
+    //             &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..],
+    //             &mut parsed_packet
+    //         );
         // match  preparse_layer4_detail( next_type,
         //         &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..],
         //         &mut parsed_packet)

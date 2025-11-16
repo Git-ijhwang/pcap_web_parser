@@ -78,7 +78,7 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
     next_hdr
 }
 
-pub fn parse_ipv4(ip_hdr: &[u8], packet: &mut PacketDetail) -> usize
+pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
 {
     let mut next_hdr: usize = 0;
     let mut offset: usize = 0;
@@ -95,6 +95,7 @@ pub fn parse_ipv4(ip_hdr: &[u8], packet: &mut PacketDetail) -> usize
     let dscp:u8 = (service&0xfc)>>2;
     let ecn:u8 = (service & 0x03);
 
+    offset += 1; //IHL(1byte) + Service Field(1byte)
     let total_len: u16 = u16::from_be_bytes( [
         ip_hdr[offset], ip_hdr[offset+1]
     ]);
@@ -168,19 +169,20 @@ pub fn parse_ipv4(ip_hdr: &[u8], packet: &mut PacketDetail) -> usize
         version, ihl, total_len, id, frag_flag, ttl, next_hdr, str_proto, hdr_chk, src_addr, dst_addr);
     println!("{}", ip_print);
 
-    packet.ip.version = version;
-    packet.ip.ihl = ihl as u8;
-    packet.ip.dscp = dscp;
-    packet.ip.ecn = ecn;
-    packet.ip.total_length = total_len;
-    packet.ip.id = id;
-    packet.ip.flags = frag_flag;
-    packet.ip.fragment_offset = frag_offset;
-    packet.ip.ttl = ttl;
-    packet.ip.protocol = next_hdr as u8;
-    packet.ip.src_addr.push_str(&src_addr.to_string());
-    packet.ip.dst_addr.push_str(&dst_addr.to_string());
-    packet.ip.next.push_str(&str_proto.to_string());
+    ip.version = version;
+    ip.ihl = ihl as u8;
+    ip.dscp = dscp;
+    ip.ecn = ecn;
+    ip.total_length = total_len;
+    ip.id = id;
+    ip.flags = frag_flag;
+    ip.fragment_offset = frag_offset;
+    ip.ttl = ttl;
+    ip.checksum = hdr_chk;
+    ip.protocol = next_hdr as u8;
+    ip.src_addr.push_str(&src_addr.to_string());
+    ip.dst_addr.push_str(&dst_addr.to_string());
+    ip.next.push_str(&str_proto.to_string());
 
     next_hdr
 }

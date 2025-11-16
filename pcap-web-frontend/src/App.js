@@ -7,6 +7,7 @@ import "./App.css";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import IpHeader from "./components/headers/IpHeader";
+import Layer4Header from "./components/headers/Layer4Header";
 
 function PacketTable({ packets, currentFile }) {
   // console.log(packets.length);
@@ -146,12 +147,12 @@ const HoverField = ({ children, tooltip }) => (
 
 
                 {/* L4 Section */}
-                {/* <Layer4Header l4={selectedPacket.packet.l4}/> */}
+                <Layer4Header l4={selectedPacket.packet.l4}/>
 
 
 
       {/* L4 Section */}
-      <div className="card mb-3">
+      {/* <div className="card mb-3">
         <div className="card-header">
           <strong>Layer 4 (Transport)</strong>
         </div>
@@ -175,7 +176,7 @@ const HoverField = ({ children, tooltip }) => (
           )}
 
         </div>
-      </div>
+      </div> */}
 
       {/* Application Layer (GTP) */}
       <div className="card">
