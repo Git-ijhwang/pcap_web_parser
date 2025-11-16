@@ -36,3 +36,19 @@
     transform: rotate(360deg);
   }
 }
+/* .wide-modal {
+  max-width: 90% !important; 
+}
+
+.wide-modal .modal-content {
+  overflow:auto;
+  min-height: 80vh; 
+} */
+.my-wide-modal {
+  max-width: 90% !important;   /* Bootstrap 기본 500px 덮어쓰기 */
+  width: 90% !important;       /* 확실하게 강제 */
+}
+
+.my-wide-modal .modal-content {
+  width: 100% !important;      /* 내부 content도 늘려주기 */
+}

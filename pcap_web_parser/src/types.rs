@@ -65,14 +65,38 @@ impl PacketSummary{
 
 #[derive(Serialize, Debug)]
 pub struct IpInfo {
+    pub version: u8,
+    pub ihl: u8,
+    pub dscp: u8,
+    pub ecn: u8,
+    pub total_length: u16,
+    pub id: u16,
+    pub flags: u8,
+    pub fragment_offset: u16,
+    pub ttl: u8,
+    pub protocol: u8,
+    pub checksum: u16,
     pub src_addr: String,
     pub dst_addr: String,
+    pub next: String,
 }
 impl  IpInfo {
     pub fn new() -> Self {
         IpInfo {
+            version: 0,
+            ihl: 0,
+            dscp: 0,
+            ecn: 0,
+            total_length: 0,
+            id: 0,
+            flags: 0,
+            fragment_offset: 0,
+            ttl: 0,
+            protocol: 0,
+            checksum: 0,
             src_addr: String::new(),
-            dst_addr: String::new()
+            dst_addr: String::new(),
+            next: String::new(),
         }
     }
 }

@@ -1,0 +1,21 @@
+.ip-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.ip-table th,
+.ip-table td {
+  border: 1px solid #ccc;
+  padding: 4px 6px;
+  text-align: center;
+}
+
+.ip-table th {
+  background: #f8f8f8;
+}
+
+.ip-table td {
+  background: #ffffff;
+}

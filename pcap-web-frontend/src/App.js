@@ -2,7 +2,11 @@
 import React, { useState } from "react";
 // import PacketTable from "./-PacketTable";
 import {Modal, Button} from "react-bootstrap";
-
+// import "./ip.css";
+import "./App.css";
+import OverlayTrigger from "react-bootstrap/OverlayTrigger";
+import Tooltip from "react-bootstrap/Tooltip";
+import IpHeader from "./components/headers/IpHeader";
 
 function PacketTable({ packets, currentFile }) {
   // console.log(packets.length);
@@ -13,6 +17,17 @@ function PacketTable({ packets, currentFile }) {
   const [showModal, setShowModal] = useState(false);
   // const [currentFile, setCurrentFile] = useState(null);
 
+
+const HoverField = ({ children, tooltip }) => (
+  <OverlayTrigger
+    placement="top"
+    overlay={<Tooltip>{tooltip}</Tooltip>}
+  >
+    <td style={{ cursor: "help" }}>
+      {children}
+    </td>
+  </OverlayTrigger>
+);
 
   const handleShow = (pkt) => {
     setSelectedPacket(pkt);
@@ -109,45 +124,31 @@ function PacketTable({ packets, currentFile }) {
 
       {/* ✅ Modal은 packets가 존재하고 선택된 패킷이 있을 때만 보여줌 */}
       {shouldShowModal && (
-        <Modal show={shouldShowModal} onHide={handleClose} centered>
+        <Modal show={shouldShowModal} onHide={handleClose} centered
+          dialogClassName="my-wide-modal"
+        >
           <Modal.Header closeButton>
             <Modal.Title>Packet Details</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            {/*
             {selectedPacket && (
-              <>
-                <p><strong>ID:</strong> {selectedPacket.id}</p>
-                <p><strong>Source IP:</strong> {selectedPacket.packet.ip.src_addr}</p>
-                <p><strong>Destination IP:</strong> {selectedPacket.packet.ip.dst_addr}</p>
-                <p><strong>L4 Src port:</strong> {selectedPacket.packet.l4.UDP.src_port}</p>
-                <p><strong>L4 Dst port:</strong> {selectedPacket.packet.l4.UDP.dst_port}</p>
-                <p><strong>GTP:</strong> {selectedPacket.packet.l4.UDP.dst_port}</p>
-              </>
-            )}
-            */}
-  {selectedPacket && (
-    <div style={{ fontFamily: "monospace", fontSize: "14px" }}>
+              <div style={{ fontFamily: "monospace", fontSize: "14px" }}>
 
-      {/* Packet ID */}
-      <div className="mb-3">
-        <h5 style={{ borderBottom: "1px solid #ccc", paddingBottom: "4px" }}>
-          Packet #{selectedPacket.id}
-        </h5>
-      </div>
+                {/* Packet ID */}
+                <div className="mb-3">
+                  <h5 style={{ borderBottom: "1px solid #ccc", paddingBottom: "4px" }}>
+                    Packet #{selectedPacket.id}
+                  </h5>
+                </div>
 
-      {/* IP Section */}
-      <div className="card mb-3">
-        <div className="card-header">
-          <strong>IP Layer</strong>
-        </div>
-        <div className="card-body">
-          <div style={{ marginLeft: "12px" }}>
-            <p><strong>Source:</strong> {selectedPacket.packet.ip.src_addr}</p>
-            <p><strong>Destination:</strong> {selectedPacket.packet.ip.dst_addr}</p>
-          </div>
-        </div>
-      </div>
+                {/* IP Section */}
+                <IpHeader ip={selectedPacket.packet.ip}/>
+
+
+                {/* L4 Section */}
+                {/* <Layer4Header l4={selectedPacket.packet.l4}/> */}
+
+
 
       {/* L4 Section */}
       <div className="card mb-3">
