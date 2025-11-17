@@ -1,21 +1,186 @@
-import React from "react";
+import React, { useState } from "react";
 import "./ip.css";
+
+function IpHexDump({ raw }) {
+  if (!raw || raw.length === 0) return <div>No raw data</div>;
+
+  const toHex = (n) => n.toString(16).padStart(2, "0").toUpperCase();
+  const toAscii = (n) =>
+    n >= 0x20 && n <= 0x7E ? String.fromCharCode(n) : ".";
+
+  // 16 bytes per line
+  const lines = [];
+  for (let i = 0; i < raw.length; i += 16) {
+    const chunk = raw.slice(i, i + 16);
+
+    const offset = i.toString(16).padStart(4, "0");
+
+    // 16바이트를 두 그룹으로 나누기
+    const first8 = chunk.slice(0, 8).map(toHex).join(" ");
+    const last8 = chunk.slice(8, 16).map(toHex).join(" ");
+    const hexBytes = first8 + "  " + last8; // 두 그룹 사이에 여분의 공백
+    // const hexBytes = chunk
+    //   .map((b) => toHex(b))
+    //   .join(" ");
+
+    const ascii = chunk
+      .map((b) => toAscii(b))
+      .join("");
+
+    lines.push({ offset, hexBytes, ascii });
+  }
+
+  return (
+    <pre
+      style={{
+        background: "#111a23ff",
+        color: "#eee",
+        padding: "10px",
+        borderRadius: "6px",
+        fontFamily: "monospace",
+        fontSize: "13px",
+        overflowX: "auto"
+      }}
+    >
+      {lines.map((line, idx) => (
+        <div key={idx}>
+          {line.offset}  {line.hexBytes.padEnd(47)}  {line.ascii}
+        </div>
+      ))}
+    </pre>
+  );
+}
 
 
 export default function IpHeader({ ip }) {
+  const [viewMode, setViewMode] = useState("decoded");
+
   if (!ip) return null;
 
   return (
     <div className="card mb-3">
-      <div className="card-header ip-header">
+      <div className="card-header ip-header d-flex justify-content-between align-items-center">
         <strong>Layer 3 (IP)</strong>
+        <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
+
+            <label className="form-check-label me-5" htmlFor="gtpSwitch">
+              {viewMode === "raw" ? "Raw" : "Decoded"}
+            </label>
+
+            <input className="form-check-input" type="checkbox" role="switch" id="gtpSwitch" checked={viewMode === "raw"}
+              onChange={() =>
+                setViewMode(viewMode === "raw" ? "decoded" : "raw")
+              }
+            />
+
+          </div>
+
       </div>
 
       <div className="card-body ip-card-body">
+
+        {viewMode === "raw" ? (
+
+          <div style={{ display: "flex", gap: "15px" }}>
+            <div style={{ flex: "0 0 600px" }}>
+
+            <table className="table table-bordered table-sm" style={{ fontSize: "14px" }}>
+              <tbody>
+
+                  <tr>
+                    <th colSpan="2" style={{textAlign: "Center"}}>
+                      <b>GTP Header</b>
+                    </th>
+                  </tr>
+
+                <tr>
+                  <th>Version</th>
+                  <td>{ip.version}</td>
+                </tr>
+
+                <tr>
+                  <th>IHL</th>
+                  <td>{ip.ihl}</td>
+                </tr>
+
+                <tr>
+                  <th>DSCP</th>
+                  <td>{ip.dscp}</td>
+                </tr>
+
+                <tr>
+                  <th>ECN</th>
+                  <td>{ip.ecn}</td>
+                </tr>
+
+                <tr>
+                  <th>Total Length</th>
+                  <td>{ip.total_length}</td>
+                </tr>
+
+                <tr>
+                  <th>ID</th>
+                  <td>{ip.id}</td>
+                </tr>
+
+                <tr>
+                  <th>Flags</th>
+                  <td>
+                    {ip.flags === 2 ? "DF (Don't Fragment)"
+                      : ip.flags === 1 ? "MF (More Fragment)"
+                      : "-"}
+                  </td>
+                </tr>
+
+                <tr>
+                  <th>Fragment Offset</th>
+                  <td>{ip.fragment_offset}</td>
+                </tr>
+
+                <tr>
+                  <th>TTL</th>
+                  <td>{ip.ttl}</td>
+                </tr>
+
+                <tr>
+                  <th>Protocol</th>
+                  <td>
+                    {ip.next} [{ip.protocol}]
+                  </td>
+                </tr>
+
+                <tr>
+                  <th>Checksum</th>
+                  <td>
+                    0x
+                    {ip.checksum != null
+                      ? ip.checksum.toString(16).toUpperCase() : "-"}
+                  </td>
+                </tr>
+
+                <tr>
+                  <th>Source Address</th>
+                  <td>{ip.src_addr}</td>
+                </tr>
+
+                <tr>
+                  <th>Destination Address</th>
+                  <td>{ip.dst_addr}</td>
+                </tr>
+            </tbody>
+            </table>
+            </div>
+
+            <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+                    <IpHexDump raw={ip.raw} />
+
+            </div>
+            </div>
+        ) : (
         <table className="ip-table ">
           <tbody>
             <tr>
-              <th colSpan="33" style={{ textAlign: "center" }}>
+              <th colSpan="33" style={{ textAlign: "center"}} >
                 <b>IP Header</b>
               </th>
             </tr>
@@ -86,6 +251,7 @@ export default function IpHeader({ ip }) {
         </tr>
       </tbody>
     </table>
+)}
     </div>
         </div>
   );

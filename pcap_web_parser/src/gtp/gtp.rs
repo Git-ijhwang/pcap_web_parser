@@ -140,6 +140,7 @@ pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary)
 pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
 -> IResult<&'a[u8], GtpInfo>
 {
+        let start = input;
         let (input, flags) = be_u8(input)?;
         let version = (flags >> 5) & 0x07;
         let p_flag = ((flags >> 4) & 0x01) == 1;
@@ -186,6 +187,13 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
     //     gtp.teid = teid.unwrap();
     // }
 
+
+    // GTP 메시지 전체 길이 계산
+    let header_len = 8 + if t_flag { 4 } else { 0 } + if mp_flag { 1 } else { 0 }; 
+    let total_len = header_len + msg_len as usize;
+
+    let raw = start[..total_len.min(start.len())].to_vec(); // 안전하게 슬라이스
+
     let info=    GtpInfo {
         version,
         p_flag,
@@ -199,6 +207,7 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
         mp: if mp_flag {mp}else {None},
 
         ies: Vec::new(),
+        raw,
     };
 
     Ok (( input, info))

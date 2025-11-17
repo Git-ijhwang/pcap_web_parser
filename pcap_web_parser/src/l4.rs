@@ -218,6 +218,8 @@ pub fn parse_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
 
     let chksum = u16::from_be_bytes([udp_buf[pos], udp_buf[pos+1]]);
 
+    udp.raw.extend_from_slice(&udp_buf[0..8]);
+
     let print = format!("\tUDP:\n\t\tSrc:{}[{}]\n\t\tDst:{}[{}]\n\t\tLen:{}\n\t\tChkSum:0x{:04x}",
         src_port, str_src_port, dst_port, str_dst_port, len, chksum);
 

@@ -30,9 +30,13 @@
 .ip-header{
   background-color: #A2D2FF !important;
 }
-/* .ip-card-body {
-  background-color: #A2D2FF !important;
-} */
+.ip-card-body,
+.tcp-card-body,
+.udp-card-body,
+.gtp-card-body
+{
+  background-color: #e9e9e9 !important;
+}
 .tcp-header{
   background-color:  #80FFDB !important;
 }

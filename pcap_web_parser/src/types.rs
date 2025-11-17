@@ -79,6 +79,7 @@ pub struct IpInfo {
     pub src_addr: String,
     pub dst_addr: String,
     pub next: String,
+    pub raw: Vec<u8>,
 }
 impl  IpInfo {
     pub fn new() -> Self {
@@ -97,6 +98,7 @@ impl  IpInfo {
             src_addr: String::new(),
             dst_addr: String::new(),
             next: String::new(),
+            raw: Vec::new(),
         }
     }
 }
@@ -114,6 +116,7 @@ pub struct UdpInfo {
     pub dst_port: u16,
     pub length: u16,
     pub checksum: u16,
+    pub raw: Vec<u8>,
 }
 impl  UdpInfo {
     pub fn new() -> Self {
@@ -122,6 +125,7 @@ impl  UdpInfo {
             dst_port: 0,
             length: 0,
             checksum: 0,
+            raw: Vec::new(),
         }
     }
 }
@@ -178,6 +182,7 @@ pub struct GtpInfo {
     pub seq: u32,
     pub mp: Option<u8>,
     pub ies: Vec<GtpIe>,
+    pub raw: Vec<u8>,
 }
 impl GtpInfo {
     pub fn new() -> Self {
@@ -195,6 +200,7 @@ impl GtpInfo {
             seq: 0,
             mp: None,
             ies: Vec::new(),
+            raw: Vec::new(),
         }
     }
 }

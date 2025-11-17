@@ -89,6 +89,7 @@ pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
     if ihl != IP_HDR_LEN {
         return 0;
     }
+    ip.raw.extend_from_slice(&ip_hdr[0..ihl]);
     offset += 1; //IHL(1byte) + Service Field(1byte)
 
     let service = ip_hdr[offset];
@@ -152,6 +153,7 @@ pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
     else {
         eprintln!("Failure to read Src Addr");
     }
+
 
     let mut ip_print = "".to_string();
 
