@@ -66,7 +66,7 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
 -> Result<ParsedDetail, String>
 {
 
-    println!(" Single Packet: {:#?}", path);
+    // println!(" Single Packet: {:#?}", path);
     let mut cap = Capture::from_file(path)
         .map_err(|e| format!("Failed to open pcap file {}: {}", path.to_string_lossy(), e))?;
 

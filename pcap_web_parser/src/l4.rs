@@ -41,15 +41,6 @@ pub fn parse_tcp_simple(tcp: &[u8], packet: & mut PacketSummary) -> u16
         eprintln!("Unknown protocol type {}", dst_port);
     }
 
-    // println!(
-    //     "\tSrc:{}[{}]\tDst:{}[{}]\tSeq:{}, Ack:{}, Win:{}, ChkSum:0x{:04x} Flags:[{}{}{}{}]",
-    //     src_port, str_src_port, dst_port, str_dst_port,
-    //     seq_num, ack_num, win_size, chksum,
-    //     if syn{"SYN "} else {""},
-    //     if ack{"ACK "} else {""},
-    //     if fin{"FIN "} else {""},
-    //     if rst{"RST "} else {""},
-    // );
     packet.src_port = src_port;
     packet.dst_port = dst_port;
 
@@ -96,15 +87,15 @@ pub fn parse_tcp(tcp_buf: &[u8], tcp: & mut TcpInfo) -> u16
         eprintln!("Unknown protocol type {}", dst_port);
     }
 
-    println!(
-        "\tSrc:{}[{}]\tDst:{}[{}]\tSeq:{}, Ack:{}, Win:{}, ChkSum:0x{:04x} Flags:[{}{}{}{}]",
-        src_port, str_src_port, dst_port, str_dst_port,
-        seq_num, ack_num, win_size, chksum,
-        if syn{"SYN "} else {""},
-        if ack{"ACK "} else {""},
-        if fin{"FIN "} else {""},
-        if rst{"RST "} else {""},
-    );
+    // println!(
+    //     "\tSrc:{}[{}]\tDst:{}[{}]\tSeq:{}, Ack:{}, Win:{}, ChkSum:0x{:04x} Flags:[{}{}{}{}]",
+    //     src_port, str_src_port, dst_port, str_dst_port,
+    //     seq_num, ack_num, win_size, chksum,
+    //     if syn{"SYN "} else {""},
+    //     if ack{"ACK "} else {""},
+    //     if fin{"FIN "} else {""},
+    //     if rst{"RST "} else {""},
+    // );
 
     // tcp = Layer4Info::TCP( TcpInfo {
         tcp.src_port = src_port;
@@ -116,6 +107,7 @@ pub fn parse_tcp(tcp_buf: &[u8], tcp: & mut TcpInfo) -> u16
         tcp.header_sz = data_offset;
         tcp.checksum = chksum;
         tcp.urgent = 0;
+    tcp.raw.extend_from_slice(&tcp_buf[0..20]);
     // });
         
     // packet.l4.tcp.get_or_insert( TcpInfo {
@@ -220,10 +212,10 @@ pub fn parse_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
 
     udp.raw.extend_from_slice(&udp_buf[0..8]);
 
-    let print = format!("\tUDP:\n\t\tSrc:{}[{}]\n\t\tDst:{}[{}]\n\t\tLen:{}\n\t\tChkSum:0x{:04x}",
-        src_port, str_src_port, dst_port, str_dst_port, len, chksum);
+    // let print = format!("\tUDP:\n\t\tSrc:{}[{}]\n\t\tDst:{}[{}]\n\t\tLen:{}\n\t\tChkSum:0x{:04x}",
+    //     src_port, str_src_port, dst_port, str_dst_port, len, chksum);
 
-    println!("{}", print);
+    // println!("{}", print);
 
     // if let Layer4Info::UDP(udp) = &mut packet.l4 {
     // let udp = packet.udp.get_or_insert( UdpInfo {

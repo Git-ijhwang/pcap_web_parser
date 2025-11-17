@@ -62,41 +62,26 @@ export default function GtpHeader({ gtp }) {
     <div className="card mb-3">
       <div className="card-header gtp-header d-flex justify-content-between align-items-center">
         <strong>Application Layer</strong>
-        <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
+          <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
 
 
-  {/* Label 먼저 */}
-  <label className="form-check-label me-5" htmlFor="gtpSwitch">
-    {viewMode === "raw" ? "Raw" : "Decoded"}
-  </label>
+            {/* Label 먼저 */}
+            <label className="form-check-label me-5" htmlFor="gtpSwitch">
+              {viewMode === "raw" ? "Raw" : "Decoded"}
+            </label>
 
 
-  {/* Switch 버튼 */}
-  <input
-    className="form-check-input"
-    type="checkbox"
-    role="switch"
-    id="gtpSwitch"
-    checked={viewMode === "raw"}
-    onChange={() =>
-      setViewMode(viewMode === "raw" ? "decoded" : "raw")
-    }
-  />
-
-          {/* <label className="form-check-label ms-2" htmlFor="gtpSwitch">
-            {viewMode === "raw" ? "Raw" : "Decoded"}
-          </label>
-
-          <input
-            className="form-check-input"
-            type="checkbox"
-            role="switch"
-            id="gtpSwitch"
-            checked={viewMode === "raw"}
-            onChange={() =>
-              setViewMode(viewMode === "raw" ? "decoded" : "raw")
-            }
-          /> */}
+            {/* Switch 버튼 */}
+            <input
+              className="form-check-input"
+              type="checkbox"
+              role="switch"
+              id="gtpSwitch"
+              checked={viewMode === "raw"}
+              onChange={() =>
+                setViewMode(viewMode === "raw" ? "decoded" : "raw")
+              }
+            />
         </div>
       </div>
 

@@ -46,10 +46,6 @@ async fn upload_file(
 
     cache.write().await.insert(uuid.clone(), info);
 
-    println!( "✅ 캐시에 저장됨: uuid={} name={} path={:?}",
-            uuid, original_name, tmp_path
-    );
-
     Ok(uuid) // 캐시 접근용 키 반환
 }
 
@@ -102,7 +98,6 @@ pub async fn handle_parse_summary(
                 .unwrap_or_else(|| std::env::temp_dir().join(&uuid));
 
 
-                // println!("==>{:?}", tmp_path.clone());
         // 파서는 보통 sync(블로킹)이므로 spawn_blocking 사용
         let detail = false;
         let tmp_path_clone = tmp_path.clone();
@@ -123,7 +118,6 @@ pub async fn handle_parse_summary(
             Ok(Err(e)) => {
                 // let _ = tokio::fs::remove_file(&tmp_path).await;
                 let msg = format!("Parser error: {}", e);
-                println!("Bad Request!!!");
                 return (StatusCode::BAD_REQUEST, msg).into_response();
             }
             Err(join_err) => {
@@ -157,8 +151,6 @@ let key = filename
 
     //1. cache로부터 파일이름을 가져오기.
     let cache_read = cache.read().await;
-    println!("cache로부터 파일 이름 가져오기.{}", params.file);
-    println!("cache keys: {:?}", cache_read.keys());
     // let info = match cache_read.get(&params.file) {
 
     let info = match cache_read.get(key) {
@@ -172,7 +164,6 @@ let key = filename
     drop(cache_read);
 
     //2. 파일 읽기
-    println!("파일 읽기");
     // let data = match tokio::fs::read(&info.path).await {
     //     Ok(bytes) => bytes,
     //     Err(e) => {
@@ -182,9 +173,7 @@ let key = filename
     // };
 
     //3. PacketQuery로부터 ID가져오기
-    println!(" PacketQuery로부터 ID가져오기");
     let packet_id = params.id;
-    println!("ID: {}", packet_id);
 
     //4. 파일에서 ID가 동일한 packet 읽기.
     let parse_result =
@@ -195,7 +184,6 @@ let key = filename
 
 
     //6. 결과 return 하기
-    println!("결과 return 하기");
     match parse_result {
             Ok(Ok(parsed)) => {
                 let msg = Json(parsed);

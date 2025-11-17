@@ -155,21 +155,21 @@ pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
     }
 
 
-    let mut ip_print = "".to_string();
+    // let mut ip_print = "".to_string();
 
-        ip_print = format!("\tIP:
-\t\tVer: {}
-\t\tLen: {} bytes
-\t\tTotalLen: {} bytes
-\t\tID: 0x{:04x}
-\t\tF: 0x{:02x}
-\t\tTTL: {}
-\t\tNext_Proto: {} [{}]
-\t\tChkSum: 0x{:04x}
-\t\tSrc Addr: {}
-\t\tDst Addr: {}",
-        version, ihl, total_len, id, frag_flag, ttl, next_hdr, str_proto, hdr_chk, src_addr, dst_addr);
-    println!("{}", ip_print);
+//         ip_print = format!("\tIP:
+// \t\tVer: {}
+// \t\tLen: {} bytes
+// \t\tTotalLen: {} bytes
+// \t\tID: 0x{:04x}
+// \t\tF: 0x{:02x}
+// \t\tTTL: {}
+// \t\tNext_Proto: {} [{}]
+// \t\tChkSum: 0x{:04x}
+// \t\tSrc Addr: {}
+// \t\tDst Addr: {}",
+//         version, ihl, total_len, id, frag_flag, ttl, next_hdr, str_proto, hdr_chk, src_addr, dst_addr);
+//     println!("{}", ip_print);
 
     ip.version = version;
     ip.ihl = ihl as u8;

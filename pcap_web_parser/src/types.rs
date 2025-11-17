@@ -141,6 +141,7 @@ pub struct TcpInfo {
     pub window: u16,
     pub checksum: u16,
     pub urgent: u16,
+    pub raw: Vec<u8>,
 }
 impl  TcpInfo {
     pub fn new() -> Self {
@@ -154,6 +155,7 @@ impl  TcpInfo {
             window: 0,
             checksum: 0,
             urgent: 0,
+            raw: Vec::new(),
         }
     }
 }
