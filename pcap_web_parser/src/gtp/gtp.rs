@@ -1,12 +1,11 @@
-use crate::gtp::gtpv2_types::*;
 use serde::Serialize;
-use crate::types::*;
-
 use nom::{
     IResult,
     number::complete::{be_u8, be_u16, be_u32},
     bytes::complete::take,
 };
+use crate::types::*;
+use crate::gtp::gtpv2_types::*;
 
 #[derive(Debug)]
 pub struct GtpHeader {
@@ -28,28 +27,61 @@ pub struct GtpHeader {
 #[derive(Debug, Serialize)]
 pub struct GtpIe {
     pub ie_type: u8,
+    pub type_str: String,
     pub length: u16,
     pub instance: u8,
     pub value: Vec<u8>,
+    pub sub_ies: Vec<GtpIe>,
 }
 
 
 pub fn parse_ie(input: &[u8]) -> IResult<&[u8], GtpIe>
 {
-    let (input, ie_type) = be_u8(input)?;
-    let (input, ie_len) = be_u16(input)?;
-    let (input, inst_byte) = be_u8(input)?;
+    // let mut result = Vec::new();
+
+    let (i, ie_type) = be_u8(input)?;
+    let (i, ie_len) = be_u16(i)?;
+    let (mut i, inst_byte) = be_u8(i)?;
     let ie_inst = inst_byte & 0x0f;
 
-    let (input, ie_value) = take(ie_len)(input)?;
 
-    Ok((input, GtpIe {
-        ie_type,
-        length :ie_len,
-        instance: ie_inst,
-        value: ie_value.to_vec(),
-    }))
+    let is_grouped = GTPV2_IE_TYPES[ie_type as usize].1;
+
+    let mut sub_ies: Vec<GtpIe> = Vec::new();
+    let mut raw_value: Vec<u8> = Vec::new();
+
+    if is_grouped {
+        let mut remaining = &i[..ie_len as usize];
+
+        while !remaining.is_empty() {
+            match parse_ie(remaining) {
+                Ok((rest, ie)) => {
+                    sub_ies.push(ie);
+                    remaining = rest;
+                }
+                Err(_) => break,
+            }
+        }
+        i = &i[ie_len as usize..];
+    }
+    else {
+        let (next, value) = take(ie_len)(i)?;
+        raw_value = value.to_vec();
+        i = next;
+    }
+
+    Ok( (i,
+        GtpIe {
+            ie_type,
+            type_str: GTPV2_IE_TYPES[ie_type as usize].0.to_string(),
+            length: ie_len,
+            instance: ie_inst,
+            value: raw_value,
+            sub_ies,
+        },
+    ))
 }
+
 
 pub fn parse_all_ies(mut input: &[u8]) -> Vec<GtpIe> {
     let mut result = Vec::new();

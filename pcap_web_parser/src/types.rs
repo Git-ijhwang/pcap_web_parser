@@ -133,6 +133,7 @@ impl  UdpInfo {
 #[derive(Serialize, Debug)]
 pub struct TcpInfo {
     pub src_port: u16,
+    pub src_port_str: String,
     pub dst_port: u16,
     pub seq: u32,
     pub ack: u32,
@@ -147,6 +148,7 @@ impl  TcpInfo {
     pub fn new() -> Self {
         TcpInfo {
             src_port: 0,
+            src_port_str: String::new(),
             dst_port: 0,
             seq: 0,
             ack: 0,

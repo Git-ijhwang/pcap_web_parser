@@ -1,7 +1,6 @@
-use std::{fs, collections::HashMap, };
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use std:: path::PathBuf;
 use tokio::io::AsyncWriteExt;
-use tokio::fs::{File};
+use tokio::fs::File;
 use uuid::Uuid;
 use axum_extra::extract::multipart::Field;
 use axum::{
@@ -11,11 +10,10 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde_json::json;
 
 use crate::*;
-use crate::types::{Cache, FileInfo, PacketQuery};
 use crate::parse_pcap::*;
+use crate::types::{Cache, FileInfo, PacketQuery};
 
 async fn upload_file(
     cache: &Cache,
@@ -99,13 +97,12 @@ pub async fn handle_parse_summary(
 
 
         // 파서는 보통 sync(블로킹)이므로 spawn_blocking 사용
-        let detail = false;
         let tmp_path_clone = tmp_path.clone();
         let parse_result =
-                // tokio::task::spawn_blocking(move || parse_file(&tmp_path_clone)).await;
-                tokio::spawn(async move {
-                    parse_pcap_summary(&tmp_path_clone, detail).await
-                }).await;
+            // tokio::task::spawn_blocking(move || parse_file(&tmp_path_clone)).await;
+            tokio::spawn(async move {
+                parse_pcap_summary(&tmp_path_clone).await
+            }).await;
 
 
         // parse 결과 처리
@@ -133,26 +130,26 @@ pub async fn handle_parse_summary(
 
 
 
-pub async fn handle_packet_detail (
+pub async fn handle_single_packet (
     State(cache): State<Cache>,
     Query(params): Query<PacketQuery> )
-// ) -> (StatusCode, Json<serde_json::Value>)
  -> Response
 {
 
-let filename = std::path::Path::new(&params.file)
-    .file_name()
-    .and_then(|os| os.to_str())
-    .unwrap_or("");
+    let filename = std::path::Path::new(&params.file)
+        .file_name()
+        .and_then(|os| os.to_str())
+        .unwrap_or("");
 
-let key = filename
-    .trim_start_matches("upload-")
-    .trim_end_matches(".pcap");
+    let key = filename
+        .trim_start_matches("upload-")
+        .trim_end_matches(".pcap");
 
     //1. cache로부터 파일이름을 가져오기.
     let cache_read = cache.read().await;
     // let info = match cache_read.get(&params.file) {
 
+    //2. 파일 읽기
     let info = match cache_read.get(key) {
         Some(v) => v.clone(),
         None => {
@@ -163,39 +160,30 @@ let key = filename
 
     drop(cache_read);
 
-    //2. 파일 읽기
-    // let data = match tokio::fs::read(&info.path).await {
-    //     Ok(bytes) => bytes,
-    //     Err(e) => {
-    //         let msg = format!("Failed to read file: {}.", e);
-    //         return (StatusCode::NOT_FOUND, msg).into_response();
-    //     }
-    // };
-
     //3. PacketQuery로부터 ID가져오기
     let packet_id = params.id;
 
     //4. 파일에서 ID가 동일한 packet 읽기.
     let parse_result =
         tokio::spawn(async move {
+            //5. parsing하기
             parse_single_packet(&info.path, packet_id).await
         }).await;
-    //5. parsing하기
 
 
     //6. 결과 return 하기
     match parse_result {
-            Ok(Ok(parsed)) => {
-                let msg = Json(parsed);
-                return (StatusCode::OK, msg).into_response()
-            }
-            Ok(Err(e)) => {
-                let msg = format!("Parser error: {}", e);
-                return (StatusCode::BAD_REQUEST, msg).into_response();
-            }
-            Err(join_err) => {
-                let msg = format!("Internal error: {}", join_err);
-                return (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response();
-            }
+        Ok(Ok(parsed)) => {
+            let msg = Json(parsed);
+            return (StatusCode::OK, msg).into_response()
+        }
+        Ok(Err(e)) => {
+            let msg = format!("Parser error: {}", e);
+            return (StatusCode::BAD_REQUEST, msg).into_response();
+        }
+        Err(join_err) => {
+            let msg = format!("Internal error: {}", join_err);
+            return (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response();
+        }
     }
 }

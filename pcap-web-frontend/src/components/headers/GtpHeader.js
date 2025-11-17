@@ -2,6 +2,68 @@ import React, { useState } from "react";
 
 import "./ip.css";
 
+function decodeAPN(bytes) {
+  let pos = 0;
+  let labels = [];
+
+  while (pos < bytes.length) {
+    const len = bytes[pos];
+    pos += 1;
+
+    if (len === 0) break; // 종료
+
+    if (pos + len > bytes.length) break; // 잘못된 데이터 보호
+
+    const labelBytes = bytes.slice(pos, pos + len);
+    const label = Array.from(labelBytes)
+      .map((b) => String.fromCharCode(b))
+      .join("");
+
+    labels.push(label);
+
+    pos += len;
+  }
+
+  return labels.join(".");
+}
+
+// hex string → Uint8Array 로 변환
+function hexToBytes(hex) {
+  if (hex.length % 2 !== 0) throw new Error("Invalid hex string");
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+// IMSI BCD decode
+function decodeBCD(input) {
+  let bytes;
+
+  // hex string이 들어온 경우
+  if (typeof input === "string") {
+    bytes = hexToBytes(input);
+  } 
+  // Uint8Array가 들어온 경우
+  else {
+    bytes = input;
+  }
+
+  let digits = [];
+
+  for (let b of bytes) {
+    const low = b & 0x0f;
+    const high = (b & 0xf0) >> 4;
+
+    if (low <= 9) digits.push(low);
+    // high nibble가 0xF이면 끝을 의미하므로 break
+    if (high <= 9) digits.push(high);
+  }
+
+  return digits.join("");
+}
+
 function GtpHexDump({ raw }) {
   if (!raw || raw.length === 0) return <div>No raw data</div>;
 
@@ -52,6 +114,239 @@ function GtpHexDump({ raw }) {
     </pre>
   );
 }
+
+function GtpIeSimpleViewer({ ies }) {
+  return (
+    <div>
+
+      <GtpIeSimpleTable ies={ies} />
+    </div>
+  );
+}
+
+function GtpIeViewer({ ies }) {
+  return (
+    <div>
+      <GtpIeTable ies={ies} />
+    </div>
+  );
+}
+function GtpIeSimpleTable({ ies, level = 0 }) {
+  const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
+  return (
+    <>
+    {ies.map((ie, idx) => (
+      <table className="table table-bordered table-sm ie-table"
+            // style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
+            >
+        <tbody>
+
+          <tr
+            style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
+                  // style= {{ background: bgColor[level]??"#fa2345" }}
+          >
+            <th 
+            style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
+                  // style= {{ background: bgColor[level]??"#fa2345" }}
+                  >
+              Type </th>
+            <td
+            style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
+                  // style= {{ background: bgColor[level]??"#fa2345" }}
+            > {ie.type_str} </td>
+          </tr>
+          <tr >
+            <th> Len </th>
+            <td> {ie.length} <i>bytes</i></td>
+          </tr>
+          <tr >
+            <th> Instance </th>
+            <td> {ie.instance} </td>
+          </tr>
+          <tr >
+            <th> Value </th>
+            <td>
+              {
+                ie.ie_type === 1 || ie.ie_type===75 || ie.ie_type===76 ? (
+                      decodeBCD(ie.value)
+                ):
+                 ie.ie_type===71 ? (
+                      decodeAPN(ie.value)
+                 ): (
+                
+              "0x"+(ie.value.length > 0 ?
+
+                        ie.value.map((b) => b.toString(16).padStart(2, "0")).join("")
+                        : "(empty)")
+              )}
+              {ie.val} </td>
+          </tr>
+
+        </tbody>
+      </table>
+    ))}
+    </>
+  )
+}
+
+function GtpIeTable({ ies, level = 0 }) {
+  const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
+  return (
+    <>
+    {ies.map((ie, idx) => (
+      <table className="table table-bordered table-sm"
+            style={{ fontSize: "14px" }}>
+        <tbody>
+          <tr>
+              <th colSpan="33"
+                  style= {{ background: bgColor[level]??"#fa2345" }} >
+                   {ie.type_str}
+              </th>
+          </tr>
+          {/* <tr>
+            <th style={{ textAlign:"center", borderLeft: "" }}>Octet</th>
+            <th colSpan="8">0</th>
+            <th colSpan="8">1</th>
+            <th colSpan="8">2</th>
+            <th colSpan="8">3</th>
+          </tr> */}
+          <tr>
+             <th style={{textAlign:"center"}}>Bit</th>
+             {[...Array(32)].map((_, i) => (
+                 <th  style={{textAlign:"center"}}key={i}>{i}</th>
+             ))}
+          </tr>
+
+          <tr key={idx} style={{ background: "#f0f0f0" }} >
+            <th style={{textAlign:"center"}}>0</th>
+
+            <td colSpan="8" style={{
+              textAlign:"center"}} >
+                Type: {ie.ie_type}
+            </td>
+                
+            <td colSpan="16" style={{ textAlign: "center" }}> Length: {ie.length} </td>
+            <td colSpan="4"style={{ textAlign: "center" }}> Spare </td>
+            <td colSpan="4" style={{ textAlign: "center" }}> Instance: {ie.instance} </td>
+          </tr>
+
+          {ie.sub_ies.length === 0 && (
+            <tr>
+              <th></th>
+                <td colSpan="32">
+                  {
+                    ie.ie_type === 1 || ie.ie_type===75 || ie.ie_type===76 ? (
+                      ie.type_str+": "+decodeBCD(ie.value)
+                    ): ie.ie_type===71 ? (
+                      ie.type_str+": "+
+                      decodeAPN(ie.value)
+                    ): (
+                      ie.type_str+": "+"0x"+(ie.value.length > 0 ?
+                        ie.value.map((b) => b.toString(16).padStart(2, "0")).join("")
+                        : "(empty)")
+                    )
+                  }
+                  
+                </td>
+            </tr>
+          )}
+
+          {ie.sub_ies.length > 0 && (
+            <tr>
+              <td colSpan="33"
+              style={{ paddingLeft: "20px" }}>
+                <b>Grouped IE Contents:</b>
+                <GtpIeTable ies={ie.sub_ies} level={level + 1} />
+              </td>
+            </tr>
+          )}
+
+        </tbody>
+      </table>
+
+    ))}
+    </>
+  )
+}
+
+// function GtpIeTable({ ies, level = 0 }) {
+//   return (
+//       <table className="table table-bordered table-sm" style={{ fontSize: "14px" }}>
+//         <tbody>
+//             <tr>
+//               <th style={{ textAlign:"center", borderLeft: "" }}>Octet</th>
+//               <th colSpan="8">0</th>
+//               <th colSpan="8">1</th>
+//               <th colSpan="8">2</th>
+//               <th colSpan="8">3</th>
+//             </tr>
+//           <tr>
+//             <th style={{textAlign:"center"}}>Bit</th>
+//             {[...Array(32)].map((_, i) => (
+//                 <th  style={{textAlign:"center"}}key={i}>{i}</th>
+//             ))}
+//           </tr>
+
+//         {ies.map((ie, idx) => (
+//           <React.Fragment key={idx}>
+//             <tr>
+//               <th></th>
+//               <th colSpan="32" style={{background:"#f0f0f0"}} >{ie.type_str}</th>
+//             </tr>
+
+//           <tr key={idx}
+//             style={{ background: "#f0f0f0" }}
+//           >
+//             <th style={{textAlign:"center"}}>{0+(32*idx)}</th>
+
+//             <td colSpan="8" style={{
+//               textAlign:"center"}} >
+//               <b>
+//                 {ie.ie_type}
+//               </b>
+//             </td>
+                
+//             <td colSpan="16" style={{ textAlign: "center" }}> Length: {ie.length} </td>
+//             <td colSpan="4"style={{ textAlign: "center" }}> Spare </td>
+//             <td colSpan="4" style={{ textAlign: "center" }}> Instance: {ie.instance} </td>
+//           </tr>
+
+//             {ie.sub_ies.length === 0 && (
+//               <tr>
+//                 <th></th>
+//                 <td colSpan="32">
+
+//                   {
+//                     ie.ie_type === 1 || ie.ie_type===75 || ie.ie_type===76 ? (
+//                       decodeBCD(ie.value)+"  "
+//                     ): ie.ie_type===71 ? (
+//                       decodeAPN(ie.value)+" "
+//                     ): (
+//                       "0x"+(ie.value.length > 0
+//                         ? ie.value.map((b) => b.toString(16).padStart(2, "0")).join("")
+//                         : "(empty)"))
+//                     }
+                  
+//                 </td>
+//               </tr>
+//             )}
+
+//             {ie.sub_ies.length > 0 && (
+//               <tr>
+//                 <td colSpan="33" style={{ paddingLeft: "20px" }}>
+//                   <b>Grouped IE Contents:</b>
+//                   <GtpIeTable ies={ie.sub_ies} level={level + 1} />
+//                 </td>
+//               </tr>
+//             )}
+//         </React.Fragment>
+//         ))}
+//       </tbody>
+//     </table>
+//   );
+// }
+
+
 
 export default function GtpHeader({ gtp }) {
   const [viewMode, setViewMode] = useState("decoded");
@@ -148,97 +443,141 @@ export default function GtpHeader({ gtp }) {
                     </td>
                   </tr>
 
+
+                  <tr >
+                    <td colSpan="2" style={{backgroundColor:"#a3b2c3"}}>
+                  GTP IEs
+                      <GtpIeSimpleViewer ies={gtp.ies} />
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
-            <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+            <div 
+            // style={{ flex: "1 1 auto", overflowX: "auto"
+               style={{
+                // flex: "1 1 auto",
+                // overflowX: "auto",
+
+                // position: "sticky",
+                // top: 0,        // 상단으로 고정
+                // background: "#111a23", // 배경색 지정 필요 (겹침 방지)
+                // zIndex: 10     // 다른 요소 위에 표시
+
+                   position: "sticky",
+    top: "10px", // 필요 시 navbar 높이만큼 조정
+    // left: 0,
+    // right: 0,
+    height: "400px",   // 높이 지정
+    overflowX: "auto",
+    background: "#111a23",
+    zIndex: 1000,
+              }}
+            >
               <GtpHexDump raw={gtp.raw} /> 
             </div>
           </div>
+
         ) : (
 
+          <div>
+          <table className="ip-table ">
+            <tbody>
 
-        <table className="ip-table ">
-          <tbody>
+              <tr>
+                <th colSpan="33" style={{ textAlign: "center" }}>
+                  <b>GTP Header</b>
+                </th>
+              </tr>
 
-            <tr>
-              <th colSpan="33" style={{ textAlign: "center" }}>
-                <b>GTP Header</b>
-              </th>
-            </tr>
+              {/* Header Row */}
+              <tr>
+                <th style={{ borderLeft: "" }}>Octet</th>
+                <th colSpan="8">0</th>
+                <th colSpan="8">1</th>
+                <th colSpan="8">2</th>
+                <th colSpan="8">3</th>
+              </tr>
 
-            {/* Header Row */}
-            <tr>
-              <th style={{ borderLeft: "" }}>Octet</th>
-              <th colSpan="8">0</th>
-              <th colSpan="8">1</th>
-              <th colSpan="8">2</th>
-              <th colSpan="8">3</th>
-            </tr>
+              <tr>
+                <th>Bit</th>
+                  {[...Array(32)].map((_, i) => (
+                    <th key={i}>{i}</th>
+                  ))}
+              </tr>
 
-            <tr>
-              <th>Bit</th>
-                {[...Array(32)].map((_, i) => (
-                  <th key={i}>{i}</th>
-                ))}
-            </tr>
-
-            <tr>
-              <th>0</th>
-              <td colSpan="3"><i>Version:</i> {gtp.version}</td>
-              <td colSpan="1"><i>P:</i>
-              {gtp.p_flag ? "1" : "0"}
-              </td>
-              <td colSpan="1"><i>T:</i> {gtp.t_flag ? "1" : "0"}</td>
-              <td colSpan="1"><i>MP:</i> {gtp.mp_flag ? "1" : "0"}</td>
-              <td colSpan="2"><i>Reserved</i> </td>
-
-              <td colSpan="8"><i>Message Type:</i>{gtp.msg_type_str} [{gtp.msg_type}] </td>
-              <td colSpan="16"><i>Message Length:</i>{gtp.msg_len} </td>
-            </tr>
-
-            <tr>
-              <th>32</th>
-              { gtp.t_flag ? (
-                <td colSpan="32"><i>TEID:0x</i>
-                            {gtp.teid != null ? gtp.teid.toString(16)
-                            // .toUpperCase()
-                            .padStart(8, "0") : "-"}
-                            {/* {gtp.teid} */}
+              <tr>
+                <th>0</th>
+                <td colSpan="3"><i>Version:</i> {gtp.version}</td>
+                <td colSpan="1"><i>P:</i>
+                  {gtp.p_flag ? "1" : "0"}
                 </td>
-              ) : (
-                <>
-                <td colSpan="24"><i>Sequence Number:0x</i>
-                            {gtp.seq != null ? gtp.seq.toString(16).padStart(8, "0")
-                            // .toUpperCase()
-                            : "-"}
-                {/* {gtp.seq} */}
+                <td colSpan="1"><i>T:</i> {gtp.t_flag ? "1" : "0"}</td>
+                <td colSpan="1"><i>MP:</i> {gtp.mp_flag ? "1" : "0"}</td>
+                <td colSpan="2"><i>Reserved</i> </td>
+
+                <td colSpan="8"><i>Message Type:</i>{gtp.msg_type_str} [{gtp.msg_type}] </td>
+                <td colSpan="16"><i>Message Length:</i>{gtp.msg_len} </td>
+              </tr>
+
+              <tr>
+                <th>32</th>
+                { gtp.t_flag ? (
+                  <td colSpan="32"><i>TEID:0x</i>
+                      {gtp.teid != null ? gtp.teid.toString(16)
+                      // .toUpperCase()
+                      .padStart(8, "0") : "-"}
+                      {/* {gtp.teid} */}
+                  </td>
+                ) : (
+                  <>
+                  <td colSpan="24"><i>Sequence Number:0x</i>
+                              {gtp.seq != null ? gtp.seq.toString(16).padStart(8, "0")
+                              // .toUpperCase()
+                              : "-"}
+                  {/* {gtp.seq} */}
+                  </td>
+                  {/* <td colSpan="8"><i>Sequence Number</i> </td> */}
+                  <td colSpan="8"><i>Spare</i> </td>
+                  </>
+                )}
+              </tr>
+
+              <tr>
+                <th>64</th>
+                { gtp.t_flag ? (
+                  <>
+                  <td colSpan="24"><i>Sequence Number:0x</i>
+                              {gtp.seq != null ? gtp.seq.toString(16)
+                              // .toUpperCase()
+                              .padStart(6, "0") : "-"}
+                  {/* {gtp.seq} */}
+                  </td>
+                  <td colSpan="8"><i>Spare</i> </td>
+                  </>
+                ):(<></>)}
+              </tr>
+
+<tr>
+                <td colSpan="33"
+                  style={{ paddingLeft: "20px" }}>
+                <b>IE Contents:</b>
+
+                  <GtpIeViewer ies={gtp.ies} />
                 </td>
-                {/* <td colSpan="8"><i>Sequence Number</i> </td> */}
-                <td colSpan="8"><i>Spare</i> </td>
-                </>
-              )}
-            </tr>
+              </tr>
 
-            <tr>
-              <th>64</th>
-              { gtp.t_flag ? (
-                <>
-                <td colSpan="24"><i>Sequence Number:0x</i>
-                            {gtp.seq != null ? gtp.seq.toString(16)
-                            // .toUpperCase()
-                            .padStart(6, "0") : "-"}
-                {/* {gtp.seq} */}
-                 </td>
-                <td colSpan="8"><i>Spare</i> </td>
-                </>
-              ):(<></>)}
-            </tr>
+            </tbody>
+          </table>
 
-        </tbody>
-      </table>
-    )}
+            <p></p>
+          {/* GTP Group IEs */}
+
+
+          </div>
+        )}
+
       </div>
     </div>
   );

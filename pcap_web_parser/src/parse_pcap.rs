@@ -1,16 +1,15 @@
 use std::process;
 
-use std::fs::File;
 use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use pcap::{Capture, Packet};
 
 use crate::ip::{ipv4::*, ipv6::*};
 // use crate::ipv6::*;
-use crate::ip::*;
 use crate::gtp::gtp::*;
-use crate::l4::*;
-use crate::gtp::gtpv2_types::*;
+use crate::l4::tcp::*;
+use crate::l4::udp::*;
+use crate::l4::l4::*;
 use crate::types::*;
 
 use std::time::Instant;
@@ -65,8 +64,6 @@ fn print_timestamp(idx:usize, packet: &Packet)
 pub async fn parse_single_packet(path: &PathBuf, id: usize)
 -> Result<ParsedDetail, String>
 {
-
-    // println!(" Single Packet: {:#?}", path);
     let mut cap = Capture::from_file(path)
         .map_err(|e| format!("Failed to open pcap file {}: {}", path.to_string_lossy(), e))?;
 
@@ -130,34 +127,15 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
         }
     };
 
-    // let (port_number, l4_hdr_len) =
-    //     preparse_layer4_detail( next_type,
-    //             &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..],
-    //             &mut parsed_packet
-    //         );
-        // match  preparse_layer4_detail( next_type,
-        //         &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..],
-        //         &mut parsed_packet)
-        // { 
-        //     (port, len) if port > 0 && len > 0 => (port, len),
-        //     _ => (0,0),
-        // };
-
-    // if port_number == 0 || l4_hdr_len == 0 {
-        // return Err("Packet not found".to_string());
-    // }
-
     // --- Parse Application Layer ---
     if port_number == 2123 {
         let (rest, mut gtpinfo) = parse_gtpc_detail(
             &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..]
         ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
-        // println!("gtpinfo: {:#?}", gtpinfo);
-
         gtpinfo.ies = parse_all_ies(rest);
+        println!("{:#?}", gtpinfo.ies);
         parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
-        // println!("Packet detiled : {:#?}", parsed_packet);
     }
 
     Ok(ParsedDetail {
@@ -167,14 +145,9 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
 }
 
 
-pub async fn parse_pcap_summary(path: &Path, detail: bool)
+pub async fn parse_pcap_summary(path: &Path)
 -> Result<ParsedResult, String> 
 {
-    // let file = File::open(path)
-    //     .map_err(|e| format!("File open error: {}", e))?;
-
-    // let filename = path;
-
     //read pcap file line by line
     let mut cap = match Capture::from_file(path) {
         Ok(c) => c,
@@ -224,35 +197,22 @@ pub async fn parse_pcap_summary(path: &Path, detail: bool)
 
         // --- Parse Layer 4 ---
         let (port_number, l4_hdr_len) =
-            preparse_layer4(next_type, &packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN)..], &mut parsed_packet, detail);
+            preparse_layer4(
+                next_type,
+                &packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN)..],
+                &mut parsed_packet);
 
         idx += 1;
 
         // --- Parse Application Layer ---
         if port_number == 2123 {
-            let (rest, mut hdr) = parse_gtpc(
-                &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..],
-                &mut parsed_packet
-            ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
+            let (rest, mut hdr) =
+                parse_gtpc (
+                    &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..],
+                    &mut parsed_packet)
+                .map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
         }
-        // match port_number {
-        //     2123 => match parse_gtpc(&packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN+l4_hdr_len)..], &mut parsed_packet ) {
-        //             Ok((_rest, hdr)) =>  {
-
-        //                 if detail {
-        //                     let ies: Vec<GtpIe> = parse_all_ies(hdr.payload);
-        //                     // for ie in ies {
-        //                         // println!("\t\tIE:\n\t\t\tType:{}({}), len:{}, inst:{}",
-        //                         //             GTPV2_IE_TYPES[ie.ie_type as usize],
-        //                         //             ie.ie_type , ie.length, ie.instance);
-        //                     // }
-        //                 }
-        //             }
-        //             Err(e) => println!("ERR {:?}", e),
-        //         }
-        //     _ => {}
-        //     }
 
         packets.push(parsed_packet);
     }
@@ -260,6 +220,7 @@ pub async fn parse_pcap_summary(path: &Path, detail: bool)
     let packet_len = packets.len();
     let duration = start.elapsed(); // 경과 시간 측정
     println!("Parsing took {:?}", duration);
+
     let result = ParsedResult {
             file: path.to_string_lossy().to_string(),
             total_packets: idx-1,

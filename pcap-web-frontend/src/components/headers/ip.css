@@ -46,3 +46,18 @@
 .gtp-header{
   background-color:  #FFE69A !important;
 }
+
+.ie-table {
+  table-layout: fixed;
+  width: 300px; /* 원하는 고정 폭 */
+  background-color: #9f3900;
+}
+
+.ie-table th {
+  width: 100px; /* th 폭 고정 */
+  background-color: beige;
+}
+
+.ie-table td {
+  width: 200px; /* td 폭 고정 */
+}
