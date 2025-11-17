@@ -8,6 +8,7 @@ import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import IpHeader from "./components/headers/IpHeader";
 import Layer4Header from "./components/headers/Layer4Header";
+import GtpHeader from "./components/headers/GtpHeader";
 
 function PacketTable({ packets, currentFile }) {
   // console.log(packets.length);
@@ -179,20 +180,21 @@ const HoverField = ({ children, tooltip }) => (
       </div> */}
 
       {/* Application Layer (GTP) */}
-      <div className="card">
+      <GtpHeader gtp={selectedPacket.packet.app.GTP}/>
+      {/* <div className="card">
         <div className="card-header">
           <strong>Application Layer (GTP)</strong>
         </div>
         <div className="card-body">
-
-          {"GTP" in selectedPacket.packet.app && (
+ */}
+          {/* {"GTP" in selectedPacket.packet.app && (
             <div style={{ marginLeft: "12px" }}>
               <p><strong>Message Type:</strong> {selectedPacket.packet.app.GTP.msg_type}</p>
               <p><strong>Description:</strong> {selectedPacket.packet.app.GTP.msg_type_str}</p>
-              <p><strong>TEID:</strong> {selectedPacket.packet.app.GTP.teid}</p>
+              <p><strong>TEID:</strong> {selectedPacket.packet.app.GTP.teid}</p> */}
 
               {/* IE List */}
-              <div className="mt-3">
+              {/* <div className="mt-3">
                 <strong>Information Elements (IEs):</strong>
                 <ul style={{ marginLeft: "20px" }}>
                   {selectedPacket.packet.app.GTP.ies.map((ie, index) => (
@@ -203,10 +205,10 @@ const HoverField = ({ children, tooltip }) => (
                 </ul>
               </div>
             </div>
-          )}
+          )} */}
 
-        </div>
-      </div>
+        {/* </div> */}
+      {/* </div> */}
     </div>
   )}
           </Modal.Body>

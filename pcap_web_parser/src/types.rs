@@ -164,17 +164,36 @@ pub enum AppLayerInfo {
 
 #[derive(Serialize, Debug)]
 pub struct GtpInfo {
+    pub version: u8,
+    pub p_flag: bool,
+    pub t_flag: bool,
+    pub mp_flag: bool,
+
     pub msg_type: u8,
     pub msg_type_str: String,
-    pub teid: u32,
+    pub msg_len: u16,
+
+    pub teid: Option<u32>,
+
+    pub seq: u32,
+    pub mp: Option<u8>,
     pub ies: Vec<GtpIe>,
 }
 impl GtpInfo {
     pub fn new() -> Self {
         GtpInfo {
+            version: 0,
+            p_flag: false,
+            t_flag: false,
+            mp_flag: false,
+
             msg_type: 0,
             msg_type_str: String::new(),
-            teid: 0,
+            msg_len: 0,
+
+            teid: None,
+            seq: 0,
+            mp: None,
             ies: Vec::new(),
         }
     }

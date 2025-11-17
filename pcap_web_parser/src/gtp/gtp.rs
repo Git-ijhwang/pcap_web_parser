@@ -187,9 +187,17 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
     // }
 
     let info=    GtpInfo {
+        version,
+        p_flag,
+        t_flag,
+        mp_flag,
         msg_type,
         msg_type_str:GTPV2_MSG_TYPES[msg_type as usize].to_string(),
-        teid: teid.unwrap_or(0),
+        msg_len,
+        teid: if t_flag {teid}else {None},
+        seq,
+        mp: if mp_flag {mp}else {None},
+
         ies: Vec::new(),
     };
 

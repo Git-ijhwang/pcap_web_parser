@@ -1,20 +1,33 @@
 import React from "react";
+import "./ip.css";
 
 export default function TcpHeader({ tcp }) {
     if (!tcp) return null;
   return (
       <div className="card mb-3">
-        <div className="card-header">
+
+        <div className="card-header tcp-header">
           <strong>Layer 4 (Transport)</strong>
         </div>
-        <div className="card-body">
-     <table className="ip-table">
-      <tbody>
-        <tr>
-          <th colSpan="33" style={{ textAlign: "center" }}>
-            <b>TCP Header</b>
-          </th>
-        </tr>
+
+        <div className="card-body tcp-card-body">
+          <table className="ip-table ">
+
+            <tbody>
+              <tr>
+                <th colSpan="33" style={{ textAlign: "center" }}>
+                  <b>TCP Header</b>
+                </th>
+              </tr>
+
+              {/* Header Row */}
+              <tr>
+                <th style={{ borderLeft: "" }}>Octet</th>
+                <th colSpan="8">0</th>
+                <th colSpan="8">1</th>
+                <th colSpan="8">2</th>
+                <th colSpan="8">3</th>
+              </tr>
 
         <tr>
           <th>Bit</th>
@@ -63,7 +76,9 @@ export default function TcpHeader({ tcp }) {
           <th>96</th>
           <td colSpan="16"><i>Checksum:</i> 
             {/* {tcp.ack} */}
-            {tcp.ack != null ? tcp.checksum.toString(16).toUpperCase(): "-"}
+            {tcp.ack != null ? tcp.checksum.toString(16)
+            .toUpperCase().padStart(4, "0")
+            : "-"}
             </td>
           <td colSpan="16"><i>Urgent Point:</i> 
           {tcp.urgent}

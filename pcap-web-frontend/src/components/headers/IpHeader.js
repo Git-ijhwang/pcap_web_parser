@@ -3,33 +3,34 @@ import "./ip.css";
 
 
 export default function IpHeader({ ip }) {
-    if (!ip) return null;
+  if (!ip) return null;
+
   return (
-      <div className="card mb-3">
-        <div className="card-header">
-          <strong>Layer 3 (IP)</strong>
-        </div>
-        <div className="card-body">
-<table className="ip-table">
-      <tbody>
-        <tr>
-          <th colSpan="33" style={{ textAlign: "center" }}>
-            <b>IP Header</b>
-          </th>
-        </tr>
-        {/* Header Row */}
-        <tr>
-          {/* <th style={{ minWidth: "42px", borderBottom: "none", borderRight: "none" }}><i>Offset</i></th> */}
-          <th style={{ borderLeft: "" }}>Octet</th>
-          <th colSpan="8">0</th>
-          <th colSpan="8">1</th>
-          <th colSpan="8">2</th>
-          <th colSpan="8">3</th>
-        </tr>
+    <div className="card mb-3">
+      <div className="card-header ip-header">
+        <strong>Layer 3 (IP)</strong>
+      </div>
+
+      <div className="card-body ip-card-body">
+        <table className="ip-table ">
+          <tbody>
+            <tr>
+              <th colSpan="33" style={{ textAlign: "center" }}>
+                <b>IP Header</b>
+              </th>
+            </tr>
+
+            {/* Header Row */}
+            <tr>
+              <th style={{ borderLeft: "" }}>Octet</th>
+              <th colSpan="8">0</th>
+              <th colSpan="8">1</th>
+              <th colSpan="8">2</th>
+              <th colSpan="8">3</th>
+            </tr>
 
         {/* Bit index row */}
         <tr>
-          {/* <th style={{ minWidth: "42px", borderTop: "none" }}>Octet</th> */}
           <th style={{ minWidth: "42px" }}>Bit</th>
           {[...Array(32)].map((_, i) => (
             <th key={i} style={{ minWidth: "11px" }}>{i}</th>
@@ -38,7 +39,6 @@ export default function IpHeader({ ip }) {
 
         {/* Row 0 */}
         <tr>
-          {/* <th>0</th> */}
           <th>0</th>
           <td colSpan="4"><i>Version:</i> {ip.version ?? "-"}</td>
           <td colSpan="4"><i>IHL:</i> {ip.ihl ?? "-"}</td>
@@ -49,7 +49,6 @@ export default function IpHeader({ ip }) {
 
         {/* Row 4 */}
         <tr>
-          {/* <th>4</th> */}
           <th>32</th>
           <td colSpan="16"><i>Identification:</i> {ip.id}</td>
           <td colSpan="3"><i>Flags:</i> {" "}

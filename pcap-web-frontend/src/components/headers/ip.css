@@ -1,3 +1,10 @@
+.card-header {
+  /* background-color: #08f8b4  !important; */
+}
+/* .card-body { */
+  /* background-color: #767676; */
+/* } */
+
 .ip-table {
   border-collapse: collapse;
   width: 100%;
@@ -7,15 +14,31 @@
 
 .ip-table th,
 .ip-table td {
-  border: 1px solid #ccc;
+  border: 1px solid #767676;
   padding: 4px 6px;
   text-align: center;
 }
 
 .ip-table th {
-  background: #f8f8f8;
+  background: #dce5f6;
 }
 
 .ip-table td {
   background: #ffffff;
+}
+
+.ip-header{
+  background-color: #A2D2FF !important;
+}
+/* .ip-card-body {
+  background-color: #A2D2FF !important;
+} */
+.tcp-header{
+  background-color:  #80FFDB !important;
+}
+.udp-header{
+  background-color:  #80FFDB !important;
+}
+.gtp-header{
+  background-color:  #FFE69A !important;
 }
