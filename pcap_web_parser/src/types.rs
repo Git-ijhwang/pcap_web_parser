@@ -113,7 +113,9 @@ pub enum Layer4Info {
 #[derive(Serialize, Debug)]
 pub struct UdpInfo {
     pub src_port: u16,
+    pub str_src_port: String,
     pub dst_port: u16,
+    pub str_dst_port: String,
     pub length: u16,
     pub checksum: u16,
     pub raw: Vec<u8>,
@@ -123,6 +125,8 @@ impl  UdpInfo {
         UdpInfo {
             src_port: 0,
             dst_port: 0,
+            str_src_port: String::new(),
+            str_dst_port: String::new(),
             length: 0,
             checksum: 0,
             raw: Vec::new(),

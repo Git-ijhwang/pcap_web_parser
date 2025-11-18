@@ -61,3 +61,11 @@
 .ie-table td {
   width: 200px; /* td 폭 고정 */
 }
+
+.udp-table th {
+  width: 200px;
+}
+
+.ie_group {
+  background-color:burlywood !important;
+}

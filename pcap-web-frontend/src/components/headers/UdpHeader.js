@@ -81,23 +81,23 @@ export default function UdpHeader({ udp }) {
           <div style={{ display: "flex", gap: "15px" }}>
             <div style={{ flex: "0 0 600px" }}>
 
-              <table className="table table-bordered table-sm" style={{ fontSize: "14px" }}>
+              <table className="table table-bordered table-sm udp-table" style={{ fontSize: "14px" }}>
                 <tbody>
 
                   <tr>
                     <th colSpan="2" style={{textAlign: "Center"}}>
-                      <b>GTP Header</b>
+                      <b>UDP Header</b>
                     </th>
                   </tr>
 
                   <tr>
                     <th>Source Port</th>
-                    <td>{udp.src_port}</td>
+                    <td> {udp.str_src_port} [{udp.src_port}] </td>
                   </tr>
 
                   <tr>
                     <th>Destination Port</th>
-                    <td>{udp.dst_port}</td>
+                    <td> {udp.str_dst_port} [{udp.dst_port}] </td>
                   </tr>
 
                   <tr>
@@ -148,8 +148,8 @@ export default function UdpHeader({ udp }) {
 
               <tr>
                 <th>0</th>
-                <td colSpan="16"><i>Source Port:</i> {udp.src_port}</td>
-                <td colSpan="16"><i>Destination Port:</i> {udp.dst_port}</td>
+                <td colSpan="16"><i>Source Port:</i> {udp.str_src_port} [{udp.src_port}] </td>
+                <td colSpan="16"><i>Destination Port:</i> {udp.str_dst_port} [{udp.dst_port}] </td>
               </tr>
 
               <tr>

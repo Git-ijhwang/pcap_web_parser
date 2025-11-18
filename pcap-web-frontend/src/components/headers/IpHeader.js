@@ -81,7 +81,7 @@ export default function IpHeader({ ip }) {
 
                   <tr>
                     <th colSpan="2" style={{textAlign: "Center"}}>
-                      <b>GTP Header</b>
+                      <b>IP Header</b>
                     </th>
                   </tr>
 

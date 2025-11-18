@@ -97,7 +97,7 @@ function GtpHexDump({ raw }) {
   return (
     <pre
       style={{
-        background: "#111a23ff",
+        background: "#111a23",
         color: "#eee",
         padding: "10px",
         borderRadius: "6px",
@@ -118,7 +118,6 @@ function GtpHexDump({ raw }) {
 function GtpIeSimpleViewer({ ies }) {
   return (
     <div>
-
       <GtpIeSimpleTable ies={ies} />
     </div>
   );
@@ -131,6 +130,7 @@ function GtpIeViewer({ ies }) {
     </div>
   );
 }
+
 function GtpIeSimpleTable({ ies, level = 0 }) {
   const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
   return (
@@ -141,19 +141,13 @@ function GtpIeSimpleTable({ ies, level = 0 }) {
             >
         <tbody>
 
-          <tr
-            style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
-                  // style= {{ background: bgColor[level]??"#fa2345" }}
-          >
-            <th 
-            style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
-                  // style= {{ background: bgColor[level]??"#fa2345" }}
-                  >
+          <tr style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
+            <th style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
               Type </th>
             <td
             style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
                   // style= {{ background: bgColor[level]??"#fa2345" }}
-            > {ie.type_str} </td>
+            > {ie.type_str} [{ie.ie_type}]</td>
           </tr>
           <tr >
             <th> Len </th>
@@ -179,15 +173,38 @@ function GtpIeSimpleTable({ ies, level = 0 }) {
                         ie.value.map((b) => b.toString(16).padStart(2, "0")).join("")
                         : "(empty)")
               )}
-              {ie.val} </td>
+              {ie.val}
+            </td>
           </tr>
+
+
+          {ie.sub_ies.length > 0 && (
+            <tr >
+              <td className="ie-group" colSpan="2"
+                  style={{ paddingLeft: "10px", paddingRight: "10px", background:"#a4b1fa" }}>
+                <b>Grouped IE Contents:</b>
+                <GtpIeSimpleTable ies={ie.sub_ies} level={level + 1} />
+              </td>
+            </tr>
+          )}
 
         </tbody>
       </table>
+
     ))}
     </>
   )
 }
+
+// function GtpIeTable({ ies, level = 0 }) {
+
+
+//         </tbody>
+//       </table>
+//     ))}
+//     </>
+//   )
+// }
 
 function GtpIeTable({ ies, level = 0 }) {
   const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
@@ -473,6 +490,7 @@ export default function GtpHeader({ gtp }) {
     overflowX: "auto",
     background: "#111a23",
     zIndex: 1000,
+    borderRadius: "10px"
               }}
             >
               <GtpHexDump raw={gtp.raw} /> 
