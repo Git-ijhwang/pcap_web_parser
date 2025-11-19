@@ -353,11 +353,11 @@ function GtpIeTable({ ies, level = 0 })
           </tr>
 
           <tr key={idx} style={{ background: "#f0f0f0" }} >
-            <th style={{textAlign:"center"}}>0</th> {/* //<---- */}
+            <th style={{textAlign:"center"}}>0</th>
 
             <td colSpan="8" style={{
               textAlign:"center"}} >
-                Type: {ie.type_str} [{ie.ie_type}]
+                Type: {ie.ie_type}
             </td>
                 
             <td colSpan="16" style={{ textAlign: "center" }}> Length: {ie.length} </td>
@@ -367,7 +367,7 @@ function GtpIeTable({ ies, level = 0 })
 
           {ie.sub_ies.length === 0 && (
             <tr>
-              <th>32</th>
+              <th></th>
                 <td colSpan="32">
                   {
                     ie.ie_type === 1 || ie.ie_type===75 || ie.ie_type===76 ? (

@@ -546,6 +546,7 @@ pub static GTPV2_MSG_TYPES: [&str; 256] = [
 ];
 
 pub static GTPV2_IE_TYPES: [(&str, bool);256] = [
+//("IE TYPE in String", Group or Single IE)
 ("Reserved", false),
 ("International Mobile Subscriber Identity (IMSI)", false),
 ("Cause", false),
@@ -626,7 +627,7 @@ pub static GTPV2_IE_TYPES: [(&str, bool);256] = [
 ("Indication", false),
 ("Protocol Configuration Options (PCO)", false),
 ("PDN Address Allocation (PAA)", false),
-("Bearer Level Quality of Service (Bearer QoS)", true),
+("Bearer Level Quality of Service (Bearer QoS)", false),
 ("Flow Quality of Service (Flow QoS)", true),
 ("RAT Type", false),
 ("Serving Network", false),

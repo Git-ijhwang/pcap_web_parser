@@ -332,9 +332,9 @@ function App() {
       const json = await res.json();
       setResult(json);
 
-      console.log("print out json: ======>", json);
+      // console.log("print out json: ======>", json);
       setCurrentFile(json.file)
-      console.log("print out currentFile:", currentFile);
+      // console.log("print out currentFile:", currentFile);
 
     } catch (err) {
       console.error(err);

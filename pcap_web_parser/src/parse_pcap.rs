@@ -6,10 +6,9 @@ use pcap::{Capture, Packet};
 
 use crate::ip::{ipv4::*, ipv6::*};
 // use crate::ipv6::*;
-use crate::gtp::gtp::*;
-use crate::l4::tcp::*;
-use crate::l4::udp::*;
+use crate::l4::{tcp::*, udp::*};
 use crate::l4::l4::*;
+use crate::gtp::{gtp::*, gtp_ie::*};
 use crate::types::*;
 
 use std::time::Instant;

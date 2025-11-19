@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::{Path, PathBuf}, sync::Arc};
 use serde::Serialize;
 use tokio::sync::RwLock;
 
-use crate::gtp::gtp::*; // 비동기 환경이면 tokio RwLock 권장
+use crate::gtp::gtp_ie::*; // 비동기 환경이면 tokio RwLock 권장
 
 pub type Cache = Arc<RwLock<HashMap<String, FileInfo>>>;
 
