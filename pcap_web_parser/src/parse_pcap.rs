@@ -133,6 +133,7 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
         ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
         gtpinfo.ies = parse_all_ies(rest);
+
         println!("{:#?}", gtpinfo.ies);
         parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
     }

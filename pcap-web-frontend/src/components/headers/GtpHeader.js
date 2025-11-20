@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+
 
 import "./ip.css";
 
@@ -244,9 +246,10 @@ function GtpHexDump({ raw }) {
 }
 
 function GtpIeSimpleViewer({ ies }) {
+  const [hoveredRaw, setHoveredRaw] = React.useState(null);
   return (
     <div>
-      <GtpIeSimpleTable ies={ies} />
+       <GtpIeSimpleTable ies={ies} onHoverRaw={setHoveredRaw} />
     </div>
   );
 }
@@ -259,15 +262,253 @@ function GtpIeViewer({ ies }) {
   );
 }
 
-function GtpIeSimpleTable({ ies, level = 0 }) {
+function renderIeValue(value) {
+  if (!value) return "(none)";
+
+  const type = Object.keys(value)[0];
+  const data = value[type];
+
+  switch (type) {
+    case "Raw":
+      return (
+        <span>
+          {/* 0x{value.data.map((b) => b.toString(16).padStart(2, "0")).join("")} */}
+          0x{data.map(b => b.toString(16).padStart(2, "0")).join("")}
+        </span>
+      );
+
+    case "Uint8":
+    case "Uint16":
+    case "Uint32":
+      return <span>{data}</span>;
+
+    case "Utf8String":
+    case "Apn":
+      return <span>{data}</span>;
+
+    case "Ipv4":
+    case "Ipv6":
+      return <span>{data}</span>;
+
+    case "Timer":
+      return (
+        <span>
+          unit={data.unit}, value={data.value}
+        </span>
+      );
+
+    case "Ambr":
+      return (
+        <div>
+          <div>UL: {data.ul}</div>
+          <div>DL: {data.dl}</div>
+        </div>
+      );
+
+    case "UserLocationInfo": {
+  // data = UliValue 구조체
+  const uli = data;
+
+  return (
+    <div style={{ padding: "4px 0" }}>
+      {uli.has_tai && uli.tai && (
+        <div style={{ marginBottom: "6px" }}>
+          <b>TAI</b><br />
+          MCC: {uli.tai.mcc}<br />
+          MNC: {uli.tai.mnc}<br />
+          TAC: {uli.tai.tac}
+        </div>
+      )}
+
+      {uli.has_ecgi && uli.ecgi && (
+        <div style={{ marginBottom: "6px" }}>
+          <b>ECGI</b><br />
+          MCC: {uli.ecgi.mcc}<br />
+          MNC: {uli.ecgi.mnc}<br />
+          ECI: {uli.ecgi.eci}
+        </div>
+      )}
+
+      {uli.has_lai && uli.lai && (
+        <div style={{ marginBottom: "6px" }}>
+          <b>LAI</b><br />
+          MCC: {uli.lai.mcc}<br />
+          MNC: {uli.lai.mnc}<br />
+          LAC: {uli.lai.lac}
+        </div>
+      )}
+
+      {uli.has_rai && uli.rai && (
+        <div style={{ marginBottom: "6px" }}>
+          <b>RAI</b><br />
+          MCC: {uli.rai.mcc}<br />
+          MNC: {uli.rai.mnc}<br />
+          RAC: {uli.rai.rac}
+        </div>
+      )}
+
+      {uli.has_sai && uli.sai && (
+        <div style={{ marginBottom: "6px" }}>
+          <b>SAI</b><br />
+          MCC: {uli.sai.mcc}<br />
+          MNC: {uli.sai.mnc}<br />
+          SAC: {uli.sai.sac}
+        </div>
+      )}
+
+      {uli.has_cgi && uli.cgi && (
+        <div style={{ marginBottom: "6px" }}>
+          <b>CGI</b><br />
+          MCC: {uli.cgi.mcc}<br />
+          MNC: {uli.cgi.mnc}<br />
+          CI: {uli.cgi.ci}
+        </div>
+      )}
+
+      {/* 아무것도 없으면 빈 값 표시 */}
+      {!uli.has_tai &&
+        !uli.has_ecgi &&
+        !uli.has_lai &&
+        !uli.has_rai &&
+        !uli.has_sai &&
+        !uli.has_cgi && <span>(empty ULI)</span>}
+    </div>
+  );
+}
+
+
+    case "FTeid":
+      return (
+        <div>
+          <div>TEID: 0x{data.teid.toString(16)}</div>
+          {data.v4 &&
+            <div>IPv4 Address: {data.ipv4}</div>
+          }
+          {data.v6 &&
+            <div>IPv6 Address: {data.ipv6}</div>
+          }
+          <div>Interface Type: {data.iface_type}</div>
+        </div>
+      );
+
+    case "ServingNetwork":
+      return (
+        <div>
+          <div>MCC: {data.mcc}</div>
+          <div>MNC: {data.mnc}</div>
+        </div>
+      );
+
+    case "BearerQoS":
+      return (
+        <div>
+          <div>QCI: {data.qci}</div>
+          <div>Max UL: {data.max_ul}</div>
+          <div>Max DL: {data.max_dl}</div>
+          <div>Guaranteed UL: {data.gbr_ul}</div>
+          <div>Guaranteed DL: {data.gbr_dl}</div>
+        </div>
+      );
+
+    case "UserLocationInfo":
+      return (
+        <div>
+          <div>TAI: {data.tai}</div>
+          <div>ECGI: {data.ecgi}</div>
+          <div>RAI: {data.rai}</div>
+        </div>
+      );
+
+    case "SubIeList":
+      return (
+        <div style={{ marginLeft: "8px", borderLeft: "2px solid #ccc", paddingLeft: "8px" }}>
+          {data.map((sub, idx) => (
+            <div key={idx} style={{ marginBottom: "6px" }}>
+              <strong>{sub.type_str}</strong>
+              <div>{renderIeValue(sub.ie_value)}</div>
+            </div>
+          ))}
+        </div>
+      );
+
+    case "None":
+      return <span>(none)</span>;
+
+    default:
+      return <span>(unknown type)</span>;
+  }
+}
+
+// function IeViewer({ ies, onHoverRaw = () => {}  }) {
+//   const [hoveredRaw, setHoveredRaw] = React.useState(null);
+
+//   return (
+//     <div style={{ display: "flex", gap: "12px" }}>
+//       <div style={{ flex: 1 }}>
+//         <GtpIeSimpleTable ies={ies} onHoverRaw={setHoveredRaw} />
+//       </div>
+
+//       <div 
+//         style={{
+//           width: "350px",
+//           border: "1px solid #ccc",
+//           padding: "8px",
+//           fontFamily: "monospace",
+//           fontSize: "13px",
+//           background: "#fafafa",
+//           position: "sticky",
+//           top: "10px",
+//           height: "fit-content"
+//         }}
+//       >
+//         {hoveredRaw ? <GtpHexDump raw={hoveredRaw} /> : <div>Hover an IE…</div>}
+//       </div>
+//     </div>
+//   );
+// }
+
+function IeViewer({ ies, onHoverRaw = () => {} }) {
+  return (   // <- 최종 return
+    <div>
+      {ies.map((ie, idx) => {
+        const subIes = ie.ie_value?.SubIeList;
+        const isGrouped = Array.isArray(subIes) && subIes.length > 0;
+
+        return (  // <- map 안에서 JSX를 반환
+          <div
+            key={`ie-${ie.ie_type}-${ie.instance}-${idx}`}
+            onMouseEnter={() => onHoverRaw(ie.raw)}
+            onMouseLeave={() => onHoverRaw(null)}
+          >
+            <GtpIeSimpleTable ies={[ie]} level={0} onHoverRaw={onHoverRaw} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+
+function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
   const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
+
   return (
     <>
-    {ies.map((ie, idx) => (
-      <table className="table table-bordered table-sm ie-table"
-            // style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
-            >
-        <tbody>
+    {ies.map((ie, idx) => {
+      const subIes = ie.ie_value?.SubIeList;
+      const isGrouped = Array.isArray(subIes) && subIes.length > 0;
+
+      return (
+        <div
+            onMouseEnter={() => onHoverRaw(ie.raw)}   // ★★ Hover 시 raw 표시
+            onMouseLeave={() => onHoverRaw(null)}  // ★★ Hover 벗어나면 clear
+        >
+          <table className="table table-bordered table-sm ie-table"
+                key={`ie-${ie.ie_type}-${ie.instance}-${idx}`}  // ✅ 고유 key
+                // style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
+                >
+            <tbody>
 
           <tr style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
             <th style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
@@ -285,10 +526,11 @@ function GtpIeSimpleTable({ ies, level = 0 }) {
             <th> Instance </th>
             <td> {ie.instance} </td>
           </tr>
+              {!isGrouped && (
           <tr >
             <th> Value </th>
             <td> 
-                {ie.sub_ies.length === 0 ? (
+                {/* {ie.sub_ies.length === 0 ? (
                   ie.ie_type === 1 || ie.ie_type === 75 || ie.ie_type === 76 ? (
                     decodeBCD(ie.value)
                   ) : ie.ie_type === 71 ? (
@@ -306,25 +548,33 @@ function GtpIeSimpleTable({ ies, level = 0 }) {
                       ? "0x" + ie.value.map((b) => b.toString(16).padStart(2, "0")).join(" ")
                       : "(empty)"
                   )
-                ) : null}
+                ) : null} */}
+                    {renderIeValue(ie.ie_value)}
             </td>
           </tr>
+          )}
 
 
-          {ie.sub_ies.length > 0 && (
+          {/* {ie.sub_ies.length > 0 && ( */}
+          {isGrouped && (
             <tr >
               <td className="ie-group" colSpan="2"
                   style={{ paddingLeft: "10px", paddingRight: "10px", background:"#a4b1fa" }}>
                 <b>Grouped IE Contents</b>
-                <GtpIeSimpleTable ies={ie.sub_ies} level={level + 1} />
+                <GtpIeSimpleTable ies={subIes} level={level + 1}
+                                      onHoverRaw={onHoverRaw}
+
+                />
               </td>
             </tr>
           )}
 
         </tbody>
       </table>
+        </div>
+      );
 
-    ))}
+    })}
     </>
   )
 }
@@ -332,9 +582,14 @@ function GtpIeSimpleTable({ ies, level = 0 }) {
 function GtpIeTable({ ies, level = 0 })
 {
   const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
+
   return (
     <>
-    {ies.map((ie, idx) => (
+    {ies.map((ie, idx) => {
+      const subIes = ie.ie_value?.SubIeList;
+      const isGrouped = Array.isArray(subIes) && subIes.length > 0;
+
+      return (
       <table className="table table-bordered table-sm"
             style={{ fontSize: "14px" }}>
         <tbody>
@@ -365,46 +620,34 @@ function GtpIeTable({ ies, level = 0 })
             <td colSpan="4" style={{ textAlign: "center" }}> Instance: {ie.instance} </td>
           </tr>
 
-          {ie.sub_ies.length === 0 && (
+          {!isGrouped && (
             <tr>
               <th>32</th>
-                <td colSpan="32">
-                  {
-                    ie.ie_type === 1 || ie.ie_type===75 || ie.ie_type===76 ? (
-                      ie.type_str+": "+decodeBCD(ie.value)
-                    ): ie.ie_type===71 ? (
-                      ie.type_str+": "+decodeAPN(ie.value)
-                    ): ie.ie_type === 80 ? (
-                        decodeBearerQoS(ie.value, 1)
-                    ):(
-                      ie.type_str+": "+
-                      (ie.value.length > 0 ?
-                      "0x"+
-                        ie.value.map((b) => b.toString(16).padStart(2, "0")).join("")
-                        : "(empty)")
-                    )
-                  }
-                  
+              <td colSpan="32">
+                  {/* {ie.raw && ie.raw.length > 0 ? */}
+                    {/* "0x"+ie.raw.map((b) =>b.toString(16).padStart(2,"0")).join(""):"(empth)" } */}
+                    {renderIeValue(ie.ie_value)}
+
                 </td>
             </tr>
           )}
 
-          {ie.sub_ies.length > 0 && (
+          {isGrouped && (
             <tr>
-              <td colSpan="33"
-              style={{ paddingLeft: "20px" }}>
+              <td colSpan="33" style={{ paddingLeft: "20px" }}>
                 <b>Grouped IE Contents:</b>
-                <GtpIeTable ies={ie.sub_ies} level={level + 1} />
+                {/* <GtpIeTable ies={ie.ie_value.SubIeList} level={level + 1} /> */}
+                 <GtpIeTable ies={subIes} level={level + 1} />
               </td>
             </tr>
           )}
 
         </tbody>
       </table>
-
-    ))}
+        );
+    })}
     </>
-  )
+  );
 }
 
 // function GtpIeTable({ ies, level = 0 }) {
@@ -488,6 +731,36 @@ function GtpIeTable({ ies, level = 0 })
 
 export default function GtpHeader({ gtp }) {
   const [viewMode, setViewMode] = useState("decoded");
+    const [hoveredRaw, setHoveredRaw] = useState(null); // ★ hover 상태
+    const [hoverTop, setHoverTop] = useState(0);  // 두 번째 HexDump top
+
+
+const fullHexRef = useRef();
+
+useEffect(() => {
+
+  console.log("useEffect 실행");
+  console.log("fullHexRef.current:", fullHexRef.current);
+
+  if (fullHexRef.current) {
+    console.log("offsetHeight:", fullHexRef.current.offsetHeight);
+
+    setHoverTop(fullHexRef.current.offsetHeight + 12); // 12px gap
+  }
+}, [viewMode, gtp.raw]); // 메시지가 바뀌면 갱신
+// useEffect(() => {
+//   if (!fullHexRef.current) return;
+
+//   const observer = new ResizeObserver(() => {
+//     console.log("ResizeObserver fired, height:", fullHexRef.current.offsetHeight);
+//     setHoverTop(fullHexRef.current.offsetHeight + 12);
+//   });
+
+//   observer.observe(fullHexRef.current);
+
+//   return () => observer.disconnect();
+// }, [gtp.raw]);
+
 
   if (!gtp) return null;
 
@@ -585,18 +858,19 @@ export default function GtpHeader({ gtp }) {
                   <tr >
                     <td colSpan="2" style={{backgroundColor:"#a3b2c3"}}>
                       GTP IEs
-                      <GtpIeSimpleViewer ies={gtp.ies} />
+                      {/* <GtpIeSimpleViewer ies={gtp.ies} /> */}
+                      <IeViewer ies={gtp.ies} onHoverRaw={setHoveredRaw} />  {/* 여기서 호출 */}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            <div 
+            {/* <div 
                style={{
                   position: "sticky",
                   top: "10px",
-                  height: "400px",   // 높이 지정
+                  height: "fit-content",   // 높이 지정
                   overflowX: "auto",
                   background: "#111a23",
                   zIndex: 1000,
@@ -604,8 +878,47 @@ export default function GtpHeader({ gtp }) {
               }}
             >
               <GtpHexDump raw={gtp.raw} /> 
+            {hoveredRaw ? <GtpHexDump raw={hoveredRaw} /> : <div>Hover an IE to see raw data</div>}
             </div>
-          </div>
+          </div> */}
+          {/* 오른쪽: HexDump 영역 */}
+  <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: "0 0 400px" }}>
+    
+    {/* 전체 GTP HexDump */}
+    <div 
+      ref={fullHexRef}
+      style={{
+        position: "sticky",
+        top: "10px",
+        height: "fit-content",
+        overflowX: "auto",
+        overflowY: "auto",
+        background: "#111a23",
+        borderRadius: "10px",
+        padding: "8px"
+      }}
+    >
+      <GtpHexDump raw={gtp.raw} />
+    </div>
+
+    {/* Hovered IE HexDump */}
+    <div
+      style={{
+        position: "sticky",
+        top: `${hoverTop}px`, 
+        // maxHeight: "400px",
+        height: "fit-content",
+        overflowX: "auto",
+        overflowY: "auto",
+        background: "#1b1f27",
+        borderRadius: "10px",
+        padding: "8px"
+      }}
+    >
+      {hoveredRaw ? <GtpHexDump raw={hoveredRaw} /> : <div style={{ color: "#888" }}>Hover an IE to see raw data</div>}
+    </div>
+  </div>
+</div>
 
         ) : (
 
@@ -689,6 +1002,7 @@ export default function GtpHeader({ gtp }) {
                 <td colSpan="33" style={{ paddingLeft: "20px" }}>
                   <b>IE Contents:</b>
                   <GtpIeViewer ies={gtp.ies} />
+
                 </td>
               </tr>
 

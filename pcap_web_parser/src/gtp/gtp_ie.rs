@@ -143,6 +143,11 @@ pub enum GtpIeValue {
     None,
 }
 
+// #[derive(Debug, Serialize)]
+// pub struct IeWithRaw  {
+//     pub decoded: GtpIeValue,
+// }
+
 #[derive(Debug, Serialize)]
 pub struct GtpIe {
     pub ie_type: u8,
@@ -151,8 +156,11 @@ pub struct GtpIe {
     pub instance: u8,
     // pub value: Vec<u8>,
     pub ie_value: GtpIeValue,
+    pub raw: Vec<u8>,
+    // pub ie_val: ie_with_raw,
     // pub sub_ies: Vec<GtpIe>,
 }
+
 
 pub fn decode_mcc_mnc(d1: u8, d2: u8, d3: u8) -> (String, String)
 {
@@ -326,7 +334,10 @@ pub fn decode_fteid(input: &[u8])
         }
 
         let addr = Ipv4Addr::from_octets(
-                input[pos..pos+3].try_into().unwrap());
+                input[pos..pos+4].try_into().unwrap()  
+            );
+
+        
         pos += 4;
         Some(addr.to_string())
     }
@@ -465,16 +476,19 @@ pub fn decode_apn(input: &[u8])
         return Err("input is empty".into());
     }
 
+    println!("Total len: {}", input.len());
+
     let mut pos = 0;
     let mut labels = Vec::new();
 
     while pos < input.len() {
-        let len = input[pos] as usize;
+        let len = input.len() as usize;
 
         if len == 0 {
             return Err("Invalied APN format: zero-length buffer".into());
         }
 
+        println!("POS: {}, Len: {}", pos, len);
         let label = &input[pos..pos+len];
         pos += len;
 
@@ -490,33 +504,65 @@ pub fn decode_apn(input: &[u8])
 }
 
 
-pub fn decode_bcd(input: &[u8])
--> Result<GtpIeValue, String>
-{
+// pub fn decode_bcd(input: &[u8])
+// -> Result<GtpIeValue, String>
+// {
+//     if input.is_empty() {
+//         return Err("input is empty".into());
+//     }
+
+//     let mut digits = String::with_capacity(input.len() * 2);
+
+//     for &b in input {
+//         let low = (b & 0x0F) as u8;
+//         let high = ((b >> 4) & 0x0F) as u8;
+
+//         // low nibble must be 0..=9
+//         if low <= 9 {
+//             digits.push(char::from(b'0' + low));
+//         } else if high == 0x0F {
+//             // high nibble: if 0xF, it is filler -> odd length, stop adding second digit
+//             break;
+//         } else {
+//             return Err(format!("invalid BCD digit in low nibble: 0x{:x}", low));
+//         }
+
+//         if high <= 9 {
+//             digits.push(char::from(b'0' + high));
+//         } else {
+//             return Err(format!("invalid BCD digit in high nibble: 0x{:x}", high));
+//         }
+//     }
+
+//     Ok(GtpIeValue::Utf8String(digits))
+// }
+
+pub fn decode_bcd(input: &[u8]) -> Result<GtpIeValue, String> {
     if input.is_empty() {
-        return Err("input is empty".into());
+        return Err("BCD input empty".into());
     }
 
-    let mut digits = String::with_capacity(input.len() * 2);
+    let mut digits = String::new();
 
-    for &b in input {
-        let low = (b & 0x0F) as u8;
-        let high = ((b >> 4) & 0x0F) as u8;
+    for (i, byte) in input.iter().enumerate() {
+        let low = byte & 0x0F;
+        let high = (byte >> 4) & 0x0F;
 
-        // low nibble must be 0..=9
-        if low <= 9 {
-            digits.push(char::from(b'0' + low));
-        } else if high == 0x0F {
-            // high nibble: if 0xF, it is filler -> odd length, stop adding second digit
-            break;
-        } else {
-            return Err(format!("invalid BCD digit in low nibble: 0x{:x}", low));
+        // 첫 바이트 high nibble은 Odd/Even indicator라 스킵해도 됨.
+        if i == 0 {
+            // lower nibble = first digit
+            if low <= 9 {
+                digits.push(char::from(b'0' + low));
+            }
+            continue;
         }
 
+        // 일반 BCD 처리
+        if low <= 9 {
+            digits.push(char::from(b'0' + low));
+        }
         if high <= 9 {
             digits.push(char::from(b'0' + high));
-        } else {
-            return Err(format!("invalid BCD digit in high nibble: 0x{:x}", high));
         }
     }
 
@@ -526,20 +572,38 @@ pub fn decode_bcd(input: &[u8])
 pub fn parse_ie(input: &[u8])
 -> IResult<&[u8], GtpIe>
 {
+    // let mut raw = Vec::new();
     // let mut result = Vec::new();
-    let (input, ie_type) = be_u8(input)?;
-    let (input, ie_len) = be_u16(input)?;
-    let (mut input, inst_byte) = be_u8(input)?;
-    let ie_inst = inst_byte & 0x0f;
+    // let (input, ie_type) = be_u8(input)?;
+    // let (input, ie_len) = be_u16(input)?;
+    // let (mut input, inst_byte) = be_u8(input)?;
+    // let ie_inst = inst_byte & 0x0f;
+    let ie_type = input[0];
+    let ie_len = u16::from_be_bytes([input[1], input[2]]) as usize;
+    let ie_inst = input[3] & 0x0f;
+    let total_len = 4+ie_len;
 
+    let raw = input[..total_len].to_vec();
+
+    // let (mut input, _) = take(ie_len)(input)?;
+    let (input, _type) = be_u8(input)?;
+    let (input, _len) = be_u16(input)?;
+    let (mut input, _inst) = be_u8(input)?;
+
+    let mut gtp_ie = GtpIe{
+        ie_type,
+        type_str: GTPV2_IE_TYPES[ie_type as usize].0.to_string(),
+        length: ie_len as u16,
+        instance: ie_inst,
+
+        ie_value: GtpIeValue::None,
+        raw,
+    };
 
     let is_grouped = GTPV2_IE_TYPES[ie_type as usize].1;
 
-    let mut sub_ies: Vec<GtpIe> = Vec::new();
-    // let mut raw_value: Vec<u8> = Vec::new();
-
-    let mut ret = GtpIeValue::None;
     if is_grouped {
+        let mut sub_ies: Vec<GtpIe> = Vec::new();
         let mut remaining = &input[..ie_len as usize];
 
         while !remaining.is_empty() {
@@ -548,9 +612,14 @@ pub fn parse_ie(input: &[u8])
                     sub_ies.push(ie);
                     remaining = rest;
                 }
-                Err(_) => break,
+                Err(_) => {
+                    println!("Sub IE Failed");
+                    break;
+                },
             }
         }
+        gtp_ie.ie_value = GtpIeValue::SubIeList(sub_ies);
+
         input = &input[ie_len as usize..];
     }
     else {
@@ -558,7 +627,10 @@ pub fn parse_ie(input: &[u8])
         
         let val = match ie_type {
             //IMSI, MSISDN
-            1 | 75 | 76 => decode_bcd(value),
+            1 | 75 | 76 => {
+                println!("IE TYPE: {}", ie_type);
+                decode_bcd(value)
+            },
 
             //APN
             71 => decode_apn(value),
@@ -576,7 +648,7 @@ pub fn parse_ie(input: &[u8])
             83 => decode_serving_network(value),
 
             //ULI
-            85 =>parse_uli_ie(value,),
+            86 =>parse_uli_ie(value,),
 
             //F-TEID
             87 => decode_fteid(value),
@@ -585,23 +657,23 @@ pub fn parse_ie(input: &[u8])
             _ => Ok(GtpIeValue::Raw(value.to_vec())),
         };
 
-        ret = match val{
-          Ok(v) => v,
-          Err(e) => GtpIeValue::None,
-        };
+        // ie_value = match val{
+        //   Ok(v) => v,
+        //   Err(e) => GtpIeValue::None,
+        // };
 
+        gtp_ie.ie_value = val.unwrap_or(GtpIeValue::None);
+        println!("===> val: {:?}", gtp_ie.ie_value);
         input = next;
     }
 
-    Ok( (input,
-        GtpIe {
-            ie_type,
-            type_str: GTPV2_IE_TYPES[ie_type as usize].0.to_string(),
-            length: ie_len,
-            instance: ie_inst,
-            ie_value: ret,
-        },
-    ))
+        // gtp_ie.ie_type = ie_type;
+        // gtp_ie.type_str = GTPV2_IE_TYPES[ie_type as usize].0.to_string();
+        // gtp_ie.length= ie_len;
+        // gtp_ie.instance= ie_inst;
+        // gtp_ie.raw = raw;
+
+    Ok( (input, gtp_ie))
 }
 
 
