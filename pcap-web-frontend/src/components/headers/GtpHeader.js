@@ -1,4 +1,3 @@
-// import React, { useState } from "react";
 import React, { useState, useRef, useEffect } from "react";
 
 
@@ -20,44 +19,41 @@ function ComponentRenderer({ comp }) {
     case "Ipv4Addr":
       return (
         <div>
-          <div>IPv4 Addr: {data.addr}</div>
-          <div>Mask: {data.mask}</div>
+          <div>  - IPv4 Addr: {data.addr}</div>
+          <div>  - Mask: {data.mask}</div>
         </div>
       );
 
     case "Ipv6Addr":
       return (
         <div>
-          <div>IPv6 Addr: {data.addr}</div>
-          <div>Mask: {data.mask}</div>
+          <div>  - IPv6 Addr: {data.addr}</div>
+          <div>  - Mask: {data.mask}</div>
         </div>
       );
 
     case "Protocol":
-      return <div>Protocol: {data.proto}</div>;
+      return <div>  - Protocol: {data.proto}</div>;
 
     case "SinglePort":
-      return <div>Port: {data.port}</div>;
+      return <div>  - Port: {data.port}</div>;
 
     case "PortRange":
       return (
-        <div>
-          Port Range: {data.start} - {data.end}
+        <div>  - Port Range: {data.start} - {data.end}
         </div>
       );
 
     case "SecParamIdx":
-      return <div>SPI: {data.spi}</div>;
+      return <div>  - SPI: {data.spi}</div>;
 
     case "TypeOfService":
       return (
-        <div>
-          ToS Value: {data.value}, Mask: {data.mask}
-        </div>
+        <div>  - ToS Value: {data.value}, Mask: {data.mask} </div>
       );
 
     case "FlowLabel":
-      return <div>Flow Label: {data.label}</div>;
+      return <div>  - low Label: {data.label}</div>;
 
     case "Unknown":
       return (
@@ -328,7 +324,7 @@ function GtpIeViewer({ ies }) {
   );
 }
 
-function renderIeValue(value) {
+function renderIeValue(value, ietype) {
   if (!value) return "(none)";
 
   const type = Object.keys(value)[0];
@@ -337,24 +333,48 @@ function renderIeValue(value) {
   switch (type) {
     case "Raw":
       return (
-        <span>
-          {/* 0x{value.data.map((b) => b.toString(16).padStart(2, "0")).join("")} */}
-          0x{data.map(b => b.toString(16).padStart(2, "0")).join("")}
-        </span>
+        <td colSpan="32">
+          <span>
+            {/* 0x{value.data.map((b) => b.toString(16).padStart(2, "0")).join("")} */}
+            0x{data.map(b => b.toString(16).padStart(2, "0")).join("")}
+          </span>
+        </td>
       );
 
     case "Uint8":
+      if (ietype == 73) {
+        return (
+          <>
+            <td colSpan="4"><span> Spare </span> </td>
+            <td colSpan="4"> <span>{data}</span> </td>
+          </>
+        );
+      } else {
+        return (
+          <>
+            <td colSpan="8"> <span>{data}</span> </td>
+          </>
+        );
+
+      }
     case "Uint16":
+      return (
+        <td colSpan="16"> <span>{data}</span> </td>
+      );
     case "Uint32":
-      return <span>{data}</span>;
+      return (
+        <td colSpan="32"> <span>{data}</span> </td>
+      );
 
     case "Utf8String":
     case "Apn":
-      return <span>{data}</span>;
+      return(
+        <td colSpan="32"> <span>{data}</span>; </td>
+      );
 
     case "Ipv4":
     case "Ipv6":
-      return <span>{data}</span>;
+      return( <td colSpan="32"> <span>{data}</span>; </td>);
 
     case "Timer":
       return (
@@ -365,10 +385,12 @@ function renderIeValue(value) {
 
     case "Ambr":
       return (
-        <div>
-          <div>UL: {data.ul}</div>
-          <div>DL: {data.dl}</div>
-        </div>
+        <td colSpan="32">
+          <div>
+            <div>UL: {data.ul}</div>
+            <div>DL: {data.dl}</div>
+          </div>
+        </td>
       );
 
     case "UserLocationInfo":
@@ -376,172 +398,192 @@ function renderIeValue(value) {
       const uli = data;
 
       return (
-        <div style={{ padding: "4px 0" }}>
-          {uli.has_tai && uli.tai && (
-            <div style={{ marginBottom: "6px" }}>
-              <b>TAI</b><br />
-              MCC: {uli.tai.mcc}<br />
-              MNC: {uli.tai.mnc}<br />
-              TAC: {uli.tai.tac}
-            </div>
-          )}
+        <td colSpan="32">
+          <div style={{ padding: "4px 0" }}>
+            {uli.has_tai && uli.tai && (
+              <div style={{ marginBottom: "6px" }}>
+                <b>TAI</b><br />
+                MCC: {uli.tai.mcc}<br />
+                MNC: {uli.tai.mnc}<br />
+                TAC: {uli.tai.tac}
+              </div>
+            )}
 
-          {uli.has_ecgi && uli.ecgi && (
-            <div style={{ marginBottom: "6px" }}>
-              <b>ECGI</b><br />
-              MCC: {uli.ecgi.mcc}<br />
-              MNC: {uli.ecgi.mnc}<br />
-              ECI: {uli.ecgi.eci}
-            </div>
-          )}
+            {uli.has_ecgi && uli.ecgi && (
+              <div style={{ marginBottom: "6px" }}>
+                <b>ECGI</b><br />
+                MCC: {uli.ecgi.mcc}<br />
+                MNC: {uli.ecgi.mnc}<br />
+                ECI: {uli.ecgi.eci}
+              </div>
+            )}
 
-          {uli.has_lai && uli.lai && (
-            <div style={{ marginBottom: "6px" }}>
-              <b>LAI</b><br />
-              MCC: {uli.lai.mcc}<br />
-              MNC: {uli.lai.mnc}<br />
-              LAC: {uli.lai.lac}
-            </div>
-          )}
+            {uli.has_lai && uli.lai && (
+              <div style={{ marginBottom: "6px" }}>
+                <b>LAI</b><br />
+                MCC: {uli.lai.mcc}<br />
+                MNC: {uli.lai.mnc}<br />
+                LAC: {uli.lai.lac}
+              </div>
+            )}
 
-          {uli.has_rai && uli.rai && (
-            <div style={{ marginBottom: "6px" }}>
-              <b>RAI</b><br />
-              MCC: {uli.rai.mcc}<br />
-              MNC: {uli.rai.mnc}<br />
-              RAC: {uli.rai.rac}
-            </div>
-          )}
+            {uli.has_rai && uli.rai && (
+              <div style={{ marginBottom: "6px" }}>
+                <b>RAI</b><br />
+                MCC: {uli.rai.mcc}<br />
+                MNC: {uli.rai.mnc}<br />
+                RAC: {uli.rai.rac}
+              </div>
+            )}
 
-          {uli.has_sai && uli.sai && (
-            <div style={{ marginBottom: "6px" }}>
-              <b>SAI</b><br />
-              MCC: {uli.sai.mcc}<br />
-              MNC: {uli.sai.mnc}<br />
-              SAC: {uli.sai.sac}
-            </div>
-          )}
+            {uli.has_sai && uli.sai && (
+              <div style={{ marginBottom: "6px" }}>
+                <b>SAI</b><br />
+                MCC: {uli.sai.mcc}<br />
+                MNC: {uli.sai.mnc}<br />
+                SAC: {uli.sai.sac}
+              </div>
+            )}
 
-          {uli.has_cgi && uli.cgi && (
-            <div style={{ marginBottom: "6px" }}>
-              <b>CGI</b><br />
-              MCC: {uli.cgi.mcc}<br />
-              MNC: {uli.cgi.mnc}<br />
-              CI: {uli.cgi.ci}
-            </div>
-          )}
+            {uli.has_cgi && uli.cgi && (
+              <div style={{ marginBottom: "6px" }}>
+                <b>CGI</b><br />
+                MCC: {uli.cgi.mcc}<br />
+                MNC: {uli.cgi.mnc}<br />
+                CI: {uli.cgi.ci}
+              </div>
+            )}
 
-          {/* 아무것도 없으면 빈 값 표시 */}
-          {!uli.has_tai &&
-            !uli.has_ecgi &&
-            !uli.has_lai &&
-            !uli.has_rai &&
-            !uli.has_sai &&
-            !uli.has_cgi && <span>(empty ULI)</span>}
-        </div>
+            {/* 아무것도 없으면 빈 값 표시 */}
+            {!uli.has_tai &&
+              !uli.has_ecgi &&
+              !uli.has_lai &&
+              !uli.has_rai &&
+              !uli.has_sai &&
+              !uli.has_cgi && <span>(empty ULI)</span>}
+          </div>
+        </td>
       );
-    
+
 
 
     case "FTeid":
       return (
-        <div>
-          <div>TEID: 0x{data.teid.toString(16)}</div>
-          {data.v4 &&
-            <div>IPv4 Address: {data.ipv4}</div>
-          }
-          {data.v6 &&
-            <div>IPv6 Address: {data.ipv6}</div>
-          }
-          <div>Interface Type: {data.iface_type}</div>
-        </div>
+        <td colSpan="32">
+          <div>
+            <div>TEID: 0x{data.teid.toString(16)}</div>
+            {data.v4 &&
+              <div>IPv4 Address: {data.ipv4}</div>
+            }
+            {data.v6 &&
+              <div>IPv6 Address: {data.ipv6}</div>
+            }
+            <div>Interface Type: {data.iface_type}</div>
+          </div>
+        </td>
       );
-    
+
     case "BearerTFT":
       return (
-        <div
-          style={{ marginLeft: "10px" }}
-        >
-          {/* <h5>Bearer TFT</h5> */}
+        <td colSpan="32">
+          <div
+            style={{ marginLeft: "10px" }}
+          >
+            {/* <h5>Bearer TFT</h5> */}
 
-          <div><b>TFT Operation Code:</b> {data.tft_op_code} ({data.str_tft_op_code})</div>
-          {/* <div><b>E-Bit:</b> {data.e_bit ? "True" : "False"}</div> */}
-          <div><b>Number of Packet Filters:</b> {data.num_filter}</div>
+            <div>TFT Operation Code: {data.tft_op_code} ({data.str_tft_op_code})</div>
+            {/* <div><b>E-Bit:</b> {data.e_bit ? "True" : "False"}</div> */}
+            <div>Number of Packet Filters: {data.num_filter}</div>
 
-          <hr />
+            <hr />
 
-      {data.packet_filter_list?.map((pf, pfIdx) => (
-        <div key={`pf-${pfIdx}`} style={{ marginTop: "10px", padding: "10px", border: "1px solid #ccc" }}>
-          <h6>Packet Filter #{pfIdx + 1}</h6>
+            {data.packet_filter_list?.map((pf, pfIdx) => (
+              <div key={`pf-${pfIdx}`} style={{ marginTop: "10px", padding: "10px", border: "1px solid #ccc" }}>
+                Packet Filter #{pfIdx + 1}
 
-          <div><b>Direction:</b> {pf.pf_dir}</div>
-          {/* <div><b>Filter ID:</b> {pf.pf_id}</div> */}
-          {/* <div><b>Precedence:</b> {pf.pkt_prec}</div> */}
-          {/* <div><b>PF Length:</b> {pf.pf_len}</div> */}
+                <div>Direction: {pf.pf_dir}</div>
+                {/* <div><b>Filter ID:</b> {pf.pf_id}</div> */}
+                {/* <div><b>Precedence:</b> {pf.pkt_prec}</div> */}
+                {/* <div><b>PF Length:</b> {pf.pf_len}</div> */}
 
-          <div style={{ marginTop: "10px" }}>
-            <b>Components:</b>
-            <ul>
-              {pf.packet_filter_component_list?.map((comp, cidx) => (
-                <li key={`comp-${cidx}`} style={{ marginTop: "5px" }}>
-                  <div><b>Type ID:</b> 0x{comp.pf_type_id.toString(16)}</div>
+                <div style={{ marginTop: "10px" }}>
+                  Components:
+                  <ul>
+                    {pf.packet_filter_component_list?.map((comp, cidx) => (
+                      <li key={`comp-${cidx}`} style={{ marginTop: "5px" }}>
+                        <div>Type ID: 0x{comp.pf_type_id.toString(16)}</div>
 
-                  {/* Component Details */}
-                  <ComponentRenderer comp={comp.components} />
-                </li>
-              ))}
-            </ul>
+                        {/* Component Details */}
+                        <ComponentRenderer comp={comp.components} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      ))}
-    </div>
+        </td>
       );
 
     case "ServingNetwork":
       return (
-        <div>
-          <div>MCC: {data.mcc}</div>
-          <div>MNC: {data.mnc}</div>
-        </div>
+        <td colSpan="32">
+          <div>
+            <div>MCC: {data.mcc}</div>
+            <div>MNC: {data.mnc}</div>
+          </div>
+        </td>
       );
 
     case "BearerQoS":
       return (
-        <div>
-          <div>QCI: {data.qci}</div>
-          <div>Max UL: {data.max_ul}</div>
-          <div>Max DL: {data.max_dl}</div>
-          <div>Guaranteed UL: {data.gbr_ul}</div>
-          <div>Guaranteed DL: {data.gbr_dl}</div>
-        </div>
+        <td colSpan="32">
+          <div>
+            <div>QCI: {data.qci}</div>
+            <div>Max UL: {data.max_ul}</div>
+            <div>Max DL: {data.max_dl}</div>
+            <div>Guaranteed UL: {data.gbr_ul}</div>
+            <div>Guaranteed DL: {data.gbr_dl}</div>
+          </div>
+        </td>
       );
 
     case "UserLocationInfo":
       return (
-        <div>
-          <div>TAI: {data.tai}</div>
-          <div>ECGI: {data.ecgi}</div>
-          <div>RAI: {data.rai}</div>
-        </div>
+        <td colSpan="32">
+          <div>
+            <div>TAI: {data.tai}</div>
+            <div>ECGI: {data.ecgi}</div>
+            <div>RAI: {data.rai}</div>
+          </div>
+        </td>
       );
 
     case "SubIeList":
       return (
-        <div style={{ marginLeft: "8px", borderLeft: "2px solid #ccc", paddingLeft: "8px" }}>
-          {data.map((sub, idx) => (
-            <div key={idx} style={{ marginBottom: "6px" }}>
-              <strong>{sub.type_str}</strong>
-              <div>{renderIeValue(sub.ie_value)}</div>
-            </div>
-          ))}
-        </div>
+        <td colSpan="32">
+          <div style={{ marginLeft: "8px", borderLeft: "2px solid #ccc", paddingLeft: "8px" }}>
+            {data.map((sub, idx) => (
+              <div key={idx} style={{ marginBottom: "6px" }}>
+                <strong>{sub.type_str}</strong>
+                <div>{renderIeValue(sub.ie_value)}</div>
+              </div>
+            ))}
+          </div>
+        </td>
       );
 
     case "None":
-      return <span>(none)</span>;
+      return
+      <td colSpan="32">
+        <span>(none)</span>;
+      </td>
 
     default:
-      return <span>(unknown type)</span>;
+      return
+      <td colSpan="32">
+        <span>(unknown type)</span>;
+      </td>
   }
 }
 
@@ -596,7 +638,8 @@ function IeViewer({ ies, onHoverRaw = () => {} }) {
 
 
 
-function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
+function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
+{
   const bgColor=[ "#F5BABB", "#f8dfd7ff", "#245050ff" ];
   const [expanded, setExpanded] = useState({});
 
@@ -616,8 +659,7 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
       const isOpen = expanded[idx] || false;
 
       return (
-        <div
-        key={`ie-wrap-${idx}`}
+        <div key={`ie-wrap-${idx}`}
             onMouseEnter={() => onHoverRaw(ie.raw)}   // ★★ Hover 시 raw 표시
             onMouseLeave={() => onHoverRaw(null)}  // ★★ Hover 벗어나면 clear
         >
@@ -627,85 +669,79 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
                 >
             <tbody>
 
-          {!isOpen && (
-            <tr style={{
-                        cursor: "pointer",
-                        userSelect: "none",
-                        background: isOpen? (bgColor[level] || "#010101"): "#a9e9b7ff",
-                      }}
-                onClick={() => toggle(idx)}
-            >
-              <th style={{colSpan:"2",
-                        backgroundColor:bgColor[level]||"#010101", 
-                // backgroundColor:"#5EABD6"
-                }}>
-                {isOpen ?  "▼" : "▶"} {ie.type_str}
-              </th>
-            </tr>
-          )}
+              {!isOpen && (
+                <tr style={{
+                          cursor: "pointer",
+                          userSelect: "none",
+                          background: isOpen? (bgColor[level] || "#010101"): "#a9e9b7ff",
+                        }}
+                  onClick={() => toggle(idx)}
+                >
+                  <th style={{colSpan:"2",
+                          backgroundColor:bgColor[level]||"#010101", }}>
+                    {isOpen ?  "▼" : "▶"} {ie.type_str}
+                  </th>
+                </tr>
+              )}
 
-          {isOpen && (
-            <>
-            <tr style={{
-                        cursor: "pointer",
-                        userSelect: "none",
-                        fontSize: "14px",
-                        backgroundColor:bgColor[level]||"#010101", 
-                      }}
-                onClick={() => toggle(idx)}
-            >
+                {isOpen && (
+                  <>
+                  <tr style={{
+                            cursor: "pointer",
+                            userSelect: "none",
+                            fontSize: "14px",
+                            backgroundColor:bgColor[level]||"#010101", }}
+                      onClick={() => toggle(idx)}
+                  >
 
-            <th style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
-                {isOpen ? "▼" : "▶"} Type 
-            </th>
-            <td style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
-              {ie.type_str} [{ie.ie_type}]
-            </td>
-          </tr>
+                    <th style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
+                      {isOpen ? "▼" : "▶"} Type 
+                    </th>
+                    <td style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
+                      {ie.type_str} [{ie.ie_type}]
+                    </td>
+                  </tr>
 
-          <tr >
-            <th> Len </th>
-            <td> {ie.length} <i>bytes</i></td>
-          </tr>
-          <tr >
-            <th> Instance </th>
-            <td> {ie.instance} </td>
-          </tr>
+                  <tr >
+                    <th> Len </th>
+                    <td> {ie.length} <i>bytes</i></td>
+                  </tr>
+                  <tr >
+                    <th> Instance </th>
+                    <td> {ie.instance} </td>
+                  </tr>
 
-          {!isGrouped && (
-          <tr >
-            <th> Value </th>
-            <td> 
-              {renderIeValue(ie.ie_value)}
-            </td>
-          </tr>
-          )}
+                  {!isGrouped && (
+                    <tr >
+                      <th> Value </th>
+                      <td> 
+                        {renderIeValue(ie.ie_value)}
+                      </td>
+                    </tr>
+                  )}
 
 
-          {/* {ie.sub_ies.length > 0 && ( */}
-          {isGrouped && (
-            <tr >
-              <td className="ie-group" colSpan="2"
-                  style={{ paddingLeft: "10px", paddingRight: "10px", background:"#a4b1fa" }}>
-                <b>Grouped IE Contents</b>
-                <GtpIeSimpleTable ies={subIes} level={level + 1}
-                                      onHoverRaw={onHoverRaw}
+                  {isGrouped && (
+                    <tr >
+                      <td className="ie-group" colSpan="2"
+                        style={{ paddingLeft: "10px", paddingRight: "10px", background:"#a4b1fa" }}>
+                        <b>Grouped IE Contents</b>
+                        <GtpIeSimpleTable ies={subIes} level={level + 1}
+                                            onHoverRaw={onHoverRaw} />
+                      </td>
+                    </tr>
+                  )}
 
-                />
-              </td>
-            </tr>
-          )}
-
-          </>
-          )}
-        </tbody>
-      </table>
-    </div>
-    );
+                  </>
+                )}
+            </tbody>
+          </table>
+        </div>
+      );
 
     })}
     </>
-  )
+  );
 }
 
 function GtpIeTable({ ies, level = 0 })
@@ -739,8 +775,7 @@ function GtpIeTable({ ies, level = 0 })
           <tr key={idx} style={{ background: "#f0f0f0" }} >
             <th style={{textAlign:"center"}}>0</th> {/* //<---- */}
 
-            <td colSpan="8" style={{
-              textAlign:"center"}} >
+            <td colSpan="8" style={{ textAlign:"center"}} >
                 Type: {ie.type_str} [{ie.ie_type}]
             </td>
                 
@@ -752,12 +787,12 @@ function GtpIeTable({ ies, level = 0 })
           {!isGrouped && (
             <tr>
               <th>32</th>
-              <td colSpan="32">
+              {/* <td colSpan="32"> */}
                   {/* {ie.raw && ie.raw.length > 0 ? */}
                     {/* "0x"+ie.raw.map((b) =>b.toString(16).padStart(2,"0")).join(""):"(empth)" } */}
-                    {renderIeValue(ie.ie_value)}
+                    {renderIeValue(ie.ie_value, ie.ie_type)}
 
-                </td>
+                {/* </td> */}
             </tr>
           )}
 

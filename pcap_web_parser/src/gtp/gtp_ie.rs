@@ -331,7 +331,6 @@ pub fn parse_uli_ie(data: &[u8]) -> Result<GtpIeValue, String> {
 
 fn parse_ipv4_remote(data: &[u8]) -> Result<PacketFilterComponent, String> {
     // commonly IPv4 component is 8 bytes: 4 bytes address + 4 bytes mask
-    println!("IPv4 remote len: {}", data.len());
     if data.len() < 8 {
         return Err(format!("IPv4 component length must be 8, got {}", data.len()));
     }
@@ -443,7 +442,6 @@ pub fn decode_bearer_tft (input: &[u8])
     if input.len() < 3 {
         return Err("ServingNetwork IE: length must be more than 3 bytes".into());
     }
-    println!("Bearer TFT");
 
     let mut offset = 0;
     let tft_op_code = (input[0] & 0xE0) >> 5;
@@ -460,9 +458,7 @@ pub fn decode_bearer_tft (input: &[u8])
     };
 
     for _ in 0..num_filter  {
-        println!("for loop");
         if offset + 4 >= input.len() {
-            println!("BearerTFT: packet filter header truncated");
             return Err("BearerTFT: packet filter header truncated".into());
         }
 
@@ -481,7 +477,6 @@ pub fn decode_bearer_tft (input: &[u8])
 
         // sanity check: pf_len bytes must exist
         if offset + (pf_len as usize) > input.len() {
-            println!("BearerTFT: Packet filter error");
             return Err("BearerTFT: packet filter content truncated".into());
         }
 
@@ -494,7 +489,6 @@ pub fn decode_bearer_tft (input: &[u8])
         let mut components: PacketFilterComponent = PacketFilterComponent::None;
 
         while comp_offset < pf_content.len() {
-            println!("while {} < {}", comp_offset, pf_content.len());
 
             if comp_offset +2 > pf_content.len() {
                 component_list.push(PacketFilterComponentList {
@@ -510,15 +504,11 @@ pub fn decode_bearer_tft (input: &[u8])
             let comp_type = pf_content[comp_offset];
             comp_offset += 1;
 
-            println!("전체 pf: {:?}", pf_content);
-            // Packet filter Length 모든 패킷 필터 길이
             let comp_len = pf_len as usize-comp_offset as usize;
             // let comp_len = pf_content[pf_len as usize-comp_offset] as usize;
-            println!("COMP LENGTH: {} ---- {}", comp_len, pf_len);
             // comp_offset += 1;
 
             if comp_offset + comp_len > pf_content.len() {
-                println!("{} + {} > {}", comp_offset, comp_len, pf_content.len());
                 component_list.push(PacketFilterComponentList {
                     pf_type_id: comp_type,
                     components: (PacketFilterComponent::Unknown {
@@ -526,7 +516,6 @@ pub fn decode_bearer_tft (input: &[u8])
                         data: pf_content[comp_offset..].to_vec(),
                     }),
                 });
-                println!("BREAK!!!!!!???!!?");
                 break;
             }
             let real_len = match comp_type {
@@ -564,7 +553,6 @@ pub fn decode_bearer_tft (input: &[u8])
             1 0 0 0  0 0 0 0	Flow label type [0x80]
             */
 
-            println!("comp_type: {}", comp_type);
             let parsed_comp = match comp_type {
                 0x10 => parse_ipv4_remote(comp_value),
                 0x20 => parse_ipv6_remote(comp_value),
@@ -584,7 +572,6 @@ pub fn decode_bearer_tft (input: &[u8])
             components = match parsed_comp {
                 Ok(v) => v,
                 Err(e) => {
-                    println!(" Error while parsing TFT compo");
                     return Err("Error while parsing TFT Component".to_string());
                 },
             };
@@ -815,8 +802,6 @@ pub fn decode_apn(input: &[u8])
         return Err("input is empty".into());
     }
 
-    println!("Total len: {}", input.len());
-
     let mut pos = 0;
     let mut labels = Vec::new();
 
@@ -827,7 +812,6 @@ pub fn decode_apn(input: &[u8])
             return Err("Invalied APN format: zero-length buffer".into());
         }
 
-        println!("POS: {}, Len: {}", pos, len);
         let label = &input[pos..pos+len];
         pos += len;
 
@@ -908,15 +892,10 @@ pub fn decode_bcd(input: &[u8]) -> Result<GtpIeValue, String> {
     Ok(GtpIeValue::Utf8String(digits))
 }
 
+
 pub fn parse_ie(input: &[u8])
 -> IResult<&[u8], GtpIe>
 {
-    // let mut raw = Vec::new();
-    // let mut result = Vec::new();
-    // let (input, ie_type) = be_u8(input)?;
-    // let (input, ie_len) = be_u16(input)?;
-    // let (mut input, inst_byte) = be_u8(input)?;
-    // let ie_inst = inst_byte & 0x0f;
     let ie_type = input[0];
     let ie_len = u16::from_be_bytes([input[1], input[2]]) as usize;
     let ie_inst = input[3] & 0x0f;
@@ -924,7 +903,6 @@ pub fn parse_ie(input: &[u8])
 
     let raw = input[..total_len].to_vec();
 
-    // let (mut input, _) = take(ie_len)(input)?;
     let (input, _type) = be_u8(input)?;
     let (input, _len) = be_u16(input)?;
     let (mut input, _inst) = be_u8(input)?;
@@ -952,7 +930,6 @@ pub fn parse_ie(input: &[u8])
                     remaining = rest;
                 }
                 Err(_) => {
-                    println!("Sub IE Failed");
                     break;
                 },
             }
@@ -992,26 +969,34 @@ pub fn parse_ie(input: &[u8])
 
             GTPV2C_IE_FTEID =>
                 decode_fteid(value),
+                
+            GTPV2C_IE_IP_ADDRESS => {
+                let v = Ipv4Addr::from_octets([
+                    value[0], value[1], value[2], value[3]
+                ]);
+                let ip = v.to_string();
+                Ok(GtpIeValue::Ipv4 (ip))
+            },
 
-            //Error
-            _ => Ok(GtpIeValue::Raw(value.to_vec())),
+            _ =>  match ie_len {
+                    1 =>  Ok(GtpIeValue::Uint8(value[0] )),
+                    2 => {
+                        let v = u16::from_be_bytes([value[0],value[1]]);
+                        Ok(GtpIeValue::Uint16(v))
+                    },
+                    4 =>  match ie_type {
+                        _ => {
+                            let v = u32::from_be_bytes([ value[0], value[1], value[2], value[3] ]);
+                            Ok(GtpIeValue::Uint32(v))
+                        }
+                    }
+                    _ => Ok(GtpIeValue::Raw(value.to_vec())),
+                },
         };
 
-        // ie_value = match val{
-        //   Ok(v) => v,
-        //   Err(e) => GtpIeValue::None,
-        // };
-
         gtp_ie.ie_value = val.unwrap_or(GtpIeValue::None);
-        println!("===> val: {:?}", gtp_ie.ie_value);
         input = next;
     }
-
-        // gtp_ie.ie_type = ie_type;
-        // gtp_ie.type_str = GTPV2_IE_TYPES[ie_type as usize].0.to_string();
-        // gtp_ie.length= ie_len;
-        // gtp_ie.instance= ie_inst;
-        // gtp_ie.raw = raw;
 
     Ok( (input, gtp_ie))
 }
@@ -1022,11 +1007,7 @@ pub fn parse_all_ies(mut input: &[u8])
 {
     let mut result = Vec::new();
 
-    println!("=>{}", input.len());
-    println!("{:?}", input);
-
     if input[1] == 0 && input[2] == 0 {
-        println!("Invalid IE Header");
         return Err(format!("Invalid IE Header"));
     }
 
@@ -1038,7 +1019,6 @@ pub fn parse_all_ies(mut input: &[u8])
             },
 
             Err(e) => {
-                println!("IE Parsing Error");
                 return Err(format!("IE parse error: {}",e));
             }
         }

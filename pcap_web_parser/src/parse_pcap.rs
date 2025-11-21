@@ -132,20 +132,17 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
             &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..]
         ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
-        println!("->{:?}", gtpinfo);
-        // gtpinfo.ies
-        let result = match  parse_all_ies(rest) {
+        let result = match parse_all_ies(rest) {
 
             Ok(v) => v,
             Err(_) => {
-                println!("Error");
                 // return Err(format!("Parse All failed: {}", e));
                 Vec::new()
             }
         };
 
         gtpinfo.ies = result;
-        // println!("{:#?}", gtpinfo.ies);
+        println!("{:#?}", gtpinfo.ies);
         parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
     }
 
