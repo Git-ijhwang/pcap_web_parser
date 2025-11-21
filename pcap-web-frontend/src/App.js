@@ -350,7 +350,7 @@ function App() {
     // <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12, fontFamily: "Inter, Arial, sans-serif" }}>
     <div className="container my-4">
       <div className="card shadow p-4">
-        <h1 className="mb-3">pcap → GTP / PFCP Parser (frontend)</h1>
+        <h1 className="mb-3">pcap file Parser </h1>
 
       <div className="mb-3">
         {/* <label style={{ display: "block", marginBottom: 8 }}> */}

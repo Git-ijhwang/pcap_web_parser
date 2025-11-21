@@ -142,7 +142,7 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
         };
 
         gtpinfo.ies = result;
-        println!("{:#?}", gtpinfo.ies);
+        // println!("{:#?}", gtpinfo.ies);
         parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
     }
 

@@ -96,11 +96,9 @@ pub enum PacketFilterComponent {
     Protocol { proto: u8 },                       // Protocol ID / Next Header (1 byte)
     SinglePort { port: u16 },                     // single port (2 bytes)
     PortRange { start: u16, end: u16 },           // port range (4 bytes)
-    SecParamIdx { spi: u32 },                       // Protocol ID / Next Header (1 byte)
-    TypeOfService { value: u8, mask: u8 },                       // Protocol ID / Next Header (1 byte)
+    SecParamIdx { spi: u32 },                     // Protocol ID / Next Header (1 byte)
+    TypeOfService { value: u8, mask: u8 },        // Protocol ID / Next Header (1 byte)
     FlowLabel { label: u32 },
-
-    // ... add more structured variants as needed
     Unknown { t: u8, data: Vec<u8> },             // unknown selector
     None,
 }

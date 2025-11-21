@@ -132,9 +132,9 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
             (input, None)
         };
 
-        println!("len {:?}", msg_len);
-        println!("TEID {:?}", teid);
-        println!("Seq {:?}", seq);
+        // println!("len {:?}", msg_len);
+        // println!("TEID {:?}", teid);
+        // println!("Seq {:?}", seq);
         let (input, _spare) = be_u8(input)?;
 
         let mut add = 0;
