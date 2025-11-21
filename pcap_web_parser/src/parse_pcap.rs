@@ -132,9 +132,20 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
             &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..]
         ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
-        gtpinfo.ies = parse_all_ies(rest);
+        println!("->{:?}", gtpinfo);
+        // gtpinfo.ies
+        let result = match  parse_all_ies(rest) {
 
-        println!("{:#?}", gtpinfo.ies);
+            Ok(v) => v,
+            Err(_) => {
+                println!("Error");
+                // return Err(format!("Parse All failed: {}", e));
+                Vec::new()
+            }
+        };
+
+        gtpinfo.ies = result;
+        // println!("{:#?}", gtpinfo.ies);
         parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
     }
 
@@ -219,7 +230,7 @@ pub async fn parse_pcap_summary(path: &Path)
 
     let packet_len = packets.len();
     let duration = start.elapsed(); // 경과 시간 측정
-    println!("Parsing took {:?}", duration);
+    // println!("Parsing took {:?}", duration);
 
     let result = ParsedResult {
             file: path.to_string_lossy().to_string(),
@@ -232,7 +243,7 @@ pub async fn parse_pcap_summary(path: &Path)
         Ok( result )
     }
     else {
-        println!(" Parse Fail. {}:{}", packet_len, idx );
+        // println!(" Parse Fail. {}:{}", packet_len, idx );
         Err("Fail".to_string())
     }
 }

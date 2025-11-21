@@ -28,23 +28,23 @@
 }
 
 .ip-header{
-  background-color: #A2D2FF !important;
+  background-color: #EFECE3 !important;
 }
 .ip-card-body,
 .tcp-card-body,
 .udp-card-body,
 .gtp-card-body
 {
-  background-color: #e9e9e9 !important;
+  background-color: #d4daff !important;
 }
 .tcp-header{
   background-color:  #80FFDB !important;
 }
 .udp-header{
-  background-color:  #80FFDB !important;
+  background-color:  #8FABD4 !important;
 }
 .gtp-header{
-  background-color:  #FFE69A !important;
+  background-color:  #84994F !important;
 }
 
 .ie-table {

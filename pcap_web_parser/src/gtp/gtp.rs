@@ -27,10 +27,6 @@ pub struct GtpHeader {
 
 
 
-
-
-
-
 pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary)
 -> IResult<&'a[u8], GtpHeader>
 {
@@ -53,8 +49,8 @@ pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary)
 
         let (input, seq_bytes) = take(3usize)(input)?;
         let seq = ((seq_bytes[0] as u32) << 16)
-                    | ((seq_bytes[1] as u32) << 8)
-                    | (seq_bytes[2] as u32);
+                       | ((seq_bytes[1] as u32) << 8)
+                       | (seq_bytes[2] as u32);
 
         let (input, mp) = if mp_flag {
             let (input, m) = be_u8(input)?;
@@ -71,6 +67,7 @@ pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary)
         if !teid.is_none() {
             add += 4;
         }
+
         add += (4);
         let (remaining, payload) = take((msg_len-add) as usize)(input)?;
 
@@ -135,6 +132,9 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
             (input, None)
         };
 
+        println!("len {:?}", msg_len);
+        println!("TEID {:?}", teid);
+        println!("Seq {:?}", seq);
         let (input, _spare) = be_u8(input)?;
 
         let mut add = 0;

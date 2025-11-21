@@ -4,6 +4,72 @@ import React, { useState, useRef, useEffect } from "react";
 
 import "./ip.css";
 
+function ComponentRenderer({ comp }) {
+  if (!comp) return <div>None</div>;
+   // comp가 string ("None")일 수도 있음
+  if (typeof comp === "string") {
+    return <div>{comp}</div>;
+  }
+
+  const type = Object.keys(comp)[0];   // "Ipv4Addr", "Protocol", ...
+  const data = comp[type];
+
+
+  switch (type) {
+
+    case "Ipv4Addr":
+      return (
+        <div>
+          <div>IPv4 Addr: {data.addr}</div>
+          <div>Mask: {data.mask}</div>
+        </div>
+      );
+
+    case "Ipv6Addr":
+      return (
+        <div>
+          <div>IPv6 Addr: {data.addr}</div>
+          <div>Mask: {data.mask}</div>
+        </div>
+      );
+
+    case "Protocol":
+      return <div>Protocol: {data.proto}</div>;
+
+    case "SinglePort":
+      return <div>Port: {data.port}</div>;
+
+    case "PortRange":
+      return (
+        <div>
+          Port Range: {data.start} - {data.end}
+        </div>
+      );
+
+    case "SecParamIdx":
+      return <div>SPI: {data.spi}</div>;
+
+    case "TypeOfService":
+      return (
+        <div>
+          ToS Value: {data.value}, Mask: {data.mask}
+        </div>
+      );
+
+    case "FlowLabel":
+      return <div>Flow Label: {data.label}</div>;
+
+    case "Unknown":
+      return (
+        <div>
+          <i>Unknown data</i>: type {data.t}, raw = [{data.data.join(", ")}]
+        </div>
+      );
+
+    default:
+      return <div>None</div>;
+  }
+}
 
 function decodeBearerQoS(bytes, detail)
 {
@@ -305,76 +371,76 @@ function renderIeValue(value) {
         </div>
       );
 
-    case "UserLocationInfo": {
-  // data = UliValue 구조체
-  const uli = data;
+    case "UserLocationInfo":
+      // data = UliValue 구조체
+      const uli = data;
 
-  return (
-    <div style={{ padding: "4px 0" }}>
-      {uli.has_tai && uli.tai && (
-        <div style={{ marginBottom: "6px" }}>
-          <b>TAI</b><br />
-          MCC: {uli.tai.mcc}<br />
-          MNC: {uli.tai.mnc}<br />
-          TAC: {uli.tai.tac}
+      return (
+        <div style={{ padding: "4px 0" }}>
+          {uli.has_tai && uli.tai && (
+            <div style={{ marginBottom: "6px" }}>
+              <b>TAI</b><br />
+              MCC: {uli.tai.mcc}<br />
+              MNC: {uli.tai.mnc}<br />
+              TAC: {uli.tai.tac}
+            </div>
+          )}
+
+          {uli.has_ecgi && uli.ecgi && (
+            <div style={{ marginBottom: "6px" }}>
+              <b>ECGI</b><br />
+              MCC: {uli.ecgi.mcc}<br />
+              MNC: {uli.ecgi.mnc}<br />
+              ECI: {uli.ecgi.eci}
+            </div>
+          )}
+
+          {uli.has_lai && uli.lai && (
+            <div style={{ marginBottom: "6px" }}>
+              <b>LAI</b><br />
+              MCC: {uli.lai.mcc}<br />
+              MNC: {uli.lai.mnc}<br />
+              LAC: {uli.lai.lac}
+            </div>
+          )}
+
+          {uli.has_rai && uli.rai && (
+            <div style={{ marginBottom: "6px" }}>
+              <b>RAI</b><br />
+              MCC: {uli.rai.mcc}<br />
+              MNC: {uli.rai.mnc}<br />
+              RAC: {uli.rai.rac}
+            </div>
+          )}
+
+          {uli.has_sai && uli.sai && (
+            <div style={{ marginBottom: "6px" }}>
+              <b>SAI</b><br />
+              MCC: {uli.sai.mcc}<br />
+              MNC: {uli.sai.mnc}<br />
+              SAC: {uli.sai.sac}
+            </div>
+          )}
+
+          {uli.has_cgi && uli.cgi && (
+            <div style={{ marginBottom: "6px" }}>
+              <b>CGI</b><br />
+              MCC: {uli.cgi.mcc}<br />
+              MNC: {uli.cgi.mnc}<br />
+              CI: {uli.cgi.ci}
+            </div>
+          )}
+
+          {/* 아무것도 없으면 빈 값 표시 */}
+          {!uli.has_tai &&
+            !uli.has_ecgi &&
+            !uli.has_lai &&
+            !uli.has_rai &&
+            !uli.has_sai &&
+            !uli.has_cgi && <span>(empty ULI)</span>}
         </div>
-      )}
-
-      {uli.has_ecgi && uli.ecgi && (
-        <div style={{ marginBottom: "6px" }}>
-          <b>ECGI</b><br />
-          MCC: {uli.ecgi.mcc}<br />
-          MNC: {uli.ecgi.mnc}<br />
-          ECI: {uli.ecgi.eci}
-        </div>
-      )}
-
-      {uli.has_lai && uli.lai && (
-        <div style={{ marginBottom: "6px" }}>
-          <b>LAI</b><br />
-          MCC: {uli.lai.mcc}<br />
-          MNC: {uli.lai.mnc}<br />
-          LAC: {uli.lai.lac}
-        </div>
-      )}
-
-      {uli.has_rai && uli.rai && (
-        <div style={{ marginBottom: "6px" }}>
-          <b>RAI</b><br />
-          MCC: {uli.rai.mcc}<br />
-          MNC: {uli.rai.mnc}<br />
-          RAC: {uli.rai.rac}
-        </div>
-      )}
-
-      {uli.has_sai && uli.sai && (
-        <div style={{ marginBottom: "6px" }}>
-          <b>SAI</b><br />
-          MCC: {uli.sai.mcc}<br />
-          MNC: {uli.sai.mnc}<br />
-          SAC: {uli.sai.sac}
-        </div>
-      )}
-
-      {uli.has_cgi && uli.cgi && (
-        <div style={{ marginBottom: "6px" }}>
-          <b>CGI</b><br />
-          MCC: {uli.cgi.mcc}<br />
-          MNC: {uli.cgi.mnc}<br />
-          CI: {uli.cgi.ci}
-        </div>
-      )}
-
-      {/* 아무것도 없으면 빈 값 표시 */}
-      {!uli.has_tai &&
-        !uli.has_ecgi &&
-        !uli.has_lai &&
-        !uli.has_rai &&
-        !uli.has_sai &&
-        !uli.has_cgi && <span>(empty ULI)</span>}
-    </div>
-  );
-}
+      );
+    
 
 
     case "FTeid":
@@ -389,6 +455,46 @@ function renderIeValue(value) {
           }
           <div>Interface Type: {data.iface_type}</div>
         </div>
+      );
+    
+    case "BearerTFT":
+      return (
+        <div
+          style={{ marginLeft: "10px" }}
+        >
+          {/* <h5>Bearer TFT</h5> */}
+
+          <div><b>TFT Operation Code:</b> {data.tft_op_code} ({data.str_tft_op_code})</div>
+          {/* <div><b>E-Bit:</b> {data.e_bit ? "True" : "False"}</div> */}
+          <div><b>Number of Packet Filters:</b> {data.num_filter}</div>
+
+          <hr />
+
+      {data.packet_filter_list?.map((pf, pfIdx) => (
+        <div key={`pf-${pfIdx}`} style={{ marginTop: "10px", padding: "10px", border: "1px solid #ccc" }}>
+          <h6>Packet Filter #{pfIdx + 1}</h6>
+
+          <div><b>Direction:</b> {pf.pf_dir}</div>
+          {/* <div><b>Filter ID:</b> {pf.pf_id}</div> */}
+          {/* <div><b>Precedence:</b> {pf.pkt_prec}</div> */}
+          {/* <div><b>PF Length:</b> {pf.pf_len}</div> */}
+
+          <div style={{ marginTop: "10px" }}>
+            <b>Components:</b>
+            <ul>
+              {pf.packet_filter_component_list?.map((comp, cidx) => (
+                <li key={`comp-${cidx}`} style={{ marginTop: "5px" }}>
+                  <div><b>Type ID:</b> 0x{comp.pf_type_id.toString(16)}</div>
+
+                  {/* Component Details */}
+                  <ComponentRenderer comp={comp.components} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ))}
+    </div>
       );
 
     case "ServingNetwork":
@@ -491,7 +597,15 @@ function IeViewer({ ies, onHoverRaw = () => {} }) {
 
 
 function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
-  const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
+  const bgColor=[ "#F5BABB", "#f8dfd7ff", "#245050ff" ];
+  const [expanded, setExpanded] = useState({});
+
+  const toggle = (idx) => {
+    setExpanded((prev) => ({
+      ...performance,
+      [idx]: !prev[idx]
+    }));
+  };
 
   return (
     <>
@@ -499,25 +613,56 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
       const subIes = ie.ie_value?.SubIeList;
       const isGrouped = Array.isArray(subIes) && subIes.length > 0;
 
+      const isOpen = expanded[idx] || false;
+
       return (
         <div
+        key={`ie-wrap-${idx}`}
             onMouseEnter={() => onHoverRaw(ie.raw)}   // ★★ Hover 시 raw 표시
             onMouseLeave={() => onHoverRaw(null)}  // ★★ Hover 벗어나면 clear
         >
           <table className="table table-bordered table-sm ie-table"
                 key={`ie-${ie.ie_type}-${ie.instance}-${idx}`}  // ✅ 고유 key
-                // style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
+                style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }}
                 >
             <tbody>
 
-          <tr style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
+          {!isOpen && (
+            <tr style={{
+                        cursor: "pointer",
+                        userSelect: "none",
+                        background: isOpen? (bgColor[level] || "#010101"): "#a9e9b7ff",
+                      }}
+                onClick={() => toggle(idx)}
+            >
+              <th style={{colSpan:"2",
+                        backgroundColor:bgColor[level]||"#010101", 
+                // backgroundColor:"#5EABD6"
+                }}>
+                {isOpen ?  "▼" : "▶"} {ie.type_str}
+              </th>
+            </tr>
+          )}
+
+          {isOpen && (
+            <>
+            <tr style={{
+                        cursor: "pointer",
+                        userSelect: "none",
+                        fontSize: "14px",
+                        backgroundColor:bgColor[level]||"#010101", 
+                      }}
+                onClick={() => toggle(idx)}
+            >
+
             <th style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
-              Type
+                {isOpen ? "▼" : "▶"} Type 
             </th>
             <td style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
               {ie.type_str} [{ie.ie_type}]
             </td>
           </tr>
+
           <tr >
             <th> Len </th>
             <td> {ie.length} <i>bytes</i></td>
@@ -526,30 +671,12 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
             <th> Instance </th>
             <td> {ie.instance} </td>
           </tr>
-              {!isGrouped && (
+
+          {!isGrouped && (
           <tr >
             <th> Value </th>
             <td> 
-                {/* {ie.sub_ies.length === 0 ? (
-                  ie.ie_type === 1 || ie.ie_type === 75 || ie.ie_type === 76 ? (
-                    decodeBCD(ie.value)
-                  ) : ie.ie_type === 71 ? (
-                      <pre>{ decodeAPN(ie.value) }</pre>
-                  ) : ie.ie_type === 72 ? (
-                    <pre>{decodeAMBR(ie.value)}</pre>
-                  ) : ie.ie_type === 73 ? (
-                    <pre>{decodeEBI(ie.value)}</pre>
-                  ) : ie.ie_type === 80 ? (
-                    <pre> {decodeBearerQoS(ie.value, 0)} </pre>
-                  ) : ie.ie_type === 87 ? (
-                    <pre>{formatFTEID(decodeFTEID(ie.value))}</pre>
-                  ) : (
-                    ie.value.length > 0
-                      ? "0x" + ie.value.map((b) => b.toString(16).padStart(2, "0")).join(" ")
-                      : "(empty)"
-                  )
-                ) : null} */}
-                    {renderIeValue(ie.ie_value)}
+              {renderIeValue(ie.ie_value)}
             </td>
           </tr>
           )}
@@ -569,10 +696,12 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
             </tr>
           )}
 
+          </>
+          )}
         </tbody>
       </table>
-        </div>
-      );
+    </div>
+    );
 
     })}
     </>
@@ -581,7 +710,7 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} }) {
 
 function GtpIeTable({ ies, level = 0 })
 {
-  const bgColor=[ "#0ff0f0", "#04f010ff", "#00e0e0" ];
+  const bgColor=[ "#BBC863", "#F0E491", "#00e0e0" ];
 
   return (
     <>
