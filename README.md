@@ -57,6 +57,6 @@ The parser reads raw packet data and produces structured JSON output, which can 
 - cargo run
 
 ### Frontend
-- cd frontend
+- cd pcap-web-frontend
 - npm install
 - npm start
