@@ -3,13 +3,7 @@ use crate::types::*;
 pub fn parse_icmp_simple (icmp: &[u8], packet: &mut PacketSummary)
 -> u16
 {
-    let mut pos = 0;
-    let icmp_type = u8::from_be_bytes([icmp[pos]]);
-    // pos + 1;
-    // let icmp_code = u8::from_be_bytes([icmp[pos]]);
-    // pos + 1;
-    // let icmp_checksum = u16::from_be_bytes([icmp[pos], icmp[pos+1]]);
-    // pos + 2;
+    let icmp_type = u8::from_be_bytes([icmp[0]]);
 
     let mut desc = String::new();
     if icmp_type == 0 {
@@ -21,6 +15,20 @@ pub fn parse_icmp_simple (icmp: &[u8], packet: &mut PacketSummary)
     packet.src_port = 0;
     packet.dst_port = 0;
     packet.description = desc;
+
+    0
+}
+
+pub fn parse_single_icmp(icmp_buf: &[u8], icmp: &mut IcmpInfo)
+-> u16
+{
+    let icmp_type = icmp_buf[0];
+    let code = icmp_buf[1];
+    let checksum = u16::from_be_bytes([icmp_buf[2], icmp_buf[3]]);
+
+    icmp.icmp_type = icmp_type;
+    icmp.code = code;
+    icmp.checksum = checksum;
 
     0
 }

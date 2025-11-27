@@ -107,9 +107,27 @@ impl  IpInfo {
 pub enum Layer4Info {
     UDP(UdpInfo),
     TCP(TcpInfo),
-    //ICMP(IcmpInfo),
+    ICMP(IcmpInfo),
     None,
 }
+
+#[derive(Serialize, Debug)]
+pub struct IcmpInfo {
+    pub icmp_type: u8,
+    pub code: u8,
+    pub checksum: u16,
+}
+impl  IcmpInfo {
+    pub fn new() -> Self {
+        IcmpInfo {
+            icmp_type: 0,
+            code: 0,
+            checksum: 0,
+        }
+    }
+}
+
+
 #[derive(Serialize, Debug)]
 pub struct UdpInfo {
     pub src_port: u16,
@@ -120,6 +138,7 @@ pub struct UdpInfo {
     pub checksum: u16,
     pub raw: Vec<u8>,
 }
+
 impl  UdpInfo {
     pub fn new() -> Self {
         UdpInfo {
@@ -170,7 +189,6 @@ impl  TcpInfo {
 pub enum AppLayerInfo {
     GTP(GtpInfo),
     // HTTP(HttpInfo),
-    //ICMP(IcmpInfo),
     None,
 }
 

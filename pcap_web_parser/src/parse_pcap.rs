@@ -6,7 +6,7 @@ use pcap::{Capture, Packet};
 
 use crate::ip::{ipv4::*, ipv6::*};
 // use crate::ipv6::*;
-use crate::l4::{tcp::*, udp::*};
+use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::l4::l4::*;
 use crate::gtp::{gtp::*, gtp_ie::*};
 use crate::types::*;
@@ -106,21 +106,30 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
         let data_buf = &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..];
 
         match next_type {
-            6   =>  {
+            PROTO_TYPE_TCP   =>  {
                 let mut tcp = TcpInfo::new();
-                let result= parse_tcp( data_buf , &mut tcp);
+                let result= parse_single_tcp( data_buf , &mut tcp);
 
                 parsed_packet.l4 = Layer4Info::TCP(tcp);
 
                 (result, 20)
             },
-            17  => {
+
+            PROTO_TYPE_UDP  => {
                 let mut udp = UdpInfo::new();
-                let result = parse_udp( data_buf, &mut udp);
+                let result = parse_single_udp( data_buf, &mut udp);
 
                 parsed_packet.l4 = Layer4Info::UDP(udp);
                 (result, 8)
-            }
+            },
+
+            PROTO_TYPE_ICMP   => {
+                let mut icmp = IcmpInfo::new();
+                let result = parse_single_icmp(data_buf, &mut icmp);
+
+                parsed_packet.l4 = Layer4Info::ICMP(icmp);
+                (result, 4)
+            },
             _ => return Err("Layer 4 parsing failed".to_string()),
 
         }
@@ -153,7 +162,7 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
 }
 
 
-pub async fn parse_pcap_summary(path: &Path)
+pub async fn parse_pcap(path: &Path)
 -> Result<ParsedResult, String> 
 {
     //read pcap file line by line

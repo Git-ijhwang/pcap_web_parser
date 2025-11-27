@@ -10,6 +10,9 @@ It supports parsing multiple network protocol layers including:
 <img width="1571" height="698" alt="image" src="https://github.com/user-attachments/assets/6870a295-7333-4eeb-9552-e5c756912042" />
 <img width="1365" height="735" alt="image" src="https://github.com/user-attachments/assets/b54ee5fe-831c-4c71-8584-fa6dfd928fc4" />
 
+---
+
+## 🚀 Features
 - **IPv4**
 - **UDP**
 - **TCP**
@@ -23,26 +26,6 @@ The parser reads raw packet data and produces structured JSON output, which can 
 
 ---
 
-## 🚀 Features
-
-### ✔ 1. IPv4 Parsing
-
-
-### ✔ 2. UDP Parsing
-
-
-### ✔ 3. TCP Parsing
-
-
-### ✔ 4. ICMP Parsing
-
-
-### ✔ 5. GTPv2-C Parsing
-
-
-### ✔ 6. GTPv2-C IE Parsing
-
-
 ### ✔ 7. Frontend (React)
 - Displays parsed structures
 - Hex dump viewer
@@ -53,6 +36,7 @@ The parser reads raw packet data and produces structured JSON output, which can 
 
 ## 📦 How to Build
 ### Rust backend
+- cd pcap_web_parser
 - cargo build
 - cargo run
 

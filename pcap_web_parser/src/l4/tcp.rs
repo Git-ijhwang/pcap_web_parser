@@ -16,7 +16,7 @@ pub fn parse_tcp_simple(tcp: &[u8], packet: & mut PacketSummary) -> u16
     dst_port
 }
 
-pub fn parse_tcp(tcp_buf: &[u8], tcp: & mut TcpInfo) -> u16
+pub fn parse_single_tcp(tcp_buf: &[u8], tcp: & mut TcpInfo) -> u16
 {
     if tcp_buf.len() < 20 {
         println!( "TCP header too short");

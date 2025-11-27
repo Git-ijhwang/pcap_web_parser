@@ -101,7 +101,7 @@ pub async fn handle_parse_summary(
         let parse_result =
             // tokio::task::spawn_blocking(move || parse_file(&tmp_path_clone)).await;
             tokio::spawn(async move {
-                parse_pcap_summary(&tmp_path_clone).await
+                parse_pcap(&tmp_path_clone).await
             }).await;
 
 

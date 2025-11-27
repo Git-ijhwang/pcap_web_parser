@@ -17,7 +17,7 @@ pub fn parse_udp_simple (udp: &[u8], packet: & mut PacketSummary) -> u16
     dst_port
 }
 
-pub fn parse_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
+pub fn parse_single_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
 {
     let mut pos = 0;
 
