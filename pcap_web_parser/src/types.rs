@@ -116,6 +116,9 @@ pub struct IcmpInfo {
     pub icmp_type: u8,
     pub code: u8,
     pub checksum: u16,
+    pub id: u16,
+    pub seq: u16,
+    pub raw: Vec<u8>,
 }
 impl  IcmpInfo {
     pub fn new() -> Self {
@@ -123,6 +126,9 @@ impl  IcmpInfo {
             icmp_type: 0,
             code: 0,
             checksum: 0,
+            id: 0,
+            seq: 0,
+            raw: Vec::new(),
         }
     }
 }

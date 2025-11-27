@@ -86,6 +86,7 @@ pub async fn handle_parse_summary(
             }
         };
 
+        println!("Temporary file created");
         // 임시 파일 경로 생성
         let cache_read = cache.read().await; // std::sync::RwLock
 

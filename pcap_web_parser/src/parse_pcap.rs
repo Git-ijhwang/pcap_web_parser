@@ -1,11 +1,9 @@
 use std::process;
-
 use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use pcap::{Capture, Packet};
 
-use crate::ip::{ipv4::*, ipv6::*};
-// use crate::ipv6::*;
+use crate::ip::{ipv4::*, port::*, ipv6::*};
 use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::l4::l4::*;
 use crate::gtp::{gtp::*, gtp_ie::*};
@@ -136,7 +134,7 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
     };
 
     // --- Parse Application Layer ---
-    if port_number == 2123 {
+    if port_number == WELLKNOWN_PORT_GTPV2 {
         let (rest, mut gtpinfo) = parse_gtpc_detail(
             &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..]
         ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
@@ -166,6 +164,7 @@ pub async fn parse_pcap(path: &Path)
 -> Result<ParsedResult, String> 
 {
     //read pcap file line by line
+    println!("Try open pacp file]\n");
     let mut cap = match Capture::from_file(path) {
         Ok(c) => c,
         Err(e) => {
@@ -194,6 +193,7 @@ pub async fn parse_pcap(path: &Path)
         }
 
         // --- Parse Layer 3 ---
+        println!("Layer 3");
         let v= match next_type {
             //IPv4
             0x0800  => {
@@ -212,6 +212,7 @@ pub async fn parse_pcap(path: &Path)
 
         next_type = v.unwrap();
 
+        println!("Layer 4");
         // --- Parse Layer 4 ---
         let (port_number, l4_hdr_len) =
             preparse_layer4(
@@ -230,13 +231,16 @@ pub async fn parse_pcap(path: &Path)
                 .map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
         }
+        else {
+            println!("Not GTPv2-C packet")
+        }
 
         packets.push(parsed_packet);
     }
 
     let packet_len = packets.len();
     let duration = start.elapsed(); // 경과 시간 측정
-    // println!("Parsing took {:?}", duration);
+    println!("Parsing took {:?}", duration);
 
     let result = ParsedResult {
             file: path.to_string_lossy().to_string(),

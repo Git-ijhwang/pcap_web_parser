@@ -132,6 +132,7 @@ const HoverField = ({ children, tooltip }) => (
           <Modal.Header closeButton>
             <Modal.Title>Packet Details</Modal.Title>
           </Modal.Header>
+
           <Modal.Body>
             {selectedPacket && (
               <div style={{ fontFamily: "monospace", fontSize: "14px" }}>
@@ -150,73 +151,21 @@ const HoverField = ({ children, tooltip }) => (
                 {/* L4 Section */}
                 <Layer4Header l4={selectedPacket.packet.l4}/>
 
+                {/* Application Layer (GTP) */}
+                {selectedPacket?.packet?.app?.GTP && (
+                  <GtpHeader gtp={selectedPacket.packet.app.GTP} />
+                )}
 
-
-      {/* L4 Section */}
-      {/* <div className="card mb-3">
-        <div className="card-header">
-          <strong>Layer 4 (Transport)</strong>
-        </div>
-        <div className="card-body">
-
-          {"UDP" in selectedPacket.packet.l4 && (
-            <div style={{ marginLeft: "12px" }}>
-              <p><strong>Protocol:</strong> UDP</p>
-              <p><strong>Src Port:</strong> {selectedPacket.packet.l4.UDP.src_port}</p>
-              <p><strong>Dst Port:</strong> {selectedPacket.packet.l4.UDP.dst_port}</p>
-            </div>
-          )}
-
-          {"TCP" in selectedPacket.packet.l4 && (
-            <div style={{ marginLeft: "12px" }}>
-              <p><strong>Protocol:</strong> TCP</p>
-              <p><strong>Seq:</strong> {selectedPacket.packet.l4.TCP.seq}</p>
-              <p><strong>Src Port:</strong> {selectedPacket.packet.l4.TCP.src_port}</p>
-              <p><strong>Dst Port:</strong> {selectedPacket.packet.l4.TCP.dst_port}</p>
-            </div>
-          )}
-
-        </div>
-      </div> */}
-
-      {/* Application Layer (GTP) */}
-      <GtpHeader gtp={selectedPacket.packet.app.GTP}/>
-      {/* <div className="card">
-        <div className="card-header">
-          <strong>Application Layer (GTP)</strong>
-        </div>
-        <div className="card-body">
- */}
-          {/* {"GTP" in selectedPacket.packet.app && (
-            <div style={{ marginLeft: "12px" }}>
-              <p><strong>Message Type:</strong> {selectedPacket.packet.app.GTP.msg_type}</p>
-              <p><strong>Description:</strong> {selectedPacket.packet.app.GTP.msg_type_str}</p>
-              <p><strong>TEID:</strong> {selectedPacket.packet.app.GTP.teid}</p> */}
-
-              {/* IE List */}
-              {/* <div className="mt-3">
-                <strong>Information Elements (IEs):</strong>
-                <ul style={{ marginLeft: "20px" }}>
-                  {selectedPacket.packet.app.GTP.ies.map((ie, index) => (
-                    <li key={index}>
-                      <strong>{ie.name}</strong> → {JSON.stringify(ie.value)}
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </div>
-          )} */}
-
-        {/* </div> */}
-      {/* </div> */}
-    </div>
-  )}
+            )}
           </Modal.Body>
+
           <Modal.Footer>
             <Button variant="secondary" onClick={handleClose}>
               Close
             </Button>
           </Modal.Footer>
+
         </Modal>
       )}
   </div>
@@ -234,23 +183,6 @@ function ResultBlock({ result }) {
   }
   const packets = result.packets?? [];
   return (
-    // <div style={{ marginTop: 16 }}>
-    //   <h3>Parse Result (raw JSON)</h3>
-    //   <div style={{
-    //     background: "#0b1220",
-    //     color: "#dff1c8",
-    //     padding: 12,
-    //     borderRadius: 6,
-    //     maxHeight: "40vh",
-    //     overflow: "auto",
-    //     fontFamily: "monospace",
-    //     fontSize: 13
-    //   }}>
-    //     <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-    //       {JSON.stringify(result, null, 2)}
-    //     </pre>
-    //   </div>
-    // </div>
     <div className="mt-4">
       <h3 className="mb-3">
         Parse Result ({result.total_packets} packets)

@@ -1,25 +1,18 @@
-#[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum L4ProtocolType {
-    PROTO_TYPE_ICMP = 1,
-    PROTO_TYPE_IPINIP = 4,
-    PROTO_TYPE_TCP = 6,
-    PROTO_TYPE_UDP = 17,
-    PROTO_TYPE_ICMPV6 = 58,
-}
+pub const PROTO_TYPE_ICMP:usize = 1;
+pub const PROTO_TYPE_IPINIP:usize = 4;
+pub const PROTO_TYPE_TCP:usize = 6;
+pub const PROTO_TYPE_UDP:usize = 17;
+pub const PROTO_TYPE_ICMPV6:usize = 58;
 
-#[repr(u16)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum wellknown_port {
-    WELLKNOWN_PORT_FTP_DATA = 20,
-    WELLKNOWN_PORT_FTP_CTRL = 21,
-    WELLKNOWN_PORT_DNS      = 53,
-    WELLKNOWN_PORT_DHCP_SVR      = 67,
-    WELLKNOWN_PORT_DHCP_CLI      = 68,
-    WELLKNOWN_PORT_HTTP      = 80,
-    WELLKNOWN_PORT_GTPV2      = 2123,
-    WELLKNOWN_PORT_PFCP      = 8805,
-}
+pub const WELLKNOWN_PORT_FTP_DATA: u16     = 20;
+pub const WELLKNOWN_PORT_FTP_CTRL: u16     = 21;
+pub const WELLKNOWN_PORT_DNS: u16          = 53;
+pub const WELLKNOWN_PORT_DHCP_SVR: u16     = 67;
+pub const WELLKNOWN_PORT_DHCP_CLI: u16     = 68;
+pub const WELLKNOWN_PORT_HTTP: u16         = 80;
+pub const WELLKNOWN_PORT_GTPV2: u16        = 2123;
+pub const WELLKNOWN_PORT_PFCP: u16         = 8805;
+
 pub fn v6_ext_hdr_to_str(ext_hdr: usize) -> Option<String>
 {
     match ext_hdr {

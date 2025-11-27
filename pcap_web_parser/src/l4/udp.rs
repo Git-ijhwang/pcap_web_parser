@@ -50,7 +50,6 @@ pub fn parse_single_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
 
     let chksum = u16::from_be_bytes([udp_buf[pos], udp_buf[pos+1]]);
 
-    udp.raw.extend_from_slice(&udp_buf[0..8]);
 
     udp.src_port = src_port;
     if str_src_port.len() > 0 {
@@ -62,6 +61,7 @@ pub fn parse_single_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
     }
     udp.length = len;
     udp.checksum = chksum;
+    udp.raw.extend_from_slice(&udp_buf[0..8]);
 
     dst_port
 }
