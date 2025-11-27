@@ -28,6 +28,7 @@ pub fn parse_single_icmp(icmp_buf: &[u8], icmp: &mut IcmpInfo)
 -> u16
 {
     let mut offset: usize = 0;
+
     let icmp_type = icmp_buf[offset];
     offset += 1;
 
