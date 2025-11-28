@@ -24,6 +24,21 @@ pub struct GtpHeader {
     pub mp: Option<u8>,
     // pub payload: &'a [u8],
 }
+impl GtpHeader {
+    pub fn new() -> Self {
+        GtpHeader {
+            version: 0,
+            p_flag: false,
+            t_flag: false,
+            mp_flag: false,
+            msg_type: 0,
+            msg_len: 0,
+            teid: None,
+            seq: 0,
+            mp: None,
+        }
+    }
+}
 
 
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./ip.css";
+import "../headers/ip.css";
 
 function HexDump({ raw }) {
   if (!raw || raw.length === 0) return <div>No raw data</div>;

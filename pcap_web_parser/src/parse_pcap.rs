@@ -5,7 +5,6 @@ use pcap::{Capture, Packet};
 
 use crate::ip::{ipv4::*, port::*, ipv6::*};
 use crate::l4::{tcp::*, udp::*, icmp::*};
-use crate::l4::l4::*;
 use crate::gtp::{gtp::*, gtp_ie::*};
 use crate::types::*;
 
@@ -180,6 +179,8 @@ pub async fn parse_pcap(path: &Path)
 
     while let Ok(packet) = cap.next_packet() {
 
+        let mut hdr_len = 0;
+
         // --- Parse TimeStamp ---
         let mut parsed_packet : PacketSummary = PacketSummary::new();
         parsed_packet.id = idx;
@@ -191,6 +192,8 @@ pub async fn parse_pcap(path: &Path)
             //get next protocol from Ethernet
             next_type = parse_ethernet(&packet.data);
         }
+
+        hdr_len += MIN_ETH_HDR_LEN;
 
         // --- Parse Layer 3 ---
         println!("Layer 3");
@@ -209,31 +212,47 @@ pub async fn parse_pcap(path: &Path)
         if v.is_none() {
             break;
         }
+        hdr_len += IP_HDR_LEN;
 
         next_type = v.unwrap();
 
         println!("Layer 4");
         // --- Parse Layer 4 ---
         let (port_number, l4_hdr_len) =
-            preparse_layer4(
-                next_type,
-                &packet.data[(MIN_ETH_HDR_LEN+IP_HDR_LEN)..],
-                &mut parsed_packet);
+            match next_type {
+                PROTO_TYPE_TCP   =>
+                    (parse_tcp_simple
+                        ( &packet.data[hdr_len..], &mut parsed_packet)
+                        , 20),
+                PROTO_TYPE_UDP   =>
+                    (parse_udp_simple
+                        ( &packet.data[hdr_len..], &mut parsed_packet)
+                        , 8),
+                PROTO_TYPE_ICMP   =>
+                    (parse_icmp_simple
+                        ( &packet.data[hdr_len..], &mut parsed_packet)
+                        , 4),
+
+                _   =>  (0, 0),
+            };
 
         idx += 1;
+        hdr_len += l4_hdr_len;
 
         // --- Parse Application Layer ---
-        if port_number == 2123 {
-            let (rest, mut hdr) =
+        match port_number {
+            WELLKNOWN_PORT_GTPV2   => {
                 parse_gtpc (
-                    &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..],
+                    &packet.data[hdr_len..],
                     &mut parsed_packet)
-                .map_err(|e| format!("GTP-C parse error: {:?}", e))?;
+                    .map_err(|e| format!("GTP-C parse error: {:?}", e))?
+            },
 
-        }
-        else {
-            println!("Not GTPv2-C packet")
-        }
+            _ => {
+                println!("Not GTPv2-C packet");
+                (&[] as &[u8], GtpHeader::new())
+            },
+        };
 
         packets.push(parsed_packet);
     }

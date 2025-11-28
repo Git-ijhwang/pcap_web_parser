@@ -76,19 +76,20 @@ export default function TcpHeader({ tcp }) {
                       <th>Flags</th>
                       <td>
                         {[
-                        tcp.flags & 0x01 ? "FIN " : "",
-                        tcp.flags & 0x02 ? "SYN " : "",
-                        tcp.flags & 0x04 ? "RST " : "",
-                        tcp.flags & 0x08 ? "PSH " : "",
+                          tcp.flags & 0x01 ? "FIN " : "",
+                          tcp.flags & 0x02 ? "SYN " : "",
+                          tcp.flags & 0x04 ? "RST " : "",
+                          tcp.flags & 0x08 ? "PSH " : "",
 
-                        tcp.flags & 0x10 ? "ACK " : "",
-                        tcp.flags & 0x20 ? "URG " : "",
-                        tcp.flags & 0x40 ? "ECE " : "",
-                        tcp.flags & 0x80 ? "CWR " : "",
+                          tcp.flags & 0x10 ? "ACK " : "",
+                          tcp.flags & 0x20 ? "URG " : "",
+                          tcp.flags & 0x40 ? "ECE " : "",
+                          tcp.flags & 0x80 ? "CWR " : "",
                         ].filter(Boolean).join(" ") || "0"
                         }
                       </td>
                     </tr>
+
                     <tr>
                       <th>Window</th>
                       <td>{tcp.window}</td>
@@ -102,10 +103,12 @@ export default function TcpHeader({ tcp }) {
                         : "-"}
                       </td>
                     </tr>
+
                     <tr>
                       <th>Urgent Point</th>
                       <td>{tcp.urgent}</td>
                     </tr>
+
                   </tbody>
                 </table>
               </div>

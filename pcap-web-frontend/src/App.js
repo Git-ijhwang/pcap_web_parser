@@ -11,13 +11,9 @@ import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/GtpHeader";
 
 function PacketTable({ packets, currentFile }) {
-  // console.log(packets.length);
-  // if (!packets || packets.length === 0)
-  //   return <p>No packets parsed yet.</p>;
 
     const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  // const [currentFile, setCurrentFile] = useState(null);
 
 
 const HoverField = ({ children, tooltip }) => (
@@ -48,9 +44,6 @@ const HoverField = ({ children, tooltip }) => (
     }
 
     try {
-      console.log("Current file name is: ", currentFile);
-      console.log("Current id  is: ", id);
-
       const res = await fetch(
                     `/api/packet_detail?file=${encodeURIComponent(currentFile)}&id=${encodeURIComponent(id)}`
       );
@@ -59,13 +52,10 @@ const HoverField = ({ children, tooltip }) => (
         const txt = await res.text();
         throw new Error(`Server ${res.status}: ${txt}`);
       }
-      console.log(res)
 
       const data = await res.json();
-      console.log(data)
       setSelectedPacket(data);
       setShowModal(true);
-      // return res.json();
     }
     catch (err) {
       console.error(err);
@@ -146,7 +136,6 @@ const HoverField = ({ children, tooltip }) => (
 
                 {/* IP Section */}
                 <IpHeader ip={selectedPacket.packet.ip}/>
-
 
                 {/* L4 Section */}
                 <Layer4Header l4={selectedPacket.packet.l4}/>
@@ -296,12 +285,8 @@ function App() {
               onClick={upload}
               disabled={loading || !file} >
 
-          {/* <button onClick={upload} disabled={loading || !file} style={{ padding: "6px 12px" }}> */}
             {loading ? "Parsing..." : "Upload & Parse"}
           </button>
-          {/* <button
-          onClick={() => { setFile(null); setResult(null); }}
-          style={{ marginLeft: 8 }}> */}
           <button
           variant="secondary" 
               className="btn btn-secondary " 
@@ -311,9 +296,6 @@ function App() {
         </div>
 
       {result?.packets && (
-          // <div className="alert alert-info mt-3">
-          //   Selected <strong>{file.name}</strong> ({file.size} bytes)
-          // </div>
           <PacketTable
               packets={result.packets}
               // onSelect={setSelectedPacket}
@@ -335,7 +317,6 @@ function App() {
               ))}
             </div>
           ) : null
-          // ( <p>No packet selected.</p>)
           }
         </Modal.Body>
         <Modal.Footer>
