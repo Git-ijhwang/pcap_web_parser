@@ -4,7 +4,7 @@ use crate::types::*;
 
 pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
 {
-    let mut next_hdr: usize = 0;
+    // let mut next_hdr: usize = 0;
     let mut offset: usize = 0;
 
     // let version_ihl = ip_hdr[offset];
@@ -29,17 +29,12 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
     //     ip_hdr[offset], ip_hdr[offset+1]
     // ]);
 
-    // let frag_flag: u8 = ((frag & 0x40)>>5) as u8;
-    // let mut frag_offset: u16 = 0;
-    // if frag_flag == 0x02 {
-    //     frag_offset = frag & 0x1f;
-    // }
     offset += 2; //Fragment flag and offset (2bytes)
 
     // let ttl = ip_hdr[offset];
     offset += 1; //Time to Live (1byte)
 
-    next_hdr = ip_hdr[offset] as usize;
+    let next_hdr = ip_hdr[offset] as usize;
     let mut str_proto = String::new();
     if let Some(v) = protocol_to_str(next_hdr) {
         str_proto = v;
@@ -78,6 +73,7 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
     next_hdr
 }
 
+
 pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
 {
     let mut next_hdr: usize = 0;
@@ -89,14 +85,15 @@ pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
     if ihl != IP_HDR_LEN {
         return 0;
     }
+
     ip.raw.extend_from_slice(&ip_hdr[0..ihl]);
     offset += 1; //IHL(1byte) + Service Field(1byte)
 
     let service = ip_hdr[offset];
     let dscp:u8 = (service&0xfc)>>2;
     let ecn:u8 = (service & 0x03);
-
     offset += 1; //IHL(1byte) + Service Field(1byte)
+
     let total_len: u16 = u16::from_be_bytes( [
         ip_hdr[offset], ip_hdr[offset+1]
     ]);
@@ -129,7 +126,6 @@ pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
     else {
         eprintln!("Unknown protocol type {}", next_hdr);
     }
-
     offset += 1; //Next Protocol (1byte)
 
     let hdr_chk = u16::from_be_bytes([
@@ -154,22 +150,6 @@ pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
         eprintln!("Failure to read Src Addr");
     }
 
-
-    // let mut ip_print = "".to_string();
-
-//         ip_print = format!("\tIP:
-// \t\tVer: {}
-// \t\tLen: {} bytes
-// \t\tTotalLen: {} bytes
-// \t\tID: 0x{:04x}
-// \t\tF: 0x{:02x}
-// \t\tTTL: {}
-// \t\tNext_Proto: {} [{}]
-// \t\tChkSum: 0x{:04x}
-// \t\tSrc Addr: {}
-// \t\tDst Addr: {}",
-//         version, ihl, total_len, id, frag_flag, ttl, next_hdr, str_proto, hdr_chk, src_addr, dst_addr);
-//     println!("{}", ip_print);
 
     ip.version = version;
     ip.ihl = ihl as u8;

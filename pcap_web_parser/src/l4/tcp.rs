@@ -55,8 +55,8 @@ pub fn parse_single_tcp(tcp_buf: &[u8], tcp: & mut TcpInfo) -> u16
     //     eprintln!("Unknown protocol type {}", dst_port);
     // }
 
-    tcp.src_port = src_port;
-    tcp.src_port_str = str_src_port;
+    tcp.src_port        = src_port;
+    tcp.src_port_str    = str_src_port;
     tcp.dst_port = dst_port;
     tcp.seq = seq_num;
     tcp.ack = ack_num;

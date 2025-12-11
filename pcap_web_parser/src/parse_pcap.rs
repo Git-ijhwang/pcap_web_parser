@@ -10,6 +10,9 @@ use crate::types::*;
 
 use std::time::Instant;
 
+const NEXT_HDR_IPV4: usize = 0x0800;
+const NEXT_HDR_IPV6: usize = 0x86dd;
+
 fn format_timestamp(packet: &Packet) -> String
 {
     let sec = packet.header.ts.tv_sec as i64;
@@ -86,12 +89,18 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
     };
 
     let mut ip= IpInfo::new();
+    let mut ip6= Ip6Info::new();
     // --- Parse Layer 3 (IPv4) ---
     let next_type = match next_type {
         // 0x0800 => parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet),
-        0x0800 => {
+        NEXT_HDR_IPV4 => {
             let result = parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut ip);
             parsed_packet.ip = ip;
+            result
+        },
+        NEXT_HDR_IPV6 => {
+            let result = parse_ipv6(&packet.data[MIN_ETH_HDR_LEN..], &mut ip6);
+            parsed_packet.ip6 = ip6;
             result
         },
 
@@ -199,13 +208,14 @@ pub async fn parse_pcap(path: &Path)
         println!("Layer 3");
         let v= match next_type {
             //IPv4
-            0x0800  => {
-                    Some(parse_ipv4_simple(&packet.data[14..], &mut parsed_packet))
+            NEXT_HDR_IPV4 => {
+                    Some(parse_ipv4_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
             },
+
             //IPv6
-            // 0x86dd  => Some(parse_ipv6(&packet.data[14..], short)),
-            //ARP
-            // 0x0806  => Some(parse_ipv4(&packet.data[14..], short)),
+            NEXT_HDR_IPV6 => {
+                    Some(parse_ipv6_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
+            }
             _       => None,
         };
 
@@ -223,15 +233,15 @@ pub async fn parse_pcap(path: &Path)
                 PROTO_TYPE_TCP   =>
                     (parse_tcp_simple
                         ( &packet.data[hdr_len..], &mut parsed_packet)
-                        , 20),
+                        , TCP_HDR_LEN),
                 PROTO_TYPE_UDP   =>
                     (parse_udp_simple
                         ( &packet.data[hdr_len..], &mut parsed_packet)
-                        , 8),
+                        , UDP_HDR_LEN),
                 PROTO_TYPE_ICMP   =>
                     (parse_icmp_simple
                         ( &packet.data[hdr_len..], &mut parsed_packet)
-                        , 4),
+                        , ICMP_HDR_LEN),
 
                 _   =>  (0, 0),
             };

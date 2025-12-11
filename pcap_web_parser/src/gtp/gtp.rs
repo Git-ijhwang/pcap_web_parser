@@ -83,7 +83,7 @@ pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary)
             add += 4;
         }
 
-        add += (4);
+        add += 4;
         let (remaining, payload) = take((msg_len-add) as usize)(input)?;
 
         // let mut print = format!("\tGTP:\n\t\tMessage Type: {} ({})\n",

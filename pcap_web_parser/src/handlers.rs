@@ -48,7 +48,9 @@ async fn upload_file(
 }
 
 /// Multipart field를 파일로 저장 (streaming)
-async fn save_field_to_file(mut field: axum_extra::extract::multipart::Field, path: &PathBuf)
+async fn save_field_to_file(
+    mut field: axum_extra::extract::multipart::Field,
+    path: &PathBuf)
 -> Result<(), Box<dyn std::error::Error + Send + Sync>>
 {
     let mut f = File::create(path).await?;

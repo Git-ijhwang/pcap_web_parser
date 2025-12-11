@@ -1,8 +1,8 @@
-pub const PROTO_TYPE_ICMP:usize = 1;
-pub const PROTO_TYPE_IPINIP:usize = 4;
-pub const PROTO_TYPE_TCP:usize = 6;
-pub const PROTO_TYPE_UDP:usize = 17;
-pub const PROTO_TYPE_ICMPV6:usize = 58;
+pub const PROTO_TYPE_ICMP: usize    = 1;
+pub const PROTO_TYPE_IPINIP: usize  = 4;
+pub const PROTO_TYPE_TCP: usize     = 6;
+pub const PROTO_TYPE_UDP: usize     = 17;
+pub const PROTO_TYPE_ICMPV6: usize  = 58;
 
 pub const WELLKNOWN_PORT_FTP_DATA: u16     = 20;
 pub const WELLKNOWN_PORT_FTP_CTRL: u16     = 21;

@@ -6,8 +6,11 @@ use crate::gtp::gtp_ie::*; // 비동기 환경이면 tokio RwLock 권장
 
 pub type Cache = Arc<RwLock<HashMap<String, FileInfo>>>;
 
-pub const IP_HDR_LEN:usize = 20;
 pub const MIN_ETH_HDR_LEN:usize = 14;
+pub const IP_HDR_LEN:usize = 20;
+pub const TCP_HDR_LEN:usize = 20;
+pub const UDP_HDR_LEN:usize = 8;
+pub const ICMP_HDR_LEN:usize = 8;
 
 
 #[derive(Clone)]
@@ -59,6 +62,33 @@ impl PacketSummary{
             protocol : String::new(),
             length: 0,
             description: String::new(),
+        }
+    }
+}
+#[derive(Serialize, Debug)]
+pub struct Ip6Info {
+    pub version: u8,
+    pub tc: u8,
+    pub fl: u32,
+    pub pl: u16,
+    pub next: u8,
+    pub hop: u8,
+    pub src_addr: String,
+    pub dst_addr: String,
+    pub raw: Vec<u8>,
+}
+impl Ip6Info {
+    pub fn new() -> Self {
+        Ip6Info {
+            version: 0,
+            tc: 0,
+            fl: 0,
+            pl: 0,
+            next: 0,
+            hop: 0,
+            src_addr: String::new(),
+            dst_addr: String::new(),
+            raw: Vec::new(),
         }
     }
 }
@@ -241,6 +271,7 @@ impl GtpInfo {
 pub struct PacketDetail {
     pub id: usize,
     pub ip: IpInfo,
+    pub ip6: Ip6Info,
     pub l4: Layer4Info,
     pub app: AppLayerInfo,
 }
@@ -249,6 +280,7 @@ impl PacketDetail{
         PacketDetail {
             id: 0,
             ip: IpInfo::new(),
+            ip6: Ip6Info::new(),
             l4: Layer4Info::None,
             app: AppLayerInfo::None,
         }

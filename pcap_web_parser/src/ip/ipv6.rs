@@ -1,5 +1,6 @@
 use std::net::Ipv6Addr;
-use crate::ip::port::*;
+use crate::{ip::port::*, types::Ip6Info};
+use crate::types::*;
 
 fn parse_ipv6_ext(mut next_hdr: usize, packet: &[u8]) {
     let mut offset = 0;
@@ -33,9 +34,50 @@ fn parse_ipv6_ext(mut next_hdr: usize, packet: &[u8]) {
     println!("No more extension headers. Next protocol = {}", next_hdr);
 }
 
-pub fn parse_ipv6(ip_hdr: &[u8], short:bool) -> usize
+
+pub fn parse_ipv6_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
 {
     let mut offset: usize = 0;
+    offset += 4;
+    offset += 2;
+    let next_hdr = ip_hdr[offset] as usize;
+    offset += 1;
+    offset += 1;
+
+    let mut str_proto = String::new();
+    if let Some(v) = protocol_to_str(next_hdr) {
+        str_proto = v;
+    }
+    else {
+        eprintln!("Unknown protocol type {}", next_hdr);
+    }
+
+    let mut src_addr6 = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
+    if let Ok(v) = ip_hdr[offset..offset+15].try_into() {
+        src_addr6  = Ipv6Addr::from_octets(v);
+    }
+    else {
+        eprintln!("failure to read src addr")
+    }
+    offset += 16;
+    let mut dst_addr6 = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
+    if let Ok(v) = ip_hdr[offset..offset+15].try_into() {
+        dst_addr6  = Ipv6Addr::from_octets(v);
+    }
+    else {
+        eprintln!("failure to read dst addr")
+    }
+
+    packet.src_ip.push_str(&src_addr6.to_string());
+    packet.dst_ip.push_str(&dst_addr6.to_string());
+
+    next_hdr
+}
+
+pub fn parse_ipv6(ip_hdr: &[u8], ip: &mut Ip6Info) -> usize
+{
+    let mut offset: usize = 0;
+    ip.raw.extend_from_slice(&ip_hdr[0..40]);
 
     let head = u32::from_be_bytes([
         ip_hdr[offset], ip_hdr[offset+1],
@@ -78,31 +120,39 @@ pub fn parse_ipv6(ip_hdr: &[u8], short:bool) -> usize
     }
     offset += 16;
 
-    let mut ip_print = String::new();
-    if short {
-        ip_print = format!("\tI6\t
-        Src: {}  Dst:{}", src_addr6, dst_addr6
-    );
-    }
-    else {
-        if str_proto.len() > 0 {
-            ip_print = format!("
-            \tIP6\tVer:{}, TC:{}, FL:{}, Len:{}, Next:{}[{}] HL:{} Src: {}  Dst:{} ",
-            version, tc, fl, len, next_hdr, str_proto, hl, src_addr6, dst_addr6)
-        }
-        else {
-            ip_print = format!("
-            \tIP6\tVer:{}, TC:{}, FL:{}, Len:{}, Next:{} HL:{} Src: {}  Dst:{} ",
-            version, tc, fl, len, next_hdr, hl, src_addr6, dst_addr6)
+    // let mut ip_print = String::new();
+    // ip_print = format!("\tI6\t
+    //     Src: {}  Dst:{}", src_addr6, dst_addr6);
 
-        }
-    }
-    println!("{}", ip_print);
+    // if short {
+    // }
+    // else {
+    //     if str_proto.len() > 0 {
+    //         ip_print = format!("
+    //         \tIP6\tVer:{}, TC:{}, FL:{}, Len:{}, Next:{}[{}] HL:{} Src: {}  Dst:{} ",
+    //         version, tc, fl, len, next_hdr, str_proto, hl, src_addr6, dst_addr6)
+    //     }
+    //     else {
+    //         ip_print = format!("
+    //         \tIP6\tVer:{}, TC:{}, FL:{}, Len:{}, Next:{} HL:{} Src: {}  Dst:{} ",
+    //         version, tc, fl, len, next_hdr, hl, src_addr6, dst_addr6)
+
+    //     }
+    // }
+    // println!("{}", ip_print);
 
     if str_proto.is_empty() {
         parse_ipv6_ext(next_hdr, &ip_hdr[offset..]);
     }
 
+    ip.version = version;
+    ip.tc = tc;
+    ip.fl = fl;
+    ip.pl = len;
+    ip.next = next_hdr as u8;
+    ip.hop = hl;
+    ip.src_addr.push_str(&src_addr6.to_string());
+    ip.dst_addr.push_str(&dst_addr6.to_string());
 
     next_hdr
 }
