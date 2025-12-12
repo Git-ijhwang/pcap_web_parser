@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 // import PacketTable from "./-PacketTable";
 import {Modal, Button} from "react-bootstrap";
 // import "./ip.css";
@@ -222,9 +222,31 @@ function App() {
   const [selectedPacket, setSelectedPacket] = useState(null);
 
 
+  // 파일 input ref 생성
+  const fileInputRef = useRef(null);
+
   const onFileChange = (e) => {
     setFile(e.target.files?.[0] ?? null);
     setResult(null);
+  };
+
+  const resetAll = async () => {
+    setFile(null);
+    setResult(null);
+
+
+    // input 파일 초기화
+    if (fileInputRef.current) {
+      fileInputRef.current.value = null;
+    }
+
+    try {
+      await fetch("/api/cleanup", {
+        method: "POST"
+      });
+    } catch (err) {
+      console.error("Cleanup failed:", err);
+    }
   };
 
   const upload = async () => {
@@ -269,11 +291,13 @@ function App() {
       <div className="card shadow p-4">
         <h1 className="mb-3">pcap file Parser </h1>
 
-      <div className="mb-3">
-        {/* <label style={{ display: "block", marginBottom: 8 }}> */}
-          <input type="file" className="form-control mb-2" onChange={onFileChange} />
-        {/* </label> */}
-      </div>
+        <div className="mb-3">
+          {/* <label style={{ display: "block", marginBottom: 8 }}> */}
+            <input type="file"
+            ref={fileInputRef}       // ref 연결
+            className="form-control mb-2" onChange={onFileChange} />
+          {/* </label> */}
+        </div>
 
         <div>
           <button
@@ -283,10 +307,12 @@ function App() {
 
             {loading ? "Parsing..." : "Upload & Parse"}
           </button>
+
           <button
-          variant="secondary" 
-              className="btn btn-secondary " 
-              onClick={() => { setFile(null); setResult(null); }} >
+            variant="secondary" 
+            className="btn btn-secondary " 
+            onClick={ resetAll }
+          >
             Reset
           </button>
         </div>

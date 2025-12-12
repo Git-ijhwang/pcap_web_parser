@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../headers/ip.css";
 
-function HexDump({ raw }) {
+export default function HexDump({ raw }) {
   if (!raw || raw.length === 0) return <div>No raw data</div>;
 
   const toHex = (n) => n.toString(16).padStart(2, "0").toUpperCase();

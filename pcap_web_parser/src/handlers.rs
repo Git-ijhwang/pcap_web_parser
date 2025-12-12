@@ -28,6 +28,8 @@ async fn upload_file(
     let tmp_filename = format!("upload-{}.pcap", uuid);
     let tmp_path = std::env::temp_dir().join(tmp_filename);
 
+    println!("[cache saved] {}", tmp_path.display());
+
     // 파일을 디스크에 쓴다 (비동기)
     if let Err(e) =
         save_field_to_file(field, &tmp_path).await {
@@ -175,7 +177,7 @@ pub async fn handle_single_packet (
             parse_single_packet(&info.path, packet_id).await
         }).await;
 
-    //5. update last_used time.
+    //5. last used time update
     if let Some(info) = cache.write().await.get_mut(key) {
         info.last_used = Instant::now();
     }
@@ -212,7 +214,45 @@ pub async fn cleanup_cache(cache: &Cache, ttl: Duration) {
 
     for uuid in expired {
         if let Some(info) = cache_guard.remove(&uuid) {
+            println!("Remove file");
             let _ = fs::remove_file(&info.path).await;
         }
     }
 }
+
+pub async fn handle_cleanup(
+    State(cache): State<Cache>,
+) -> (StatusCode, String)
+{
+    let ttl = Duration::from_secs(60 * 5); // 예: 5분 TTL
+
+    let mut write = cache.write().await;
+    let now = Instant::now();
+
+    let mut removed_count = 0;
+
+    // HashMap<String, CacheInfo>
+    let keys: Vec<String> = write.keys().cloned().collect();
+
+    for key in keys {
+        if let Some(info) = write.get(&key) {
+            if now.duration_since(info.last_used) > ttl {
+                // 파일 삭제
+                let _ = fs::remove_file(&info.path).await;
+
+                // 캐시에서 제거
+                write.remove(&key);
+
+                removed_count += 1;
+            }
+        }
+    }
+
+    println!("Removed Count: {}", removed_count);
+    (
+
+        StatusCode::OK,
+        format!("cleanup done: {} files removed", removed_count)
+    )
+}
+
