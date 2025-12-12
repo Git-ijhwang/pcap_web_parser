@@ -1,6 +1,6 @@
 use std:: path::PathBuf;
 use tokio::io::AsyncWriteExt;
-use tokio::fs::File;
+use tokio::fs;
 use uuid::Uuid;
 use axum_extra::extract::multipart::Field;
 use axum::{
@@ -10,6 +10,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use std::time::{ Duration, Instant};
 
 use crate::*;
 use crate::parse_pcap::*;
@@ -40,6 +41,7 @@ async fn upload_file(
     let info = FileInfo {
         path: tmp_path.clone(),
         original_name: original_name.to_string(),
+        last_used: Instant::now(),
     };
 
     cache.write().await.insert(uuid.clone(), info);
@@ -53,7 +55,7 @@ async fn save_field_to_file(
     path: &PathBuf)
 -> Result<(), Box<dyn std::error::Error + Send + Sync>>
 {
-    let mut f = File::create(path).await?;
+    let mut f = fs::File::create(path).await?;
 
     while let Some(chunk) = field.chunk().await? {
         f.write_all(&chunk).await?;
@@ -173,6 +175,10 @@ pub async fn handle_single_packet (
             parse_single_packet(&info.path, packet_id).await
         }).await;
 
+    //5. update last_used time.
+    if let Some(info) = cache.write().await.get_mut(key) {
+        info.last_used = Instant::now();
+    }
 
     //6. 결과 return 하기
     match parse_result {
@@ -180,13 +186,33 @@ pub async fn handle_single_packet (
             let msg = Json(parsed);
             return (StatusCode::OK, msg).into_response()
         }
+
         Ok(Err(e)) => {
             let msg = format!("Parser error: {}", e);
             return (StatusCode::BAD_REQUEST, msg).into_response();
         }
+
         Err(join_err) => {
             let msg = format!("Internal error: {}", join_err);
             return (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response();
+        }
+    }
+}
+
+
+pub async fn cleanup_cache(cache: &Cache, ttl: Duration) {
+    let mut cache_guard = cache.write().await;
+    let now = Instant::now();
+
+    // 삭제 대상 UUID 추출
+    let expired: Vec<String> = cache_guard.iter()
+        .filter(|(_, info)| now.duration_since(info.last_used) > ttl)
+        .map(|(uuid, _)| uuid.clone())
+        .collect();
+
+    for uuid in expired {
+        if let Some(info) = cache_guard.remove(&uuid) {
+            let _ = fs::remove_file(&info.path).await;
         }
     }
 }

@@ -176,7 +176,7 @@ pub async fn parse_pcap(path: &Path)
     let mut cap = match Capture::from_file(path) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("Failed to open pcap file {}", path.to_string_lossy());
+            eprintln!("Failed to open pcap file {}: {}", e, path.to_string_lossy());
             process::exit(1);
         }
     };

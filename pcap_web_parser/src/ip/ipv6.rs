@@ -38,8 +38,10 @@ fn parse_ipv6_ext(mut next_hdr: usize, packet: &[u8]) {
 pub fn parse_ipv6_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
 {
     let mut offset: usize = 0;
+
     offset += 4;
     offset += 2;
+
     let next_hdr = ip_hdr[offset] as usize;
     offset += 1;
     offset += 1;
@@ -60,6 +62,7 @@ pub fn parse_ipv6_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
         eprintln!("failure to read src addr")
     }
     offset += 16;
+
     let mut dst_addr6 = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
     if let Ok(v) = ip_hdr[offset..offset+15].try_into() {
         dst_addr6  = Ipv6Addr::from_octets(v);

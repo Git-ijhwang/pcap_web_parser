@@ -12,20 +12,19 @@ import GtpHeader from "./components/headers/GtpHeader";
 
 function PacketTable({ packets, currentFile }) {
 
-    const [selectedPacket, setSelectedPacket] = useState(null);
+  const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
-
-const HoverField = ({ children, tooltip }) => (
-  <OverlayTrigger
-    placement="top"
-    overlay={<Tooltip>{tooltip}</Tooltip>}
-  >
-    <td style={{ cursor: "help" }}>
-      {children}
-    </td>
-  </OverlayTrigger>
-);
+  const HoverField = ({ children, tooltip }) => (
+    <OverlayTrigger
+      placement="top"
+      overlay={<Tooltip>{tooltip}</Tooltip>}
+    >
+      <td style={{ cursor: "help" }}>
+        {children}
+      </td>
+    </OverlayTrigger>
+  );
 
   const handleShow = (pkt) => {
     setSelectedPacket(pkt);
@@ -253,9 +252,7 @@ function App() {
       const json = await res.json();
       setResult(json);
 
-      // console.log("print out json: ======>", json);
       setCurrentFile(json.file)
-      // console.log("print out currentFile:", currentFile);
 
     } catch (err) {
       console.error(err);
@@ -268,7 +265,6 @@ function App() {
 
 
   return (
-    // <div style={{ maxWidth: 1100, margin: "24px auto", padding: 12, fontFamily: "Inter, Arial, sans-serif" }}>
     <div className="container my-4">
       <div className="card shadow p-4">
         <h1 className="mb-3">pcap file Parser </h1>

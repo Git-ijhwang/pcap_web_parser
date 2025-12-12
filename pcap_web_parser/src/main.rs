@@ -1,4 +1,4 @@
-use std::{fs, collections::HashMap };
+use std::{collections::HashMap };
 use std::{net::SocketAddr, sync::Arc};
 
 use axum::{
@@ -8,6 +8,7 @@ use axum::{
 use tokio::sync::RwLock;
 use axum_extra::extract::Multipart;
 use tower_http::cors::CorsLayer;
+use std::time::Duration;
 
 mod handlers;
 mod gtp;
@@ -25,6 +26,17 @@ async fn main()
     // let upload_dir = std::env::temp_dir();
     let cache: Cache = Arc::new(RwLock::new(HashMap::new()));
     let cors = CorsLayer::permissive();
+
+
+    // --- This thread For Clean-up the Cache File
+    let cache_for_cleanup = cache.clone();
+    tokio::spawn(async move {
+        let ttl = Duration::from_secs(300);     // 5분 TTL
+        loop {
+            cleanup_cache(&cache_for_cleanup, ttl).await;
+            tokio::time::sleep(Duration::from_secs(60)).await; // 1분 간격 실행
+        }
+    });
 
     let app = Router::new()
         .route("/api/parse", post(handle_parse_summary))

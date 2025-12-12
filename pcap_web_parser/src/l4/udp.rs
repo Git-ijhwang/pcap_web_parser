@@ -9,7 +9,6 @@ pub fn parse_udp_simple (udp: &[u8], packet: & mut PacketSummary) -> u16
     pos += 2;
 
     let dst_port = u16::from_be_bytes([udp[pos], udp[pos+1]]);
-    pos += 2;
 
     packet.src_port = src_port;
     packet.dst_port = dst_port;

@@ -1,6 +1,7 @@
 use std::{collections::HashMap, path::{Path, PathBuf}, sync::Arc};
 use serde::Serialize;
 use tokio::sync::RwLock;
+use std::time::Instant;
 
 use crate::gtp::gtp_ie::*; // 비동기 환경이면 tokio RwLock 권장
 
@@ -17,6 +18,7 @@ pub const ICMP_HDR_LEN:usize = 8;
 pub struct FileInfo {
     pub path: PathBuf,
     pub original_name: String,
+    pub last_used: Instant,
 }
 
 #[derive(serde::Deserialize)]
