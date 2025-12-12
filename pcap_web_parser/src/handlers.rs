@@ -25,7 +25,7 @@ async fn upload_file(
 
     // UUID로 내부 파일 이름 생성
     let uuid = Uuid::new_v4().to_string();
-    let tmp_filename = format!("upload-{}.pcap", uuid);
+    let tmp_filename = format!("web_parser-{}.pcap", uuid);
     let tmp_path = std::env::temp_dir().join(tmp_filename);
 
     println!("[cache saved] {}", tmp_path.display());
@@ -149,7 +149,7 @@ pub async fn handle_single_packet (
         .unwrap_or("");
 
     let key = filename
-        .trim_start_matches("upload-")
+        .trim_start_matches("web_parser-")
         .trim_end_matches(".pcap");
 
     //1. cache로부터 파일이름을 가져오기.

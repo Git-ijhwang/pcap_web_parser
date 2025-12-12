@@ -234,7 +234,6 @@ function App() {
     setFile(null);
     setResult(null);
 
-
     // input 파일 초기화
     if (fileInputRef.current) {
       fileInputRef.current.value = null;
@@ -317,39 +316,39 @@ function App() {
           </button>
         </div>
 
-      {result?.packets && (
+        {result?.packets && (
           <PacketTable
               packets={result.packets}
               // onSelect={setSelectedPacket}
               currentFile={currentFile}
             />
-      )}
+        )}
 
-      <Modal show={selectedPacket !== null} onHide={() => setSelectedPacket(null)} centered size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Packet Detail (ID: {selectedPacket?.id}) </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedPacket ? (
-            <div>
-              {Object.entries(selectedPacket).map(([key, value]) => (
-                <p key={key}>
-                  <strong>{key}</strong>: {String(value)}
-                </p>
-              ))}
-            </div>
-          ) : null
-          }
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setSelectedPacket(null)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
+        <Modal show={selectedPacket !== null} onHide={() => setSelectedPacket(null)} centered size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>Packet Detail (ID: {selectedPacket?.id}) </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {selectedPacket ? (
+              <div>
+                {Object.entries(selectedPacket).map(([key, value]) => (
+                  <p key={key}>
+                    <strong>{key}</strong>: {String(value)}
+                  </p>
+                ))}
+              </div>
+            ) : null
+            }
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setSelectedPacket(null)}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
-        {/* <ResultBlock result={result} /> */}
-    </div>
+          {/* <ResultBlock result={result} /> */}
+      </div>
     </div>
   );
 }
