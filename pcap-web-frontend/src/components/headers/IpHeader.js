@@ -48,13 +48,14 @@ function IpHexDump({ raw }) {
 }
 
 
-export default function IpHeader({ ip }) {
+export default function IpHeader({ ip, depth }) {
   const [viewMode, setViewMode] = useState("decoded");
 
   if (!ip) return null;
 
   return (
     <div className="card mb-3">
+      {depth === 0 ? " " : `Inner IPv4 #${depth}`}
       <div className="card-header ip-header d-flex justify-content-between align-items-center">
         <strong>Layer 3 (IP)</strong>
         <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >

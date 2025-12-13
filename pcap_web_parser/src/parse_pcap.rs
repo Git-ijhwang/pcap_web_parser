@@ -60,9 +60,73 @@ fn print_timestamp(idx:usize, packet: &Packet)
 }
 
 
+async fn parse_l3( next_type: usize, ip_hdr: &[u8],
+    parsed_packet: &mut PacketDetail)
+-> (usize, usize)
+{
+    let mut ip= IpInfo::new();
+    let mut ip6= Ip6Info::new();
+
+    match next_type {
+        PROTO_TYPE_IPINIP | NEXT_HDR_IPV4 => {
+            let next_hdr_type = parse_ipv4(
+                ip_hdr, &mut ip);
+            parsed_packet.l3.push(Layer3Info::IP(ip));
+            (next_hdr_type, IP_HDR_LEN)
+        },
+
+        NEXT_HDR_IPV6 => {
+            let next_hdr_type = parse_ipv6(
+                ip_hdr, &mut ip6);
+            parsed_packet.l3.push(Layer3Info::IP6(ip6));
+            (next_hdr_type, IP6_HDR_LEN)
+        },
+
+        _ =>  (0,0)
+    }
+}
+
+
+async fn parse_l4( next_type: usize, data_buf: &[u8],
+    parsed_packet: &mut PacketDetail)
+-> (u16, usize)
+{
+    match next_type {
+        PROTO_TYPE_TCP =>  {
+            let mut tcp = TcpInfo::new();
+            let result= parse_single_tcp( data_buf , &mut tcp);
+
+            parsed_packet.l4 = Layer4Info::TCP(tcp);
+            (result, TCP_HDR_LEN)
+        },
+
+        PROTO_TYPE_UDP => {
+            let mut udp = UdpInfo::new();
+            let result = parse_single_udp( data_buf, &mut udp);
+
+            parsed_packet.l4 = Layer4Info::UDP(udp);
+            (result, UDP_HDR_LEN)
+        },
+
+        PROTO_TYPE_ICMP => {
+            let mut icmp = IcmpInfo::new();
+            let result = parse_single_icmp(data_buf, &mut icmp);
+
+            parsed_packet.l4 = Layer4Info::ICMP(icmp);
+            (result, ICMP_HDR_LEN)
+        },
+
+        _ =>  (0, 0)
+
+    }
+
+}
+
+
 pub async fn parse_single_packet(path: &PathBuf, id: usize)
 -> Result<ParsedDetail, String>
 {
+    let mut offset: usize = 0;
     let mut cap = Capture::from_file(path)
         .map_err(|e| format!("Failed to open pcap file {}: {}", path.to_string_lossy(), e))?;
 
@@ -82,70 +146,35 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
     };
 
     // --- Parse Layer 2 Ethernet ---
-    let next_type = if packet.data.len() >= MIN_ETH_HDR_LEN {
+    let mut next_type = if packet.data.len() >= MIN_ETH_HDR_LEN {
         parse_ethernet(&packet.data)
     } else {
         return Err("Layer 2 parsing faile".to_string());
     };
+    offset += MIN_ETH_HDR_LEN;
 
-    let mut ip= IpInfo::new();
-    let mut ip6= Ip6Info::new();
-    // --- Parse Layer 3 (IPv4) ---
-    let next_type = match next_type {
-        // 0x0800 => parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet),
-        NEXT_HDR_IPV4 => {
-            let result = parse_ipv4(&packet.data[MIN_ETH_HDR_LEN..], &mut ip);
-            parsed_packet.ip = ip;
-            result
-        },
-        NEXT_HDR_IPV6 => {
-            let result = parse_ipv6(&packet.data[MIN_ETH_HDR_LEN..], &mut ip6);
-            parsed_packet.ip6 = ip6;
-            result
-        },
+    // --- Parse Layer 3 (IPv4, IPinIP or IPv6) ---
+    loop {
+        let (nt, l3_hdr_len) =
+            parse_l3(next_type, &packet.data[offset..], &mut parsed_packet).await;
 
-        _ => return Err("Layer 3 parsing failed".to_string()),
-    };
+        offset += l3_hdr_len;
+        next_type = nt;
+
+        if next_type != PROTO_TYPE_IPINIP {
+            break;
+        }
+    }
+
 
     // --- Parse Layer 4 ---
-    let (port_number, l4_hdr_len)  = {
-        let data_buf = &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN)..];
+    let (port_number, l4_hdr_len) = parse_l4(next_type, &packet.data[offset..], &mut parsed_packet).await;
 
-        match next_type {
-            PROTO_TYPE_TCP   =>  {
-                let mut tcp = TcpInfo::new();
-                let result= parse_single_tcp( data_buf , &mut tcp);
-
-                parsed_packet.l4 = Layer4Info::TCP(tcp);
-
-                (result, 20)
-            },
-
-            PROTO_TYPE_UDP  => {
-                let mut udp = UdpInfo::new();
-                let result = parse_single_udp( data_buf, &mut udp);
-
-                parsed_packet.l4 = Layer4Info::UDP(udp);
-                (result, 8)
-            },
-
-            PROTO_TYPE_ICMP   => {
-                let mut icmp = IcmpInfo::new();
-                let result = parse_single_icmp(data_buf, &mut icmp);
-
-                parsed_packet.l4 = Layer4Info::ICMP(icmp);
-                (result, 4)
-            },
-            _ => return Err("Layer 4 parsing failed".to_string()),
-
-        }
-    };
+    offset += l4_hdr_len;
 
     // --- Parse Application Layer ---
     if port_number == WELLKNOWN_PORT_GTPV2 {
-        let (rest, mut gtpinfo) = parse_gtpc_detail(
-            &packet.data[(MIN_ETH_HDR_LEN + IP_HDR_LEN + l4_hdr_len)..]
-        ).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
+        let (rest, mut gtpinfo) = parse_gtpc_detail( &packet.data[offset..]).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
         let result = match parse_all_ies(rest) {
 
@@ -157,7 +186,6 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
         };
 
         gtpinfo.ies = result;
-        // println!("{:#?}", gtpinfo.ies);
         parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
     }
 
@@ -172,7 +200,6 @@ pub async fn parse_pcap(path: &Path)
 -> Result<ParsedResult, String> 
 {
     //read pcap file line by line
-    println!("Try open pacp file]\n");
     let mut cap = match Capture::from_file(path) {
         Ok(c) => c,
         Err(e) => {
@@ -205,7 +232,6 @@ pub async fn parse_pcap(path: &Path)
         hdr_len += MIN_ETH_HDR_LEN;
 
         // --- Parse Layer 3 ---
-        println!("Layer 3");
         let v= match next_type {
             //IPv4
             NEXT_HDR_IPV4 => {
@@ -226,7 +252,6 @@ pub async fn parse_pcap(path: &Path)
 
         next_type = v.unwrap();
 
-        println!("Layer 4");
         // --- Parse Layer 4 ---
         let (port_number, l4_hdr_len) =
             match next_type {

@@ -53,7 +53,7 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
 }
 
 
-pub fn parse_ipv4(ip_hdr: &[u8], ip: &mut IpInfo) -> usize
+pub fn parse_ipv4( ip_hdr: &[u8], ip: &mut IpInfo) -> usize
 {
     let mut offset: usize = 0;
 

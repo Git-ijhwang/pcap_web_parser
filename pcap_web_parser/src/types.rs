@@ -9,6 +9,7 @@ pub type Cache = Arc<RwLock<HashMap<String, FileInfo>>>;
 
 pub const MIN_ETH_HDR_LEN:usize = 14;
 pub const IP_HDR_LEN:usize = 20;
+pub const IP6_HDR_LEN:usize = 40;
 pub const TCP_HDR_LEN:usize = 20;
 pub const UDP_HDR_LEN:usize = 8;
 pub const ICMP_HDR_LEN:usize = 8;
@@ -133,6 +134,13 @@ impl  IpInfo {
             raw: Vec::new(),
         }
     }
+}
+
+#[derive(Serialize, Debug)]
+pub enum Layer3Info {
+    IP(IpInfo),
+    IP6(Ip6Info),
+    None,
 }
 
 #[derive(Serialize, Debug)]
@@ -272,8 +280,9 @@ impl GtpInfo {
 #[derive(Serialize, Debug)]
 pub struct PacketDetail {
     pub id: usize,
-    pub ip: IpInfo,
-    pub ip6: Ip6Info,
+    pub l3: Vec<Layer3Info>,
+    // pub ip: Vec<IpInfo>,
+    // pub ip6: Option<Ip6Info>,
     pub l4: Layer4Info,
     pub app: AppLayerInfo,
 }
@@ -281,8 +290,11 @@ impl PacketDetail{
     pub fn new() -> Self {
         PacketDetail {
             id: 0,
-            ip: IpInfo::new(),
-            ip6: Ip6Info::new(),
+            // ip: Vec::new(),
+                // IpInfo::new()),
+            // ip6: None,//Ip6Info::new(),
+            // l3: Layer3Info::None,
+            l3: Vec::new(),
             l4: Layer4Info::None,
             app: AppLayerInfo::None,
         }

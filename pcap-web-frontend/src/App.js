@@ -9,6 +9,7 @@ import Tooltip from "react-bootstrap/Tooltip";
 import IpHeader from "./components/headers/IpHeader";
 import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/GtpHeader";
+import Layer3Header from "./components/headers/Layer3Header";
 
 function PacketTable({ packets, currentFile }) {
 
@@ -134,7 +135,9 @@ function PacketTable({ packets, currentFile }) {
                 </div>
 
                 {/* IP Section */}
-                <IpHeader ip={selectedPacket.packet.ip}/>
+                {selectedPacket.packet.l3.map((l3, idx) => (
+                  <Layer3Header key={idx} l3={l3} idx={idx} />
+                )) }
 
                 {/* L4 Section */}
                 <Layer4Header l4={selectedPacket.packet.l4}/>
@@ -293,8 +296,8 @@ function App() {
         <div className="mb-3">
           {/* <label style={{ display: "block", marginBottom: 8 }}> */}
             <input type="file"
-            ref={fileInputRef}       // ref 연결
-            className="form-control mb-2" onChange={onFileChange} />
+              ref={fileInputRef}       // ref 연결
+              className="form-control mb-2" onChange={onFileChange} />
           {/* </label> */}
         </div>
 
