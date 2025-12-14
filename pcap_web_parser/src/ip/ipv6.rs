@@ -77,6 +77,7 @@ pub fn parse_ipv6_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
     next_hdr
 }
 
+
 pub fn parse_ipv6(ip_hdr: &[u8], ip: &mut Ip6Info) -> usize
 {
     let mut offset: usize = 0;

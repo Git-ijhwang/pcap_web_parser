@@ -3,16 +3,16 @@ import "./ip.css";
 import HexDump from '../hex-dump/HexDump';
 
 
-export default function IpHeader({ ip, depth }) {
+export default function Ipv6Header({ ip, depth }) {
   const [viewMode, setViewMode] = useState("decoded");
 
   if (!ip) return null;
 
   return (
     <div className="card mb-3">
-      {depth === 0 ? " " : `Inner IPv4 #${depth}`}
       <div className="card-header ip-header d-flex justify-content-between align-items-center">
-        <strong>Layer 3 (IP)</strong>
+
+        <strong>Layer 3 (IPv6)</strong>
         <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
 
           <label className="form-check-label me-5" htmlFor="gtpSwitch">
@@ -24,11 +24,9 @@ export default function IpHeader({ ip, depth }) {
         </div>
 
       </div>
-
       <div className="card-body ip-card-body">
 
         {viewMode === "raw" ? (
-
           <div style={{ display: "flex", gap: "15px" }}>
             <div style={{ flex: "0 0 600px" }}>
 
@@ -37,7 +35,7 @@ export default function IpHeader({ ip, depth }) {
 
                   <tr>
                     <th colSpan="2" style={{textAlign: "Center"}}>
-                      <b>IP Header</b>
+                      <b>IPv6 Header</b>
                     </th>
                   </tr>
 
@@ -47,59 +45,28 @@ export default function IpHeader({ ip, depth }) {
                   </tr>
 
                   <tr>
-                    <th>IHL</th>
-                    <td>{ip.ihl}</td>
+                    <th>Traffic Class</th>
+                    <td>{ip.tc}</td>
                   </tr>
 
                   <tr>
-                    <th>DSCP</th>
-                    <td>{ip.dscp}</td>
+                    <th>Flow Label</th>
+                    <td>{ip.fl}</td>
                   </tr>
 
                   <tr>
-                    <th>ECN</th>
-                    <td>{ip.ecn}</td>
+                    <th>Playload Length</th>
+                    <td>{ip.pl} bytes</td>
                   </tr>
 
                   <tr>
-                    <th>Total Length</th>
-                    <td>{ip.total_length}</td>
+                    <th>Next Header</th>
+                    <td>{ip.next} bytes</td>
                   </tr>
 
                   <tr>
-                    <th>ID</th>
-                    <td>{ip.id}</td>
-                  </tr>
-
-                  <tr>
-                    <th>Flags</th>
-                    <td>
-                      {ip.flags === 2 ? "DF (Don't Fragment)" : ip.flags === 1 ? "MF (More Fragment)" : "-"}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <th>Fragment Offset</th>
-                    <td>{ip.fragment_offset}</td>
-                  </tr>
-
-                  <tr>
-                    <th>TTL</th>
-                    <td>{ip.ttl}</td>
-                  </tr>
-
-                  <tr>
-                    <th>Protocol</th>
-                    <td>
-                      {ip.next} [{ip.protocol}]
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <th>Checksum</th>
-                    <td>
-                      0x{ip.checksum != null ? ip.checksum.toString(16).toUpperCase() : "-"}
-                    </td>
+                    <th>Hop Limit</th>
+                    <td>{ip.hop} bytes</td>
                   </tr>
 
                   <tr>
@@ -111,6 +78,7 @@ export default function IpHeader({ ip, depth }) {
                     <th>Destination Address</th>
                     <td>{ip.dst_addr}</td>
                   </tr>
+
                 </tbody>
               </table>
             </div>
@@ -124,7 +92,7 @@ export default function IpHeader({ ip, depth }) {
             <tbody>
               <tr>
                 <th colSpan="33" style={{ textAlign: "center"}} >
-                  <b>IP Header</b>
+                  <b>IPv6 Header</b>
                 </th>
               </tr>
 
@@ -149,52 +117,52 @@ export default function IpHeader({ ip, depth }) {
               <tr>
                 <th>0</th>
                 <td colSpan="4"><i>Version:</i> {ip.version ?? "-"}</td>
-                <td colSpan="4"><i>IHL:</i> {ip.ihl ?? "-"}</td>
-                <td colSpan="6"><i>DSCP:</i> {ip.dscp}</td>
-                <td colSpan="2"><i>ECN:</i> {ip.ecn}</td>
-                <td colSpan="16"><i>Total Length:</i> {ip.total_length}</td>
+                <td colSpan="8"><i>Traffic Class:</i> {ip.tc ?? "-"}</td>
+                <td colSpan="20"><i>Payload Length:</i> {ip.pl ?? "-"}</td>
               </tr>
 
               {/* Row 4 */}
               <tr>
                 <th>32</th>
-                <td colSpan="16"><i>Identification:</i> {ip.id}</td>
-                <td colSpan="3"><i>Flags:</i> {" "}
-                  {ip.flags === 2 ? "DF" :
-                  ip.flags === 1 ? ", MF" :
-                  "0"}
-                </td>
-                <td colSpan="13"><i>Fragment Offset:</i> {ip.fragment_offset}</td>
+                <td colSpan="16"><i>Payload Length:</i> {ip.pl}</td>
+                <td colSpan="8"><i>Next Header:</i> {ip.next ?? "-"}</td>
+                <td colSpan="8"><i>Hop Limit:</i> {ip.hop ?? "-"}</td>
               </tr>
 
               {/* Row 8 */}
               <tr>
-                {/* <th>8</th> */}
                 <th>64</th>
-                <td colSpan="8"><i>TTL:</i> {ip.ttl}</td>
-                <td colSpan="8"><i>Protocol:</i> {ip.protocol} ({ip.next})</td>
-                <td colSpan="16"><i>Header Checksum:0x</i>
-                  {/* {ip.checksum} */}
-                  {ip.checksum != null ? ip.checksum.toString(16).toUpperCase() : "-"}
-                </td>
+                <td colSpan="32" rowSpan="4"><i>Source Address:</i> {ip.src_addr ?? "-"}</td>
               </tr>
 
-              {/* Row 12 */}
               <tr>
-                {/* <th>12</th> */}
                 <th>96</th>
-                <td colSpan="32"><i>Source Address:</i> {ip.src_addr}</td>
+              </tr>
+              <tr>
+                <th>128</th>
+              </tr>
+              <tr>
+                <th>160</th>
               </tr>
 
-              {/* Row 16 */}
               <tr>
-                {/* <th>16</th> */}
-                <th>128</th>
-                <td colSpan="32"><i>Destination Address:</i> {ip.dst_addr}</td>
+                <th>192</th>
+                <td colSpan="32" rowSpan="4"><i>Destination Address:</i> {ip.dst_addr ?? "-"}</td>
+              </tr>
+
+              <tr>
+                <th>224</th>
+              </tr>
+              <tr>
+                <th>256</th>
+              </tr>
+              <tr>
+                <th>288</th>
               </tr>
             </tbody>
           </table>
         )}
+
       </div>
     </div>
   );
