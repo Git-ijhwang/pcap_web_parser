@@ -17,13 +17,15 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
     offset += 1; //Time to Live (1byte)
 
     let next_hdr = ip_hdr[offset] as usize;
-    let mut str_proto = String::new();
+    // let mut str_proto = String::new();
     if let Some(v) = protocol_to_str(next_hdr) {
-        str_proto = v;
+        packet.protocol.push_str(&v);
+        // str_proto = v;
     }
     else {
         eprintln!("Unknown protocol type {}", next_hdr);
     }
+    // packet.protocol.push(str_proto);
 
     offset += 1; //Next Protocol (1byte)
 

@@ -12,66 +12,46 @@ import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/GtpHeader";
 import Layer3Header from "./components/headers/Layer3Header";
 
-function PacketFilter({onFilterChange}) {
-  // 필터 가능한 프로토콜 목록
-  const protocols = [
-    { name: "TCP", value: "tcp" },
-    { name: "UDP", value: "udp" },
-    { name: "ICMP", value: "icmp" },
-    { name: "GTP", value: "gtp" },
-    { name: "IPinIP", value: "ipinip" },
-    { name: "IPv6", value: "ipv6" },
-  ];
-  const [selected, setSelected] = useState([]);
-
-  const toggleProtocol = (value) => {
-    const newSelected = selected.includes(value)
-      ? selected.filter(v=>v !== value)
-      : [...selected, value];
-    
-      setSelected(newSelected);
-      if (onFilterChange) onFilterChange(newSelected);
-  };
-
-  return(
-    <div className="card shadow p-3 ">
-           <h5>Packet Filters</h5>
-      <div className="d-flex flex-wrap">
-        {protocols.map(proto => (
-          <div className="form-check me-3" key={proto.value}>
-            <input
-              className="form-check-input"
-              type="checkbox"
-              value={proto.value}
-              id={`chk-${proto.value}`}
-              checked={selected.includes(proto.value)}
-              onChange={() => toggleProtocol(proto.value)}
-            />
-            <label className="form-check-label" htmlFor={`chk-${proto.value}`}>
-              {proto.name}
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-}
 
 function PacketTable({ packets, currentFile , onFilterChange}) {
 
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  // const [collapsed, setCollapsed] = useState(null);
 
+  const [filterCollapsed, setFilterCollapsed] = useState(false);
+
+  const [modalSections, setModalSections] = useState({
+    l3: false,
+    l4: false,
+    app: false
+  });
   // 필터 가능한 프로토콜 목록
   const protocols = [
     { name: "TCP", value: "tcp" },
     { name: "UDP", value: "udp" },
     { name: "ICMP", value: "icmp" },
     { name: "GTP", value: "gtp" },
-    { name: "IPinIP", value: "ipinip" },
+    { name: "IPv4", value: "ipv4" },
     { name: "IPv6", value: "ipv6" },
   ];
+
+  const [filters, setFilters] = useState({
+    tcp:   { enabled: false, port: "" },
+    udp:   { enabled: false, port: "" },
+    ipv4:  { enabled: false, addr: "" },
+    ipv6:  { enabled: false, addr: "" },
+  });
+
+  const protocolMeta = {
+    ipv4: { layer:3, name: "IPv4"},
+    ipv6: { layer:3, name: "IPv6"},
+    tcp:  { layer:4, name: "TCP"},
+    udp:  { layer:4, name: "UDP"},
+    icmp: { layer:4, name: "ICMP"},
+    gtp:  { layer:7, name: "GTP"},
+  };
+
   const [selected, setSelected] = useState([]);
 
   const toggleProtocol = (value) => {
@@ -111,7 +91,7 @@ function PacketTable({ packets, currentFile , onFilterChange}) {
 
     try {
       const res = await fetch(
-                    `/api/packet_detail?file=${encodeURIComponent(currentFile)}&id=${encodeURIComponent(id)}`
+        `/api/packet_detail?file=${encodeURIComponent(currentFile)}&id=${encodeURIComponent(id)}`
       );
 
       if (!res.ok) {
@@ -137,34 +117,201 @@ function PacketTable({ packets, currentFile , onFilterChange}) {
 
   // packets가 없으면 Modal 렌더링 자체를 하지 않음
   // const shouldShowModal = showModal && selectedPacket !== null;
+  function isValidPort(port)
+  {
+    const n = Number(port);
+    if ( Number.isInteger(n) && n > 0 && n <65535 ) {
+      return true;
+    }
+    return false;
+  }
+
+  function isValidIPv4(ip) {
+    return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
+  }
+
+  function isValidIPv6(ip) {
+    return ip.includes(":");
+  }
+
   const filteredPackets = packets?.filter(pkt => {
-    if (selected.length === 0) return true;
-    return selected.includes(pkt.protocol.toLowerCase());
+
+    if (filters.tcp.enabled) {
+      if (pkt.protocol !== "TCP") return false;
+      if (filters.tcp.port && isValidPort(filters.tcp.port)) {
+        const n = Number(filters.tcp.port);
+        if (pkt.src_port !== n && pkt.dst_port !== n) return false;
+      }
+    }
+
+    if (filters.udp.enabled) {
+      if (pkt.protocol !== "UDP") return false;
+      if (filters.udp.port && isValidPort(filters.udp.port)) {
+        const n = Number(filters.udp.port);
+        if (pkt.src_port !== n && pkt.dst_port !== n) return false;
+      }
+    }
+    if (filters.ipv4.enabled) {
+      if (isValidIPv4(filters.ipv4.addr)) {
+        if ( pkt.src_ip !== filters.ipv4.addr &&
+          pkt.dst_ip !== filters.ipv4.addr)
+          return false;
+      }
+    }
+    if (filters.ipv6.enabled) {
+      if (isValidIPv6(filters.ipv6.addr)) {
+        if ( pkt.src_ip !== filters.ipv6.addr &&
+          pkt.dst_ip !== filters.ipv6.addr)
+          return false;
+      }
+    }
+
+    return true;
+
   });
 
   return (
     <div className="container mt-4">
 
-      <h5>Packet Filters</h5>
+      <button type="button"
+          className= "btn btn-sm btn-outline-secondary position-absolute"
+          style={{top:"12px", right:"12px", margin:"12px"}}
+          onClick={() => setFilterCollapsed(c => !c)}
+          aria-label="toggle collapse"
+          >
+        <i className={`bi ${filterCollapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
+      </button>
 
-      <div className="d-flex flex-wrap">
-        {protocols.map(proto => (
-          <div className="form-check me-3" key={proto.value}>
+      <div className={`d-flex card gap-2 p-2 filter-wrapper ${filterCollapsed ? "filterCollapsed" : ""}`} >
+
+      <h5>Packet Filters</h5>
+      <div className="d-flex gap-2">
+
+        {/* Layer-3 */}
+        <div className="l3-filter  card  gap-2 flex-fill" >
+          {/* IPv4 */}
+          <div className="d-flex align-items-center gap-2">
             <input
-              className="form-check-input"
               type="checkbox"
-              value={proto.value}
-              id={`chk-${proto.value}`}
-              checked={selected.includes(proto.value)}
-              onChange={() => toggleProtocol(proto.value)}
+              checked={filters.ipv4.enabled}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  ipv4: { ...f.ipv4, enabled: e.target.checked }
+                }))
+              }
             />
-            <label className="form-check-label" htmlFor={`chk-${proto.value}`}>
-              {proto.name}
-            </label>
+            <span>IPv4</span>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ width: "200px" }}
+              placeholder="10.0.0.1"
+              disabled={!filters.ipv4.enabled}
+              value={filters.ipv4.addr}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  ipv4: { ...f.ipv4, addr: e.target.value }
+                }))
+              }
+            />
           </div>
-        ))}
+
+          {/* IPv6 */}
+          <div className="d-flex align-items-center gap-2">
+            <input
+              type="checkbox"
+              checked={filters.ipv6.enabled}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  ipv6: { ...f.ipv6, enabled: e.target.checked }
+                }))
+              }
+            />
+            <span>IPv6</span>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ width: "260px" }}
+              placeholder="2001:db8::1"
+              disabled={!filters.ipv6.enabled}
+              value={filters.ipv6.addr}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  ipv6: { ...f.ipv6, addr: e.target.value }
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        {/* Layer-4 */}
+        <div className="l4-filter  card  gap-2 flex-fill" >
+          {/* TCP */}
+          <div className="d-flex align-items-center gap-2">
+            <input
+              type="checkbox"
+              checked={filters.tcp.enabled}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  tcp: { ...f.tcp, enabled: e.target.checked }
+                }))
+              }
+            />
+            <span>TCP</span>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ width: "120px" }}
+              placeholder="port"
+              disabled={!filters.tcp.enabled}
+              value={filters.tcp.port}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  tcp: { ...f.tcp, port: e.target.value }
+                }))
+              }
+            />
+          </div>
+
+          {/* UDP */}
+          <div className="d-flex align-items-center gap-2">
+            <input
+              type="checkbox"
+              checked={filters.udp.enabled}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  udp: { ...f.udp, enabled: e.target.checked }
+                }))
+              }
+            />
+            <span>UDP</span>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              style={{ width: "120px" }}
+              placeholder="port"
+              disabled={!filters.udp.enabled}
+              value={filters.udp.port}
+              onChange={e =>
+                setFilters(f => ({
+                  ...f,
+                  udp: { ...f.udp, port: e.target.value }
+                }))
+              }
+            />
+          </div>
+        </div>
       </div>
 
+
+</div>
     <table className="table table-striped table-hover table-bordered mt-3">
       <thead className="table-dark">
         <tr>
@@ -179,14 +326,13 @@ function PacketTable({ packets, currentFile , onFilterChange}) {
         </tr>
       </thead>
       <tbody>
-        {packets && packets.length>0 ? (
-          packets.map((pkt) => (
+        {filteredPackets || filteredPackets.length > 0 ? (
+           filteredPackets.map((pkt) => (
+
           <tr key={pkt.id}
-              onClick={() =>
-                // onSelect(pkt)
-                fetchPacketDetail(pkt.id)
-              }
-              style={{ cursor: "pointer" }}>
+            onClick={() => fetchPacketDetail(pkt.id) }
+            style={{ cursor: "pointer" }}>
+
             <td>{pkt.id}</td>
             <td>{pkt.ts}</td>
             <td>{pkt.src_ip}</td>
@@ -211,8 +357,8 @@ function PacketTable({ packets, currentFile , onFilterChange}) {
 
 
       {/* ✅ Modal은 packets가 존재하고 선택된 패킷이 있을 때만 보여줌 */}
-      {shouldShowModal && (
-        <Modal show={shouldShowModal} onHide={handleClose} centered
+        {selectedPacket && (
+        <Modal show={showModal} onHide={handleClose} centered
           dialogClassName="my-wide-modal"
         >
           <Modal.Header closeButton>
@@ -387,18 +533,15 @@ function App() {
 
   return (
     <div className="container mt-4">
-      <div className="card shadow p-4 ">
+      <div className="fileopen-card card shadow p-4 ">
 
-        <button
-          type="button"
-            className=
-              "btn btn-sm btn-outline-secondary position-absolute"
-              style={{top:"12px", right:"12px"}}
+        <button type="button"
+            className= "btn btn-sm btn-outline-secondary position-absolute"
+            style={{top:"12px", right:"12px", margin:"12px"}}
             onClick={() => setCollapsed(c => !c)}
             aria-label="toggle collapse"
             >
-                <i className={`bi ${collapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
-
+          <i className={`bi ${collapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
         </button>
 
         <h1 className={`mb-3 parser-title
@@ -436,10 +579,7 @@ function App() {
 
       </div>
 
-      <div>
-        {/* <PacketFilter/> */}
-      </div>
-      <div className="card shadow p-4 ">
+      <div className="packetlist-card card shadow p-4 ">
         {result?.packets && (
           <PacketTable
               packets={result.packets}

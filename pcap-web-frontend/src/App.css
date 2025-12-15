@@ -44,6 +44,10 @@
   overflow:auto;
   min-height: 80vh; 
 } */
+.fileopen-card {
+  margin-bottom: 10px;
+}
+
 .my-wide-modal {
   max-width: 90% !important;   /* Bootstrap 기본 500px 덮어쓰기 */
   width: 90% !important;       /* 확실하게 강제 */
@@ -53,7 +57,17 @@
   width: 100% !important;      /* 내부 content도 늘려주기 */
 }
 
-/* Collapse part */
+.l3-filter {
+  border: none !important;
+}
+.l4-filter {
+  border: none !important;
+}
+.packetlist-card {
+  margin-bottom: 20px;
+}
+
+/* Title Collapse part */
 .collapse-wrapper {
   overflow: hidden;
   transition: 
@@ -79,4 +93,22 @@
 .parser-title.collapsed {
   font-size: 1.1rem;       /* 접혔을 때 */
   margin-bottom: 0.5rem;
+}
+
+/* Filter Collapse part */
+.filter-wrapper {
+  margin-top: 20px !important;
+  overflow: hidden;
+  transition: 
+    max-height 0.3s ease,
+    opacity 0.2s ease,
+    margin 0.3s ease;
+  max-height: 500px;   /* 충분히 큰 값 */
+  opacity: 1;
+  padding: 0;
+}
+.filter-wrapper.filterCollapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
 }
