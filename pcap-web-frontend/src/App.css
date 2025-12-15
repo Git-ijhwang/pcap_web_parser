@@ -52,3 +52,31 @@
 .my-wide-modal .modal-content {
   width: 100% !important;      /* 내부 content도 늘려주기 */
 }
+
+/* Collapse part */
+.collapse-wrapper {
+  overflow: hidden;
+  transition: 
+    max-height 0.3s ease,
+    opacity 0.2s ease,
+    margin 0.3s ease;
+  max-height: 500px;   /* 충분히 큰 값 */
+  opacity: 1;
+}
+
+.collapse-wrapper.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+.parser-title {
+  font-size: 1.75rem;      /* 기본 h1보다 약간 작게 */
+  transition:
+    font-size 0.25s ease,
+    margin-bottom 0.25s ease;
+}
+
+.parser-title.collapsed {
+  font-size: 1.1rem;       /* 접혔을 때 */
+  margin-bottom: 0.5rem;
+}

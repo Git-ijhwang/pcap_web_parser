@@ -4,6 +4,7 @@ import React, { useState, useRef } from "react";
 import {Modal, Button} from "react-bootstrap";
 // import "./ip.css";
 import "./App.css";
+
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
 import IpHeader from "./components/headers/IpHeader";
@@ -11,11 +12,76 @@ import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/GtpHeader";
 import Layer3Header from "./components/headers/Layer3Header";
 
-function PacketTable({ packets, currentFile }) {
+function PacketFilter({onFilterChange}) {
+  // 필터 가능한 프로토콜 목록
+  const protocols = [
+    { name: "TCP", value: "tcp" },
+    { name: "UDP", value: "udp" },
+    { name: "ICMP", value: "icmp" },
+    { name: "GTP", value: "gtp" },
+    { name: "IPinIP", value: "ipinip" },
+    { name: "IPv6", value: "ipv6" },
+  ];
+  const [selected, setSelected] = useState([]);
+
+  const toggleProtocol = (value) => {
+    const newSelected = selected.includes(value)
+      ? selected.filter(v=>v !== value)
+      : [...selected, value];
+    
+      setSelected(newSelected);
+      if (onFilterChange) onFilterChange(newSelected);
+  };
+
+  return(
+    <div className="card shadow p-3 ">
+           <h5>Packet Filters</h5>
+      <div className="d-flex flex-wrap">
+        {protocols.map(proto => (
+          <div className="form-check me-3" key={proto.value}>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              value={proto.value}
+              id={`chk-${proto.value}`}
+              checked={selected.includes(proto.value)}
+              onChange={() => toggleProtocol(proto.value)}
+            />
+            <label className="form-check-label" htmlFor={`chk-${proto.value}`}>
+              {proto.name}
+            </label>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+}
+
+function PacketTable({ packets, currentFile , onFilterChange}) {
 
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // 필터 가능한 프로토콜 목록
+  const protocols = [
+    { name: "TCP", value: "tcp" },
+    { name: "UDP", value: "udp" },
+    { name: "ICMP", value: "icmp" },
+    { name: "GTP", value: "gtp" },
+    { name: "IPinIP", value: "ipinip" },
+    { name: "IPv6", value: "ipv6" },
+  ];
+  const [selected, setSelected] = useState([]);
+
+  const toggleProtocol = (value) => {
+    const newSelected = selected.includes(value)
+      ? selected.filter(v=>v !== value)
+      : [...selected, value];
+    
+      setSelected(newSelected);
+      if (onFilterChange) onFilterChange(newSelected);
+  };
   const HoverField = ({ children, tooltip }) => (
     <OverlayTrigger
       placement="top"
@@ -63,11 +129,41 @@ function PacketTable({ packets, currentFile }) {
     }
   };
 
+
+  const toggleModalSection = (section) => {
+    setModalSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+
   // packets가 없으면 Modal 렌더링 자체를 하지 않음
-  const shouldShowModal = showModal && selectedPacket !== null;
+  // const shouldShowModal = showModal && selectedPacket !== null;
+  const filteredPackets = packets?.filter(pkt => {
+    if (selected.length === 0) return true;
+    return selected.includes(pkt.protocol.toLowerCase());
+  });
 
   return (
-        <div className="container mt-4">
+    <div className="container mt-4">
+
+      <h5>Packet Filters</h5>
+
+      <div className="d-flex flex-wrap">
+        {protocols.map(proto => (
+          <div className="form-check me-3" key={proto.value}>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              value={proto.value}
+              id={`chk-${proto.value}`}
+              checked={selected.includes(proto.value)}
+              onChange={() => toggleProtocol(proto.value)}
+            />
+            <label className="form-check-label" htmlFor={`chk-${proto.value}`}>
+              {proto.name}
+            </label>
+          </div>
+        ))}
+      </div>
 
     <table className="table table-striped table-hover table-bordered mt-3">
       <thead className="table-dark">
@@ -223,6 +319,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [currentFile, setCurrentFile] = useState(null);
   const [selectedPacket, setSelectedPacket] = useState(null);
+  const [collapsed, setCollapsed] = useState(null);
 
 
   // 파일 input ref 생성
@@ -289,40 +386,63 @@ function App() {
 
 
   return (
-    <div className="container my-4">
-      <div className="card shadow p-4">
-        <h1 className="mb-3">pcap file Parser </h1>
+    <div className="container mt-4">
+      <div className="card shadow p-4 ">
 
-        <div className="mb-3">
-          {/* <label style={{ display: "block", marginBottom: 8 }}> */}
-            <input type="file"
-              ref={fileInputRef}       // ref 연결
-              className="form-control mb-2" onChange={onFileChange} />
-          {/* </label> */}
+        <button
+          type="button"
+            className=
+              "btn btn-sm btn-outline-secondary position-absolute"
+              style={{top:"12px", right:"12px"}}
+            onClick={() => setCollapsed(c => !c)}
+            aria-label="toggle collapse"
+            >
+                <i className={`bi ${collapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
+
+        </button>
+
+        <h1 className={`mb-3 parser-title
+          ${collapsed ? "collapsed" : ""}`}>pcap file Parser </h1>
+         {/* 🔽 Collapsible Area */}
+        <div className={`collapse-wrapper ${collapsed ? "collapsed" : ""}`} >
+
+          <div className="mb-3">
+            {/* <label style={{ display: "block", marginBottom: 8 }}> */}
+              <input type="file"
+                ref={fileInputRef}       // ref 연결
+                className="form-control mb-2" onChange={onFileChange} />
+            {/* </label> */}
+          </div>
+
+          <div>
+            <button
+                className="btn btn-primary me-3" 
+                onClick={upload}
+                disabled={loading || !file} >
+
+              {loading ? "Parsing..." : "Upload & Parse"}
+            </button>
+
+            <button
+              variant="secondary" 
+              className="btn btn-secondary " 
+              onClick={ resetAll }
+            >
+              Reset
+            </button>
+          </div>
+
         </div>
 
-        <div>
-          <button
-              className="btn btn-primary me-3" 
-              onClick={upload}
-              disabled={loading || !file} >
+      </div>
 
-            {loading ? "Parsing..." : "Upload & Parse"}
-          </button>
-
-          <button
-            variant="secondary" 
-            className="btn btn-secondary " 
-            onClick={ resetAll }
-          >
-            Reset
-          </button>
-        </div>
-
+      <div>
+        {/* <PacketFilter/> */}
+      </div>
+      <div className="card shadow p-4 ">
         {result?.packets && (
           <PacketTable
               packets={result.packets}
-              // onSelect={setSelectedPacket}
               currentFile={currentFile}
             />
         )}
@@ -343,11 +463,14 @@ function App() {
             ) : null
             }
           </Modal.Body>
+
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setSelectedPacket(null)}>
+            <Button variant="secondary"
+              onClick={() => setSelectedPacket(null)}>
               Close
             </Button>
           </Modal.Footer>
+
         </Modal>
 
           {/* <ResultBlock result={result} /> */}
