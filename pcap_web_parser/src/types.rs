@@ -281,8 +281,6 @@ impl GtpInfo {
 pub struct PacketDetail {
     pub id: usize,
     pub l3: Vec<Layer3Info>,
-    // pub ip: Vec<IpInfo>,
-    // pub ip6: Option<Ip6Info>,
     pub l4: Layer4Info,
     pub app: AppLayerInfo,
 }
@@ -290,10 +288,6 @@ impl PacketDetail{
     pub fn new() -> Self {
         PacketDetail {
             id: 0,
-            // ip: Vec::new(),
-                // IpInfo::new()),
-            // ip6: None,//Ip6Info::new(),
-            // l3: Layer3Info::None,
             l3: Vec::new(),
             l4: Layer4Info::None,
             app: AppLayerInfo::None,

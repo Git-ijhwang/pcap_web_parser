@@ -51,6 +51,7 @@ async fn upload_file(
     Ok(uuid) // 캐시 접근용 키 반환
 }
 
+
 /// Multipart field를 파일로 저장 (streaming)
 async fn save_field_to_file(
     mut field: axum_extra::extract::multipart::Field,
@@ -69,8 +70,8 @@ async fn save_field_to_file(
 
 pub async fn handle_parse_summary(
     State(cache): State<Cache>,
-    mut multipart: Multipart,
-) -> Response
+    mut multipart: Multipart)
+-> Response
 {
     while let Some(field) = multipart.next_field().await.unwrap_or(None) {
         let name = field.name().map(|s| s.to_string()).unwrap_or_default();
@@ -202,7 +203,9 @@ pub async fn handle_single_packet (
 }
 
 
-pub async fn cleanup_cache(cache: &Cache, ttl: Duration) {
+pub async fn
+cleanup_cache(cache: &Cache, ttl: Duration)
+{
     let mut cache_guard = cache.write().await;
     let now = Instant::now();
 
@@ -220,15 +223,14 @@ pub async fn cleanup_cache(cache: &Cache, ttl: Duration) {
     }
 }
 
-pub async fn handle_cleanup(
-    State(cache): State<Cache>,
-) -> (StatusCode, String)
+pub async fn
+handle_cleanup(
+    State(cache): State<Cache>)
+-> (StatusCode, String)
 {
     let ttl = Duration::from_secs(60 * 5); // 예: 5분 TTL
-
     let mut write = cache.write().await;
     let now = Instant::now();
-
     let mut removed_count = 0;
 
     // HashMap<String, CacheInfo>
@@ -249,10 +251,9 @@ pub async fn handle_cleanup(
     }
 
     println!("Removed Count: {}", removed_count);
-    (
 
+    (
         StatusCode::OK,
         format!("cleanup done: {} files removed", removed_count)
     )
 }
-

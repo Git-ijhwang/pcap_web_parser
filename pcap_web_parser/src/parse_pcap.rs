@@ -235,12 +235,12 @@ pub async fn parse_pcap(path: &Path)
         let v= match next_type {
             //IPv4
             NEXT_HDR_IPV4 => {
-                    Some(parse_ipv4_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
+                Some(parse_ipv4_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
             },
 
             //IPv6
             NEXT_HDR_IPV6 => {
-                    Some(parse_ipv6_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
+                Some(parse_ipv6_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
             }
             _       => None,
         };
@@ -248,30 +248,26 @@ pub async fn parse_pcap(path: &Path)
         if v.is_none() {
             break;
         }
-        hdr_len += IP_HDR_LEN;
-
         next_type = v.unwrap();
+
+        hdr_len += IP_HDR_LEN;
 
         // --- Parse Layer 4 ---
         let (port_number, l4_hdr_len) =
             match next_type {
-                PROTO_TYPE_TCP   =>
-                    (parse_tcp_simple
-                        ( &packet.data[hdr_len..], &mut parsed_packet)
-                        , TCP_HDR_LEN),
-                PROTO_TYPE_UDP   =>
-                    (parse_udp_simple
-                        ( &packet.data[hdr_len..], &mut parsed_packet)
-                        , UDP_HDR_LEN),
-                PROTO_TYPE_ICMP   =>
-                    (parse_icmp_simple
-                        ( &packet.data[hdr_len..], &mut parsed_packet)
-                        , ICMP_HDR_LEN),
+                PROTO_TYPE_TCP   => (
+                    parse_tcp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                    TCP_HDR_LEN),
+                PROTO_TYPE_UDP   => (
+                    parse_udp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                    UDP_HDR_LEN),
+                PROTO_TYPE_ICMP   => (
+                    parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet)
+                    , ICMP_HDR_LEN),
 
                 _   =>  (0, 0),
             };
 
-        idx += 1;
         hdr_len += l4_hdr_len;
 
         // --- Parse Application Layer ---
@@ -290,6 +286,8 @@ pub async fn parse_pcap(path: &Path)
         };
 
         packets.push(parsed_packet);
+
+        idx += 1;
     }
 
     let packet_len = packets.len();
@@ -297,17 +295,15 @@ pub async fn parse_pcap(path: &Path)
     println!("Parsing took {:?}", duration);
 
     let result = ParsedResult {
-            file: path.to_string_lossy().to_string(),
-            total_packets: idx-1,
-            packets : packets,
-        };
-
+        file: path.to_string_lossy().to_string(),
+        total_packets: idx-1,
+        packets : packets,
+    };
 
     if packet_len == idx-1 {
         Ok( result )
     }
     else {
-        // println!(" Parse Fail. {}:{}", packet_len, idx );
         Err("Fail".to_string())
     }
 }

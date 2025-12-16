@@ -46,9 +46,10 @@ pub fn parse_ipv6_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
     offset += 1;
     offset += 1;
 
-    let mut str_proto = String::new();
+    // let mut str_proto = String::new();
     if let Some(v) = protocol_to_str(next_hdr) {
-        str_proto = v;
+        // str_proto = v;
+        packet.protocol.push_str(&v);
     }
     else {
         eprintln!("Unknown protocol type {}", next_hdr);
