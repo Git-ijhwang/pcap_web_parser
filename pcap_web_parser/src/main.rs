@@ -42,6 +42,7 @@ async fn main()
         .route("/api/parse", post(handle_parse_summary))
         .route("/api/packet_detail", get(handle_single_packet))
         .route("/api/cleanup", get(handle_cleanup))
+        .route("/api/gtp/callflow", post( handle_callflow))
         .with_state(cache) //router에 의해 호출되는 모든 함수들에 전달되는 사용자 data.
         .layer(cors); 
 
