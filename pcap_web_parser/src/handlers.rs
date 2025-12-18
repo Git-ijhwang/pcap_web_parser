@@ -1,4 +1,5 @@
 use std:: path::PathBuf;
+// use hyper::Response;
 use tokio::io::AsyncWriteExt;
 use tokio::fs;
 use uuid::Uuid;
@@ -69,10 +70,13 @@ async fn save_field_to_file(
 }
 
 pub async fn handle_parse_summary(
-    State(cache): State<Cache>,
+    // State(cache): State<Cache>,
+    State(state): State<Arc<AppState>>,
     mut multipart: Multipart)
 -> Response
 {
+    let cache = &state.cache;
+
     while let Some(field) = multipart.next_field().await.unwrap_or(None) {
         let name = field.name().map(|s| s.to_string()).unwrap_or_default();
         if name != "pcap" {
@@ -139,10 +143,13 @@ pub async fn handle_parse_summary(
 
 
 pub async fn handle_single_packet (
-    State(cache): State<Cache>,
+    State(state): State<Arc<AppState>>,
+    // State(cache): State<Cache>,
     Query(params): Query<PacketQuery> )
  -> Response
 {
+
+    let cache = &state.cache;
 
     let filename = std::path::Path::new(&params.file)
         .file_name()
@@ -225,10 +232,12 @@ cleanup_cache(cache: &Cache, ttl: Duration)
 
 pub async fn
 handle_cleanup(
-    State(cache): State<Cache>)
+    State(state): State<Arc<AppState>>)
+    // State(cache): State<Cache>)
 -> (StatusCode, String)
 {
     let ttl = Duration::from_secs(60 * 5); // 예: 5분 TTL
+    let cache = &state.cache;
     let mut write = cache.write().await;
     let now = Instant::now();
     let mut removed_count = 0;
