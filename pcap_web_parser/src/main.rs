@@ -10,6 +10,7 @@ use axum_extra::extract::Multipart;
 use tower_http::cors::CorsLayer;
 use std::time::Duration;
 
+mod file_manage;
 mod handlers;
 mod gtp;
 mod parse_pcap;
@@ -19,17 +20,30 @@ mod l4;
 
 use types::Cache;
 use handlers::*;
+use file_manage::*;
+
+pub struct AppState {
+    pub cache: Cache,
+    pub pcaps: Arc<PcapFiles>,
+}
 
 #[tokio::main]
 async fn main()
 {
     // let upload_dir = std::env::temp_dir();
+    // pub type Cache = Arc<RwLock<HashMap<String, FileInfo>>>;
+
     let cache: Cache = Arc::new(RwLock::new(HashMap::new()));
+    let pcaps = Arc::new(PcapFiles::new());
     let cors = CorsLayer::permissive();
 
+    let cache_for_cleanup = cache.clone();
+    let state = Arc::new(AppState {
+        cache,
+        pcaps,
+    });
 
     // --- This thread For Clean-up the Cache File
-    let cache_for_cleanup = cache.clone();
     tokio::spawn(async move {
         let ttl = Duration::from_secs(300);     // 5분 TTL
         loop {
@@ -43,7 +57,7 @@ async fn main()
         .route("/api/packet_detail", get(handle_single_packet))
         .route("/api/cleanup", get(handle_cleanup))
         .route("/api/gtp/callflow", post( handle_callflow))
-        .with_state(cache) //router에 의해 호출되는 모든 함수들에 전달되는 사용자 data.
+        .with_state(state) //router에 의해 호출되는 모든 함수들에 전달되는 사용자 data.
         .layer(cors); 
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));

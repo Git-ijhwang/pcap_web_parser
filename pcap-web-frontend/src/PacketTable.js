@@ -9,11 +9,12 @@ import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/GtpHeader";
 
 
-function PacketTable({ packets, currentFile , onFilterChange}) {
+function PacketTable({ packets, fileId}) {
   const [loadingFlow, setLoadingFlow] = useState(false);
   const [flowError, setFlowError] = useState(null);
   const [callFlow, setCallFlow] = useState(null);
 
+// , currentFile , onFilterChange}) {
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [filterCollapsed, setFilterCollapsed] = useState(false);
@@ -68,14 +69,15 @@ function PacketTable({ packets, currentFile , onFilterChange}) {
     };
 
   const fetchPacketDetail = async (id) => {
-    if (!currentFile) {
+    if (!fileId) {
       alert("No file selected!");
       return;
     }
 
     try {
       const res = await fetch(
-        `/api/packet_detail?file=${encodeURIComponent(currentFile)}&id=${encodeURIComponent(id)}`
+        `/api/packet_detail?file_id=${fileId}&id=${encodeURIComponent(id)}`
+        // `/api/packet_detail?file=${encodeURIComponent(currentFile)}&id=${encodeURIComponent(id)}`
       );
 
       if (!res.ok) {
@@ -97,7 +99,7 @@ function PacketTable({ packets, currentFile , onFilterChange}) {
   // packets가 없으면 Modal 렌더링 자체를 하지 않음
   function isValidPort(port) {
     const n = Number(port);
-    if ( Number.isInteger(n) && n > 0 && n <65535 ) {
+    if ( Number.isInteger(n) && n > 0 && n < 65535 ) {
       return true;
     }
     return false;
@@ -225,7 +227,9 @@ function PacketTable({ packets, currentFile , onFilterChange}) {
             </div>
           </div>
 
-          {/* Layer-4 */}
+          {/*
+          Layer-4
+          */}
           <div className="l4-filter  card  gap-2 flex-fill" >
             {/* TCP */}
             <div className="d-flex align-items-center gap-2">
