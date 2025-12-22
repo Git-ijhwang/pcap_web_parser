@@ -1,12 +1,15 @@
+use std:: path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+use crate::types::*;
+
 static FILE_ID_GEN: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FileId(u64);
+pub struct FileId(pub u64);
 
 impl FileId {
     pub fn new() -> Self {
@@ -17,7 +20,8 @@ impl FileId {
 
 #[derive(Debug)]
 pub struct FileContext {
-    packets: Vec<Packet>,
+    original_name: PathBuf,
+    packets: Vec<PacketSummary>,
     parsed_at: Instant,
 }
 
@@ -34,10 +38,11 @@ impl PcapFiles {
         }
     }
 
-    pub fn insert_file(&self, packets: Vec<Packet>) -> FileId {
+    pub fn insert_file(&self, original_name:PathBuf, packets: Vec<PacketSummary>) -> FileId {
         let file_id = FileId::new();
 
         let ctx = FileContext {
+            original_name,
             packets,
             parsed_at: Instant::now(),
         };
@@ -47,9 +52,19 @@ impl PcapFiles {
         file_id
     }
 
-    pub fn get_packet ( &self, file_id: FileId, packet_id: usize)
-    -> Option<&Packet> {
+    pub fn get_file_name ( &self, file_id: FileId)
+    -> Option<PathBuf>
+    {
         let files = self.files.read().unwrap();
-        files.get(&file_id)?.packets.get(packet_id)
+
+        files.get(&file_id).map(|ctx| ctx.original_name.clone())
     }
+
+    // pub fn get_packet ( &self, file_id: FileId, packet_id: usize)
+    // -> Option<String>
+    // {
+    //     let files = self.files.read().unwrap();
+
+    //     files.get(&file_id)?.original_name
+    // }
 }

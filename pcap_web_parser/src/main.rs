@@ -22,29 +22,28 @@ use types::Cache;
 use handlers::*;
 use file_manage::*;
 
-    pub struct AppState {
-        pub cache: Cache,
-        pub pcaps: Arc<PcapFiles>,
-    }
+pub struct AppState {
+    pub cache: Cache,
+    pub pcaps: Arc<PcapFiles>,
+}
 
 #[tokio::main]
 async fn main()
 {
     // let upload_dir = std::env::temp_dir();
-    let cache: Cache = Arc::new(RwLock::new(HashMap::new()));
-// pub type Cache = Arc<RwLock<HashMap<String, FileInfo>>>;
-    let pcaps = Arc::new(PcapFiles::new());
+    // pub type Cache = Arc<RwLock<HashMap<String, FileInfo>>>;
 
+    let cache: Cache = Arc::new(RwLock::new(HashMap::new()));
+    let pcaps = Arc::new(PcapFiles::new());
     let cors = CorsLayer::permissive();
 
-
+    let cache_for_cleanup = cache.clone();
     let state = Arc::new(AppState {
         cache,
         pcaps,
     });
 
     // --- This thread For Clean-up the Cache File
-    let cache_for_cleanup = cache.clone();
     tokio::spawn(async move {
         let ttl = Duration::from_secs(300);     // 5분 TTL
         loop {
@@ -52,8 +51,6 @@ async fn main()
             tokio::time::sleep(Duration::from_secs(60)).await; // 1분 간격 실행
         }
     });
-
-
 
     let app = Router::new()
         .route("/api/parse",

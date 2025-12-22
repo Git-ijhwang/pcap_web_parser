@@ -12,6 +12,8 @@ function App() {
   const [currentFile, setCurrentFile] = useState(null);
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [collapsed, setCollapsed] = useState(null);
+  // const [result, setResult] = useState(null);
+  const [fileId, setFileId] = useState(null);
 
 
   // 파일 input ref 생성
@@ -63,9 +65,9 @@ function App() {
       }
 
       const json = await res.json();
-      setResult(json);
-
-      setCurrentFile(json.file)
+      setResult(json.packets);
+      // setCurrentFile(json.file)
+      setFileId(json.file_id);
 
     } catch (err) {
       console.error(err);
@@ -120,17 +122,16 @@ function App() {
             >
               Reset
             </button>
+
           </div>
-
         </div>
-
       </div>
 
       <div className="packetlist-card card shadow p-4 ">
         {result?.packets && (
           <PacketTable
               packets={result.packets}
-              currentFile={currentFile}
+              fileId={fileId}
             />
         )}
 

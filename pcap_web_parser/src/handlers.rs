@@ -16,6 +16,7 @@ use std::time::{ Duration, Instant};
 use crate::*;
 use crate::parse_pcap::*;
 use crate::types::{Cache, FileInfo, PacketQuery};
+use crate::file_manage::*;
 
 async fn upload_file(
     cache: &Cache,
@@ -78,7 +79,9 @@ pub async fn handle_parse_summary(
     let cache = &state.cache;
 
     while let Some(field) = multipart.next_field().await.unwrap_or(None) {
+
         let name = field.name().map(|s| s.to_string()).unwrap_or_default();
+
         if name != "pcap" {
             continue;
         }
@@ -109,20 +112,29 @@ pub async fn handle_parse_summary(
 
 
         // 파서는 보통 sync(블로킹)이므로 spawn_blocking 사용
-        let tmp_path_clone = tmp_path.clone();
+                let tmp_path_clone = tmp_path.clone();
         let parse_result =
             // tokio::task::spawn_blocking(move || parse_file(&tmp_path_clone)).await;
             tokio::spawn(async move {
                 parse_pcap(&tmp_path_clone).await
             }).await;
 
-
         // parse 결과 처리
         match parse_result {
             Ok(Ok(parsed)) => {
                 // let _ = tokio::fs::remove_file(&tmp_path).await;
                 // let msg = Json(parsed);
-                return (StatusCode::OK, Json(parsed)).into_response();
+                let file_id = state.pcaps.insert_file(
+                    tmp_path.clone(),
+                    parsed.clone().packets);
+
+                let resp = serde_json::json!({
+                    "file_id": file_id.0,
+                    "packets": parsed,
+                });
+
+                return (StatusCode::OK, Json(resp)).into_response();
+                // return (StatusCode::OK, Json(parsed)).into_response();
             }
             Ok(Err(e)) => {
                 // let _ = tokio::fs::remove_file(&tmp_path).await;
@@ -144,51 +156,65 @@ pub async fn handle_parse_summary(
 
 pub async fn handle_single_packet (
     State(state): State<Arc<AppState>>,
-    // State(cache): State<Cache>,
     Query(params): Query<PacketQuery> )
  -> Response
 {
 
-    let cache = &state.cache;
+    let file_id = FileId(params.file_id);
+    let packet_id = params.id;
 
-    let filename = std::path::Path::new(&params.file)
-        .file_name()
-        .and_then(|os| os.to_str())
-        .unwrap_or("");
+    let pcaps = &state.pcaps;
 
-    let key = filename
-        .trim_start_matches("web_parser-")
-        .trim_end_matches(".pcap");
-
-    //1. cache로부터 파일이름을 가져오기.
-    let cache_read = cache.read().await;
-    // let info = match cache_read.get(&params.file) {
-
-    //2. 파일 읽기
-    let info = match cache_read.get(key) {
-        Some(v) => v.clone(),
+    let file_name = match pcaps.get_file_name(file_id){
+        Some(pkt) => pkt,
         None => {
-            let msg = format!("File not found in cache.");
-            return (StatusCode::NOT_FOUND, msg).into_response();
+            return (
+                StatusCode::NOT_FOUND,
+                "packet no found",
+            ).into_response();
         }
     };
 
-    drop(cache_read);
+    // let cache = &state.cache;
+
+    // let filename = std::path::Path::new(&params.file_id)
+    //     .file_name()
+    //     .and_then(|os| os.to_str())
+    //     .unwrap_or("");
+
+    // let key = filename
+    //     .trim_start_matches("web_parser-")
+    //     .trim_end_matches(".pcap");
+
+    //1. cache로부터 파일이름을 가져오기.
+    // let cache_read = state.cache.read().await;
+    // let cache_read = cache.read().await;
+    // let info = match cache_read.get(&params.file) {
+
+    //2. 파일 읽기
+    // let info = match cache_read.get(&file_name) {
+    //     Some(v) => v.clone(),
+    //     None => {
+    //         let msg = format!("File not found in cache.");
+    //         return (StatusCode::NOT_FOUND, msg).into_response();
+    //     }
+    // };
+
+    // drop(cache_read);
 
     //3. PacketQuery로부터 ID가져오기
-    let packet_id = params.id;
 
     //4. 파일에서 ID가 동일한 packet 읽기.
     let parse_result =
         tokio::spawn(async move {
             //5. parsing하기
-            parse_single_packet(&info.path, packet_id).await
+            parse_single_packet(&file_name, packet_id).await
         }).await;
 
     //5. last used time update
-    if let Some(info) = cache.write().await.get_mut(key) {
-        info.last_used = Instant::now();
-    }
+    // if let Some(info) = cache.write().await.get_mut(key) {
+    //     info.last_used = Instant::now();
+    // }
 
     //6. 결과 return 하기
     match parse_result {

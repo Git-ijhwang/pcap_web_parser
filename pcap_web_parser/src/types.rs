@@ -24,7 +24,7 @@ pub struct FileInfo {
 
 #[derive(serde::Deserialize)]
 pub struct PacketQuery {
-    pub file: String,
+    pub file_id: u64,
     pub id: usize, // 프론트엔드에서 보내는 id
 }
 
@@ -33,14 +33,14 @@ pub struct ParsedDetail {
     pub id: usize,
     pub packet: PacketDetail,
 }
-#[derive(serde::Serialize, Debug)]
+#[derive(serde::Serialize, Debug, Clone)]
 pub struct ParsedResult {
     pub file: String,
     pub total_packets: usize,
     pub packets: Vec<PacketSummary>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize )]
 pub struct PacketSummary {
     pub id: usize,
     pub ts: String,
