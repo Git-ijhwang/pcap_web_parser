@@ -1,9 +1,12 @@
+use std::net::Ipv4Addr;
+use axum::extract;
+use serde::Serialize;
 use std::process;
 use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use pcap::{Capture, Packet};
 
-use crate::ip::{ipv4::*, port::*, ipv6::*};
+use crate::ip::{self, ipv4::*, ipv6::*, port::*};
 use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::gtp::{gtp::*, gtp_ie::*};
 use crate::types::*;
@@ -12,6 +15,7 @@ use std::time::Instant;
 
 const NEXT_HDR_IPV4: usize = 0x0800;
 const NEXT_HDR_IPV6: usize = 0x86dd;
+
 
 fn format_timestamp(packet: &Packet) -> String
 {
@@ -123,7 +127,8 @@ async fn parse_l4( next_type: usize, data_buf: &[u8],
 }
 
 
-pub async fn parse_single_packet(path: &PathBuf, id: usize)
+pub async fn
+parse_single_packet(path: &PathBuf, id: usize)
 -> Result<ParsedDetail, String>
 {
     let mut offset: usize = 0;
@@ -155,11 +160,11 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
 
     // --- Parse Layer 3 (IPv4, IPinIP or IPv6) ---
     loop {
-        let (nt, l3_hdr_len) =
+        let (np, l3_hdr_len) =
             parse_l3(next_type, &packet.data[offset..], &mut parsed_packet).await;
 
         offset += l3_hdr_len;
-        next_type = nt;
+        next_type = np;
 
         if next_type != PROTO_TYPE_IPINIP {
             break;
@@ -196,7 +201,7 @@ pub async fn parse_single_packet(path: &PathBuf, id: usize)
 }
 
 
-pub async fn parse_pcap(path: &Path)
+pub async fn simple_parse_pcap(path: &Path)
 -> Result<ParsedResult, String> 
 {
     //read pcap file line by line

@@ -18,11 +18,12 @@ impl FileId {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FileContext {
-    original_name: PathBuf,
-    packets: Vec<PacketSummary>,
-    parsed_at: Instant,
+    pub uuid: String,
+    pub original_name: PathBuf,
+    pub packets: Vec<PacketSummary>,
+    pub parsed_at: Instant,
 }
 
 
@@ -38,10 +39,11 @@ impl PcapFiles {
         }
     }
 
-    pub fn insert_file(&self, original_name:PathBuf, packets: Vec<PacketSummary>) -> FileId {
+    pub fn insert_file(&self, uuid:String, original_name:PathBuf, packets: Vec<PacketSummary>) -> FileId {
         let file_id = FileId::new();
 
         let ctx = FileContext {
+            uuid,
             original_name,
             packets,
             parsed_at: Instant::now(),
@@ -53,18 +55,30 @@ impl PcapFiles {
     }
 
     pub fn get_file_name ( &self, file_id: FileId)
-    -> Option<PathBuf>
+    // -> Option<PathBuf>
+    -> Option<FileContext>
     {
         let files = self.files.read().unwrap();
 
-        files.get(&file_id).map(|ctx| ctx.original_name.clone())
+        let result = files.get(&file_id).cloned();
+        result 
     }
 
-    // pub fn get_packet ( &self, file_id: FileId, packet_id: usize)
-    // -> Option<String>
-    // {
-    //     let files = self.files.read().unwrap();
+    pub fn get_packet ( &self, file_id: FileId, packet_id: usize)
+    -> Option<Vec<PacketSummary>>
+    {
+        // 1. RwLock 읽기 잠금 획득
+        let files = self.files.read().ok()?;
 
-    //     files.get(&file_id)?.original_name
-    // }
+        // 2. HashMap에서 file_id에 해당하는 FileContext 검색
+        let file_context = files.get(&file_id)?;
+
+        // 3. packets 벡터에서 packet_id(인덱스)에 해당하는 패킷 검색
+        // get()은 인덱스 범위를 벗어나면 None을 반환하므로 안전합니다.
+        let packet = file_context.packets.get(packet_id)?;
+
+        // 4. 결과 반환 (반환 타입이 Option<Vec<PacketSummary>>이므로 해당 패킷을 Vec에 담아 반환)
+        // PacketSummary가 Clone을 구현하고 있어야 합니다.
+        Some(vec![packet.clone()])
+    }
 }

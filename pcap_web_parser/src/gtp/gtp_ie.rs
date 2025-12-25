@@ -9,13 +9,13 @@ use std::convert::TryInto;
 
 use crate::gtp::gtpv2_types::*;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct AmbrValue {
     pub ul: u32,
     pub dl: u32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct FTeidValue {
     pub v4: bool,
     pub v6: bool,
@@ -25,12 +25,12 @@ pub struct FTeidValue {
     pub ipv6: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ServingNetworkValue {
     pub mcc: String,
     pub mnc: String,
 }
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BearerQoSValue {
     pub pci: bool,
     pub pl: u8,
@@ -46,27 +46,27 @@ pub struct BearerQoSValue {
 
 
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TaiValue {
     pub mcc: String,
     pub mnc: String,
     pub tac: u16,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct EcgiValue {
     pub mcc: String,
     pub mnc: String,
     pub eci: u32,   // 28-bit value, stored in u32
 }
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct CgiValue {
     pub mcc: String,
     pub mnc: String,
     pub lac: u16,
     pub ci: u16,
 }
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SaiValue {
     pub mcc: String,
     pub mnc: String,
@@ -74,7 +74,7 @@ pub struct SaiValue {
     pub sac: u16,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct RaiValue {
     pub mcc: String,
     pub mnc: String,
@@ -82,14 +82,14 @@ pub struct RaiValue {
     pub rac: u8,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct LaiValue {
     pub mcc: String,
     pub mnc: String,
     pub lac: u16,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum PacketFilterComponent {
     Ipv4Addr { addr: String, mask: String },      // IPv4 address + mask (8 bytes)
     Ipv6Addr { addr: String, mask: String },      // IPv6 address + mask (32 bytes: 16+16)
@@ -114,13 +114,13 @@ static BEARER_TFT_OP_CODE: [&str;8] = [
     "Reserved",                                 /* 1 1 1 [7]*/
 ];
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PacketFilterComponentList {
     pub pf_type_id: u8,
     pub components: PacketFilterComponent, 
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PacketFilter {
     pub pf_dir: u8,
     pub pf_id: u8,
@@ -129,7 +129,7 @@ pub struct PacketFilter {
     pub packet_filter_component_list: Vec<PacketFilterComponentList>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct BearerTFT {
     pub tft_op_code: u8,
     pub str_tft_op_code: String,
@@ -138,7 +138,7 @@ pub struct BearerTFT {
     pub packet_filter_list: Vec<PacketFilter>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct UliValue {
     pub has_tai: bool,
     pub has_ecgi: bool,
@@ -155,7 +155,7 @@ pub struct UliValue {
     pub cgi: Option<CgiValue>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub enum GtpIeValue {
     // Raw bytes (해석되지 않은 기본 형태)
     Raw(Vec<u8>),
@@ -196,7 +196,7 @@ pub enum GtpIeValue {
 //     pub decoded: GtpIeValue,
 // }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GtpIe {
     pub ie_type: u8,
     pub type_str: String,

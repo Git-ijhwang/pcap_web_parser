@@ -43,6 +43,7 @@ async fn upload_file(
 
     // 캐시에 등록
     let info = FileInfo {
+        // uuid: uuid.clone(),
         path: tmp_path.clone(),
         original_name: original_name.to_string(),
         last_used: Instant::now(),
@@ -112,11 +113,12 @@ pub async fn handle_parse_summary(
 
 
         // 파서는 보통 sync(블로킹)이므로 spawn_blocking 사용
-                let tmp_path_clone = tmp_path.clone();
+        let tmp_path_clone = tmp_path.clone();
+
         let parse_result =
             // tokio::task::spawn_blocking(move || parse_file(&tmp_path_clone)).await;
             tokio::spawn(async move {
-                parse_pcap(&tmp_path_clone).await
+                simple_parse_pcap(&tmp_path_clone).await
             }).await;
 
         // parse 결과 처리
@@ -124,8 +126,7 @@ pub async fn handle_parse_summary(
             Ok(Ok(parsed)) => {
                 // let _ = tokio::fs::remove_file(&tmp_path).await;
                 // let msg = Json(parsed);
-                let file_id = state.pcaps.insert_file(
-                    tmp_path.clone(),
+                let file_id = state.pcaps.insert_file(uuid, tmp_path.clone(),
                     parsed.clone().packets);
 
                 let resp = serde_json::json!({
@@ -159,14 +160,14 @@ pub async fn handle_single_packet (
     Query(params): Query<PacketQuery> )
  -> Response
 {
-
+let test = params.file_id;
     let file_id = FileId(params.file_id);
     let packet_id = params.id;
 
     let pcaps = &state.pcaps;
 
-    let file_name = match pcaps.get_file_name(file_id){
-        Some(pkt) => pkt,
+    let (uuid, file_name) = match pcaps.get_file_name(file_id){
+        Some(pkt) => (pkt.uuid, pkt.original_name),
         None => {
             return (
                 StatusCode::NOT_FOUND,
@@ -175,9 +176,9 @@ pub async fn handle_single_packet (
         }
     };
 
-    // let cache = &state.cache;
+    let cache = &state.cache;
 
-    // let filename = std::path::Path::new(&params.file_id)
+    // let filename = std::path::Path::new(id)
     //     .file_name()
     //     .and_then(|os| os.to_str())
     //     .unwrap_or("");
@@ -212,9 +213,9 @@ pub async fn handle_single_packet (
         }).await;
 
     //5. last used time update
-    // if let Some(info) = cache.write().await.get_mut(key) {
-    //     info.last_used = Instant::now();
-    // }
+    if let Some(info) = cache.write().await.get_mut(&uuid) {
+        info.last_used = Instant::now();
+    }
 
     //6. 결과 return 하기
     match parse_result {
@@ -255,6 +256,55 @@ cleanup_cache(cache: &Cache, ttl: Duration)
         }
     }
 }
+
+
+pub async fn
+handle_callflow(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<CallflowRequest>)
+-> Response
+{
+    let file_id = FileId(req.file_id);
+    let packet_id = req.packet_id;
+    // let packet_summary = state.pcaps;
+
+    let cache = &state.cache;
+    let pcaps = &state.pcaps;
+
+    let (uuid, file_name) = match pcaps.get_file_name(file_id){
+        Some(pkt) => (pkt.uuid, pkt.original_name),
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                "packet no found",
+            ).into_response();
+        }
+    };
+
+    let flow_result =
+        tokio::spawn(async move {
+            make_call_flow(&file_name, packet_id).await
+        }).await;
+
+    match flow_result {
+        Ok(Ok(call_flow)) => {
+            let msg = Json(call_flow);
+            return (StatusCode::OK, msg).into_response()
+        }
+
+        Ok(Err(e)) => {
+            let msg = format!("Call Flow error: {}", e);
+            return (StatusCode::BAD_REQUEST, msg).into_response();
+        }
+
+        Err(join_err) => {
+            let msg = format!("Internal error: {}", join_err);
+            return (StatusCode::INTERNAL_SERVER_ERROR, msg).into_response();
+        }
+    }
+
+}
+
 
 pub async fn
 handle_cleanup(

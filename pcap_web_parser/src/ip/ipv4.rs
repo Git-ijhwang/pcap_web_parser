@@ -55,7 +55,50 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
 }
 
 
-pub fn parse_ipv4( ip_hdr: &[u8], ip: &mut IpInfo) -> usize
+pub fn
+get_ip_addr(ip_hdr: &[u8])
+-> (Ipv4Addr, Ipv4Addr)
+{
+    let mut offset: usize = 0;
+    let mut src_addr = Ipv4Addr::new(0,0,0,0);
+    let mut dst_addr = Ipv4Addr::new(0,0,0,0);
+
+    offset += 12;
+    if let Ok(octets) = ip_hdr[offset..offset+4].try_into() {
+        src_addr = Ipv4Addr::from_octets(octets);
+    }
+    else {
+        eprintln!("Failure to read Src Addr");
+    }
+
+    offset += 4;
+    if let Ok(octets) = ip_hdr[offset..offset+4].try_into() {
+        dst_addr = Ipv4Addr::from_octets(octets);
+    }
+    else {
+        eprintln!("Failure to read Src Addr");
+    }
+
+    (src_addr, dst_addr)
+}
+
+
+pub fn
+get_next_proto(ip_hdr: &[u8])
+-> usize
+{
+    let mut offset: usize = 0;
+    offset += 9;
+
+    let next_hdr = ip_hdr[offset] as usize;
+
+    next_hdr
+}
+
+
+pub fn
+parse_ipv4( ip_hdr: &[u8], ip: &mut IpInfo)
+-> usize
 {
     let mut offset: usize = 0;
 

@@ -39,29 +39,31 @@ function PacketTable({ packets, fileId}) {
     setSelectedPacket(null);
   };
 
-    const fetchCallFlow = async (packetId) => {
-        setLoadingFlow(true);
-        setFlowError(null);
+  const fetchCallFlow = async (packetId) => {
 
-        try {
-            console.log("PacketID:", packetId);
-            const res = await fetch("/api/gtp/callflow", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({packet_id: packetId}),
-            });
+    setLoadingFlow(true);
+    setFlowError(null);
 
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
-            }
+    try {
+      console.log("PacketID:", packetId);
+      const res = await fetch("/api/gtp/callflow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          {file_id: fileId , packet_id: packetId}),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
 
             const data = await res.json();
             setCallFlow(data);
         }
         catch (err) {
-            console.err("Callflow fetch failed:", err);
+            // console.err("Callflow fetch failed:", err);
             setFlowError("Failed to load call flow");
         } finally {
             setLoadingFlow(false);
@@ -325,7 +327,10 @@ function PacketTable({ packets, fileId}) {
               <td>{pkt.description}</td>
               <td>
                 <button
-                  className="btn btn-sm btn-outline-primary" onClick={() => fetchCallFlow(pkt.id) } >
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchCallFlow(pkt.id); }} >
                     <i className="bi bi-diagram-3"></i>
                 </button>
               </td>

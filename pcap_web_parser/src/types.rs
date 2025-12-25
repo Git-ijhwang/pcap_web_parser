@@ -17,6 +17,7 @@ pub const ICMP_HDR_LEN:usize = 8;
 
 #[derive(Clone)]
 pub struct FileInfo {
+    // pub uuid: String,
     pub path: PathBuf,
     pub original_name: String,
     pub last_used: Instant,

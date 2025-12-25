@@ -9,6 +9,7 @@ use tokio::sync::RwLock;
 use axum_extra::extract::Multipart;
 use tower_http::cors::CorsLayer;
 use std::time::Duration;
+use serde::Deserialize;
 
 mod file_manage;
 mod handlers;
@@ -17,7 +18,9 @@ mod parse_pcap;
 mod ip;
 mod types;
 mod l4;
+mod gtp_call_flow;
 
+use gtp_call_flow::*;
 use types::Cache;
 use handlers::*;
 use file_manage::*;
@@ -25,6 +28,13 @@ use file_manage::*;
 pub struct AppState {
     pub cache: Cache,
     pub pcaps: Arc<PcapFiles>,
+}
+
+
+#[derive(Deserialize)]
+pub struct CallflowRequest {
+    pub file_id: u64,
+    pub packet_id: usize,
 }
 
 #[tokio::main]
