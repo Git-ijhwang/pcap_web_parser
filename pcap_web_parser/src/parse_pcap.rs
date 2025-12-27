@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
 use pcap::{Capture, Packet};
 
-use crate::ip::{self, ipv4::*, ipv6::*, port::*};
+use crate::ip::{self, ipv4::*, ipv6::*, port::{self, *}};
 use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::gtp::{gtp::*, gtp_ie::*};
 use crate::types::*;
@@ -233,6 +233,9 @@ pub async fn simple_parse_pcap(path: &Path)
             //get next protocol from Ethernet
             next_type = parse_ethernet(&packet.data);
         }
+        if next_type != 0x0800 {
+            continue;
+        }
 
         hdr_len += MIN_ETH_HDR_LEN;
 
@@ -260,15 +263,20 @@ pub async fn simple_parse_pcap(path: &Path)
         // --- Parse Layer 4 ---
         let (port_number, l4_hdr_len) =
             match next_type {
-                PROTO_TYPE_TCP   => (
-                    parse_tcp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
-                    TCP_HDR_LEN),
-                PROTO_TYPE_UDP   => (
-                    parse_udp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
-                    UDP_HDR_LEN),
-                PROTO_TYPE_ICMP   => (
-                    parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet)
-                    , ICMP_HDR_LEN),
+                PROTO_TYPE_TCP   => {
+                    (parse_tcp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                    TCP_HDR_LEN)
+                },
+
+                PROTO_TYPE_UDP   => {
+                    (parse_udp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                    UDP_HDR_LEN)
+                },
+
+                PROTO_TYPE_ICMP   => {
+                    ( parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                    ICMP_HDR_LEN)
+                },
 
                 _   =>  (0, 0),
             };
@@ -285,8 +293,8 @@ pub async fn simple_parse_pcap(path: &Path)
             },
 
             _ => {
-                println!("Not GTPv2-C packet");
-                (&[] as &[u8], GtpHeader::new())
+                // (&[] as &[u8], GtpHeader::new())
+                continue;
             },
         };
 
@@ -301,7 +309,7 @@ pub async fn simple_parse_pcap(path: &Path)
 
     let result = ParsedResult {
         file: path.to_string_lossy().to_string(),
-        total_packets: idx-1,
+        total_packets: packet_len,
         packets : packets,
     };
 

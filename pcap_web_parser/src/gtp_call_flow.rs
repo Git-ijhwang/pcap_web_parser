@@ -29,7 +29,7 @@ impl CallFlow{
 }
 
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct ip5tuple {
     pub protocol: u8,
     pub src_addr: Ipv4Addr,
@@ -55,11 +55,352 @@ struct OwnedPacket {
     data: Vec<u8>,
 }
 
-fn get_seq_from_gtpc(input: &[u8]) -> u32 {
+#[derive(Serialize, Debug)]
+struct SessCtxInfo {
+    imsi: String,
+    my_s11_teid: u32,
+    my_s5s8_teid: u32,
+    peer_s11_teid: u32,
+    peer_s5s8_teid: u32,
+}
+impl SessCtxInfo {
+    pub fn new() -> Self {
+        SessCtxInfo {
+            imsi: String::new(),
+            my_s11_teid: 0,
+            my_s5s8_teid: 0,
+            peer_s11_teid: 0,
+            peer_s5s8_teid: 0,
+        }
+    }
+}
+
+#[derive(Serialize, Debug)]
+struct NodeInfo {
+    addr: Ipv4Addr,
+    port: u16,
+    s11_seq: u32,
+    s5s8_seq: u32,
+    msg_type: u8,
+    status: u8,
+    session: SessCtxInfo,
+}
+impl NodeInfo {
+    pub fn new() -> Self {
+        NodeInfo {
+            addr: Ipv4Addr::new(0, 0, 0, 0),
+            port: 0,
+            s11_seq: 0,
+            s5s8_seq: 0,
+            msg_type: 0,
+            status: 0,
+            session: SessCtxInfo::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+struct TargetInfo {
+    tuple: ip5tuple,
+    teid: u32,
+    imsi: String,
+}
+
+
+async
+fn senario_analysis(target:TargetInfo, vecPackets: Vec<OwnedPacket>, nodes: &mut Vec<NodeInfo>)
+->Result<Vec<OwnedPacket>, String>
+{
+    let mut filtered_packets = Vec::new();
+
+    let mut init_node = NodeInfo::new();
+    let mut resp_node = NodeInfo::new();
+    let mut third_node = NodeInfo::new();
+
+    for pkt in vecPackets.into_iter() {
+        //IP & UDP Layer
+        let tuple = extract_5tuple(&pkt).await;
+
+        let msg_type = get_msg_type_from_header(&pkt);
+        let seq = get_seq_from_header(&pkt);
+        let teid = get_teid_from_header(&pkt);
+
+        match msg_type {
+            GTPV2C_CREATE_SESSION_REQ => {
+                let fteid_teid = extract_fteid(&pkt).await;
+                let imsi = extract_imsi(&pkt).await;
+
+                println!(">>>>>>>>>Extracted FTEID TEID: {}", fteid_teid);
+
+                //First Create Session Request Packet
+                if init_node.status == 0 {
+
+                    //First Node
+                    init_node_info(&mut init_node, &tuple, msg_type,
+                        seq, 0, imsi);
+                    init_fteid_info(&mut init_node, fteid_teid, 0, 0, 0);
+
+                    //Second Node
+                    init_node_info(&mut resp_node, &tuple, msg_type,
+                            0, 0, imsi);
+                    init_fteid_info(&mut resp_node, 0, 0, fteid_teid, 0);
+                    filtered_packets.push(pkt);
+                }
+                //If Second Create Session Request Packet
+                else if init_node.status == 1 && resp_node.status == 1 {
+
+                    if resp_node.addr == tuple.src_addr &&
+                       tuple.dst_addr != init_node.addr {
+
+                        //Third Node check
+                        init_node_info(&mut third_node, &tuple, msg_type,
+                            0, seq, imsi);
+                        init_fteid_info(&mut third_node, 0, 0, 0, fteid_teid);
+
+                        //Second Node Update
+                        update_node_info(&mut resp_node, seq, 0, 0, fteid_teid, 0, 0);
+
+                        filtered_packets.push(pkt);
+                    }
+                }   
+            },
+
+            GTPV2C_CREATE_SESSION_RSP => {
+                let fteid_teid = extract_fteid(&pkt).await;
+                if init_node.status == 0 {
+                    //Unexpected Case
+                    continue;
+                }
+                //Third Node
+                else if third_node.status == 1 {
+                    if is_match_node(&third_node, &tuple) &&
+                       is_match_node(&resp_node, &tuple) {
+
+                        if is_seq_match(&resp_node, seq) { //if sequence numaber is match what respond node is expecting.
+                            if is_s5s8_teid_match(&resp_node, teid) {
+                                update_node_info(&mut third_node, 0, 0,
+                                    0, fteid_teid, 0, 0);
+                                update_node_info(&mut resp_node, 0, 0,
+                                    0, 0, 0, fteid_teid);
+                                filtered_packets.push(pkt);
+                                continue;
+                            }
+                        }
+                    }
+                }
+                //Second Node
+                else if init_node.status == 1 {
+                    if is_match_node(&resp_node, &tuple) &&
+                       is_match_node(&init_node, &tuple) {
+
+                        if is_seq_match(&init_node, seq) &&
+                           is_s11_teid_match(&resp_node, teid) {
+
+                            update_node_info(&mut resp_node, 0, 0,
+                                fteid_teid, 0,
+                                0, 0);
+                            update_node_info(&mut init_node, 0, 0,
+                                0, 0,
+                                fteid_teid, 0);
+
+                            filtered_packets.push(pkt);
+                                continue;
+                        }
+                    }
+                }
+            }
+            GTPV2C_MODIFY_BEARER_REQ |
+            GTPV2C_RELEASE_ACCESS_BEARERS_REQ
+            => {
+                if init_node.status <= 1 {
+                    //Unexpected Case
+                    continue;
+                }
+                // [mme] -> [sgw or spgw]
+                if check_node(&init_node, tuple.src_addr, tuple.src_port) {
+                    //Intiator Node check
+                    update_node_info(&mut init_node, seq, 0,
+                        0, 0, 0, 0);
+                    filtered_packets.push(pkt);
+                    continue;
+                }
+                // [mme]  [sgw] -> [pgw] or [mme] <- [sgw or s/pgw]
+                else if check_node(&resp_node, tuple.src_addr, tuple.src_port) {
+                    //Response Node check
+                    // [mme]  [sgw] -> [pgw]
+                    if third_node.status > 0 &&
+                       check_node(&third_node, tuple.dst_addr, tuple.dst_port) {
+                        update_node_info(&mut resp_node, seq, 0,
+                        0, 0, 0, 0);
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                    else
+                    // [mme] <- [sgw]  [pgw]
+                    if check_node(&init_node, tuple.dst_addr, tuple.dst_port) {
+                        update_node_info(&mut resp_node, 0, seq,
+                            0, 0, 0, 0);
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+                // [mme]    [sgw] <- [pgw]
+                else if third_node.status > 0 && check_node(&third_node, tuple.src_addr, tuple.src_port) {
+                    //Third Node check
+                    update_node_info(&mut third_node, 0, seq,
+                        0, 0, 0, 0);
+                    filtered_packets.push(pkt);
+                    continue;
+                }
+            }
+
+            GTPV2C_MODIFY_BEARER_RSP |
+            GTPV2C_RELEASE_ACCESS_BEARERS_RSP 
+            => {
+                if init_node.status <= 1 {
+                    //Unexpected Case
+                    continue;
+                }
+
+                // [mme] <- [sgw or spgw]
+                if check_node(&init_node, tuple.dst_addr, tuple.dst_port) {
+                    if init_node.s11_seq == seq {
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+                // [mme]  [sgw] <- [pgw]
+                else if is_match_node(resp_node, tuple) {
+                    //Response Node check
+                    // [mme]  [sgw] <- [pgw]
+                    if third_node.status > 0 && check_node(&third_node, tuple.src_addr, tuple.src_port) {
+                        if resp_node.s5s8_seq == seq {
+                            filtered_packets.push(pkt);
+                            continue;
+                        }
+                    }
+                }
+                // [mme] -> [sgw or s/pgw]
+                else if check_node(&init_node, tuple.src_addr, tuple.src_port) {
+                    if resp_node.s11_seq == seq {
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+            },
+
+            GTPV2C_DOWNLINK_DATA_NOTIFICATION => {
+                if init_node.status <= 1 {
+                    //Unexpected Case
+                    continue;
+                }
+                // [mme] <- [sgw]
+                if check_node(&init_node, tuple.dst_addr, tuple.dst_port) &&
+                   check_node(&resp_node, tuple.src_addr, tuple.src_port) 
+                {
+                    if is_s11_teid_match(&init_node, teid) {
+                        update_node_info(&mut resp_node, seq, 0,
+                            0, 0, 0, 0);
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+            },
+            GTPV2C_DOWNLINK_DATA_NOTIFICATION_ACK => {
+                if init_node.status == 0 {
+                    //Unexpected Case
+                    continue;
+                }
+                // [mme] -> [sgw]
+                if check_node(&init_node, tuple.src_addr, tuple.src_port) &&
+                    check_node(&resp_node, tuple.dst_addr, tuple.dst_port)  {
+                    if is_s11_teid_match(&resp_node, teid) &&
+                       is_s11_seq_match(&resp_node, seq) {
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+            },
+
+            GTPV2C_DELETE_SESSION_REQ => {
+                if init_node.status <= 1 {
+                    //Unexpected Case
+                    continue;
+                }
+                //[mme] -> [sgw or spgw]
+                if check_node(&init_node, tuple.src_addr, tuple.src_port) {
+                    if is_s11_teid_match(&resp_node, teid) {
+                        update_node_info(&mut init_node, seq, 0, 0, 0, 0, 0);
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+                //[mme]  [sgw] -> [pgw]
+                else if check_node(&resp_node, tuple.src_addr, tuple.src_port) {
+                    if is_s5s8_teid_match(resp_node, teid) {
+                        update_node_info(&mut resp_node, 0, seq, 0, 0, 0, 0);
+
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+            },
+
+            GTPV2C_DELETE_SESSION_RSP => {
+                if init_node.status == 0 {
+                    //Unexpected Case
+                    continue;
+                }
+                //[mme]  [sgw] <- [pgw]
+                if third_node.status > 0 &&
+                   check_node(&resp_node, tuple.dst_addr, tuple.dst_port) &&
+                   check_node(&third_node, tuple.src_addr, tuple.src_port) 
+                {
+                    if is_s5s8_teid_match(&resp_node, teid) &&
+                       is_s5s8_seq_match(&resp_node, seq) {
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+                //[mme] <- [sgw]  [pgw]
+                else if check_node(&init_node, tuple.dst_addr, tuple.dst_port) &&
+                    check_node(&resp_node, tuple.src_addr, tuple.src_port) 
+                {
+                    if is_s11_teid_match(&init_node, teid) &&
+                       is_s11_seq_match(&init_node, seq) {
+                        filtered_packets.push(pkt);
+                        continue;
+                    }
+                }
+            },
+
+            _ => {}
+        }
+    }
+
+    if filtered_packets.is_empty() {
+        return Err("No packets matched the 5-tuple".to_string());
+    }
+    //First Node create
+    nodes.push(init_node.clone());
+    //Second Node create
+    nodes.push(resp_node.clone());
+    //Third Node create
+    if third_node.status > 0 {
+        nodes.push(third_node.clone());
+    }
+
+    Ok(filtered_packets)
+
+}
+
+
+fn get_seq_from_header (packet: &OwnedPacket) -> u32
+{
 
     let offset: usize = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
 
-    let (_, hdr) = get_gtp_header(&input[offset..]).map_err(|e| {
+    let (_, hdr) = get_gtp_header(&packet.data[offset..]).map_err(|e| {
         eprintln!("GTP Header parse error: {:?}", e);
         e
     }).unwrap();
@@ -67,6 +408,40 @@ fn get_seq_from_gtpc(input: &[u8]) -> u32 {
     println!("GTP Sequence: {}", hdr.seq);
 
     hdr.seq
+}
+
+fn get_teid_from_header (packet: &OwnedPacket) -> u32
+{
+
+    let offset: usize = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
+
+    let (_, hdr) = get_gtp_header(&packet.data[offset..]).map_err(|e| {
+        eprintln!("GTP Message Type parse error: {:?}", e);
+        e
+    }).unwrap();
+
+    match hdr.teid {
+        None => {
+            println!("No TEID in GTP Header");
+            return 0;
+        },
+        Some(teid) => teid,
+    }
+}
+
+fn get_msg_type_from_header (packet: &OwnedPacket) -> u8
+{
+
+    let offset: usize = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
+
+    let (_, hdr) = get_gtp_header(&packet.data[offset..]).map_err(|e| {
+        eprintln!("GTP Message Type parse error: {:?}", e);
+        e
+    }).unwrap();
+
+    println!("GTP Message Type: {}", hdr.msg_type);
+
+    hdr.msg_type
 }
 
 
@@ -123,6 +498,32 @@ extract_imsi(packet: &OwnedPacket)
     return imsi;
 }
 
+async fn extract_fteid(packet: &OwnedPacket) -> u32
+{
+    let mut offset: usize = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
+    offset += get_gtp_hdr_len(&packet.data[offset..]);
+    
+    let ies = parse_all_ies(&packet.data[offset..]);
+
+    let fteid = match ies {
+        Ok(ies) => {
+            let t = find_ie_fteid(&ies);
+            match t {
+                Ok(fteid_value) => {
+                    fteid_value
+                },
+                Err(e) => {
+                    return 0;
+                }
+            }
+        },
+        Err(e) => {
+            return 0;
+        },
+    };
+
+    fteid.teid
+}
 
 async fn
 extract_5tuple(packet: &OwnedPacket)
@@ -201,52 +602,48 @@ async fn filter_by_teid(orig_teid:u32, filtered_packets: Vec<OwnedPacket>)
 
 }
 
-async fn filter_by_5tuple(tuple:ip5tuple,
-    vecPackets: Vec<OwnedPacket>
-)
-// ->Vec<Packet<'_>>
-->Result<Vec<OwnedPacket>, String>
+fn checked_by_5tuple(tuple: &ip5tuple, packet: &OwnedPacket)
+-> bool
 {
-    let mut offset: usize = 0;
-    let mut ip_filtered_packets = Vec::new();
+    let mut offset: usize = MIN_ETH_HDR_LEN;
 
-    offset += MIN_ETH_HDR_LEN;
+    let (src_addr, dst_addr) = get_ip_addr(&packet.data[offset..]);
+    let proto = get_next_proto(&packet.data[offset..]);
 
-    // let pcap = &mut cap.cloned();
-    // loop 대신 while let을 사용하여 깔끔하게 처리 가능
-    // while let Ok(pkt) = cap.next_packet() 
-    for pkt in vecPackets.into_iter() {
-    
-        let (src, dst) = get_ip_addr(&pkt.data[offset..]);
-        let proto = get_next_proto(&pkt.data[offset..]);
+    if (tuple.src_addr == src_addr || tuple.src_addr == dst_addr) &&
+       (tuple.dst_addr == src_addr || tuple.dst_addr == dst_addr) &&
+       tuple.protocol as usize == proto {
+        
+        offset += IP_HDR_LEN;
 
-        if (tuple.src_addr == src || tuple.src_addr == dst) &&
-           (tuple.dst_addr == src || tuple.dst_addr == dst) &&
-           tuple.protocol as usize == proto {
-            
-            ip_filtered_packets.push( pkt);
-        }
-    }
-
-    if ip_filtered_packets.is_empty() {
-        return Err("No packets found for 5-tuple".to_string());
-    }
-
-    offset += IP_HDR_LEN;
-
-    let mut port_filtered_packets = Vec::new();
-
-    for pkt in ip_filtered_packets {
-
-        let (src_port, dst_port) = get_udp_port(&pkt.data[offset..]);
+        let (src_port, dst_port) = get_udp_port(&packet.data[offset..]);
 
         if ( tuple.src_port == src_port || tuple.src_port == dst_port ) &&
            ( tuple.dst_port == src_port || tuple.dst_port == dst_port ) {
-            port_filtered_packets.push(pkt);   
+            return true;   
         }
     }
 
-    Ok(port_filtered_packets)
+    false
+}
+
+async fn filter_by_5tuple(tuple:ip5tuple, vecPackets: Vec<OwnedPacket>)
+->Result<Vec<OwnedPacket>, String>
+{
+    let mut filtered_packets = Vec::new();
+
+    for pkt in vecPackets.into_iter() {
+
+		if checked_by_5tuple(&tuple, &pkt) {
+            filtered_packets.push(pkt);
+        }
+
+    }
+    if filtered_packets.is_empty() {
+        return Err("No packets matched the 5-tuple".to_string());
+    }
+
+    Ok(filtered_packets)
 }
 
 fn
@@ -282,6 +679,143 @@ make_data( tuple_filtered_packets: Vec<OwnedPacket>)
     return Ok(call_flow);
 }
 
+fn init_fteid_info(node: &mut NodeInfo,
+    my_s11_teid:u32, my_s5s8_teid:u32, peer_s11_teid:u32, peer_s5s8_teid:u32)
+{
+    if my_s11_teid > 0 {
+        node.session.my_s11_teid = my_s11_teid;
+    }
+    if my_s5s8_teid > 0 {
+        node.session.my_s5s8_teid = my_s5s8_teid;
+    }
+    if peer_s11_teid > 0 {
+        node.session.peer_s11_teid = peer_s11_teid;
+    }
+    if peer_s5s8_teid > 0 {
+        node.session.peer_s5s8_teid = peer_s5s8_teid;
+    }
+
+}
+
+fn init_node_info(node: &mut NodeInfo,
+    tuple: &ip5tuple, msg_type:u8, s11_seq:u32, s5s8_seq:u32, imsi:String)
+{
+    node.status = 1; //Start with Create Session Request Sent
+    node.addr = tuple.src_addr;
+    node.port = tuple.src_port;
+    node.msg_type = msg_type;
+
+    if s11_seq > 0 {
+        node.s11_seq = s11_seq;
+    }
+    if s5s8_seq > 0 {
+        node.s5s8_seq = s5s8_seq;
+    }
+
+    node.session.imsi = imsi;
+}
+
+fn update_node_info(node: &mut NodeInfo,
+    s11_seq: u32, s5s8_seq: u32,
+    my_s11_teid:u32, my_s5s8_teid:u32,
+    peer_s11_teid:u32, peer_s5s8_teid:u32)
+{
+    node.status += 1;
+
+    if s11_seq > 0 {
+        node.s11_seq = s11_seq;
+    }
+    if s5s8_seq > 0 {
+        node.s5s8_seq = s5s8_seq;
+    }
+
+    if my_s11_teid > 0 {
+        node.session.my_s11_teid = my_s11_teid;
+    }
+
+    if my_s5s8_teid > 0 {
+        node.session.my_s5s8_teid = my_s5s8_teid;
+    }
+
+    if peer_s11_teid > 0 {
+        node.session.peer_s11_teid = peer_s11_teid;
+    }
+
+    if peer_s5s8_teid > 0 {
+        node.session.peer_s5s8_teid = peer_s5s8_teid;
+    }
+}
+
+fn is_s5s8_teid_match( node: &NodeInfo, teid:u32)
+-> bool
+{
+    if node.session.my_s5s8_teid == teid {
+       return true;
+    }
+    false
+}
+
+fn is_s11_teid_match( node: &NodeInfo, teid:u32)
+-> bool
+{
+    if node.session.my_s11_teid == teid {
+       return true;
+    }
+    false
+}
+
+fn is_s5s8_seq_match( node: &NodeInfo, seq:u32)
+-> bool
+{
+    if node.s5s8_seq == seq {
+       return true;
+    }
+    false
+}
+
+fn is_s11_seq_match( node: &NodeInfo, seq:u32)
+-> bool
+{
+    if node.s11_seq == seq {
+       return true;
+    }
+    false
+}
+
+fn
+check_node ( node: &NodeInfo, addr: Ipv4Addr, port: u16 )
+-> bool
+{
+    if node.addr == addr && node.port == port {
+        return true;
+    }
+
+    false
+}
+
+fn
+is_same_context( node: &NodeInfo, teid:u32)
+-> bool
+{
+    if node.session.my_teid == teid {
+        return true;
+    }
+
+    false
+}
+fn
+is_match_node( node: &NodeInfo, tuple: &ip5tuple )
+-> bool
+{
+    if ( node.addr == tuple.src_addr || node.addr == tuple.dst_addr) &&
+       ( node.port == tuple.src_port || node.port == tuple.dst_port)
+       {
+           return true;
+    }
+
+    false
+}
+
 
 pub async fn
 make_call_flow (path: &PathBuf, id: usize)
@@ -289,11 +823,13 @@ make_call_flow (path: &PathBuf, id: usize)
 {
     let mut offset: usize = 0;
 
-    //1. convert pcap to vec
+    println!("Target Packet ID: {}", id);
+    //1. convert whole pcap to vec
     let vecPackets = load_pcap(path)?;
 
     //2. find the packet by id
-    let packet =vecPackets.get(id).ok_or("Packet not found".to_string())?;
+    let packet = vecPackets.get(id-1).ok_or("Packet not found".to_string())?;
+    println!("Target Packet idx: {}", packet.idx);
 
     //3. extract 5-tuple from previous found packet
     let tuple = extract_5tuple(&packet).await;
@@ -302,16 +838,36 @@ make_call_flow (path: &PathBuf, id: usize)
     offset += MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
 
     //4. extract TEID from previous found packet
-    // let (rest,  teid) = get_gtp_teid(&packet.data[offset..]).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
-    // println!("Extracted TEID: {}", teid);
+    let (rest,  teid) = get_gtp_teid(&packet.data[offset..]).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
+    println!("Extracted TEID: {}", teid);
 
+    //4.1 extract IMSI from previous found packet
     let target_imsi = extract_imsi(&packet).await;
+    println!("Extracted IMSI: {}", target_imsi);
+
+
+    //4.2 extract SEQ from previous found packet
+    // let seq = get_seq_from_header(&packet);
+    // println!("Extracted SEQ: {}", seq);
+
+    // let msg_type = get_msg_type_from_header(&packet);
+    // println!("Extracted Message Type: {}", msg_type);
+
+    let target = TargetInfo {
+        tuple : tuple.clone(),
+        teid,
+        imsi: target_imsi.clone(),
+    };
+
+
+
+    /****************************************/
 
     //5. Filter by 5-tuple (src_ip, dst_ip, src_port, dst_port, protocol_type) of found previous packet
-    let filtered_packets = filter_by_5tuple(tuple, vecPackets).await;
+    let tuple_filtered_packets = filter_by_5tuple(tuple, vecPackets).await;
 
     //5.1 Handle error from filtering by 5-tuple
-    let tuple_filtered_packets = match filtered_packets {
+    let filtered_packets = match tuple_filtered_packets {
         Ok(v) => v,
         Err(e) => {
             eprintln!("Error filtering by 5-tuple: {}", e);
@@ -320,18 +876,29 @@ make_call_flow (path: &PathBuf, id: usize)
     };
     // println!("Filtered packets count: {}", tuple_filtered_packets.len());
 
-    /*
+    let mut nodes = vec![];
 
-    //6. Filter by TEID of found previous packet
-    let teid_filtered_packets = filter_by_teid(teid, tuple_filtered_packets).await;
-    println!("TEID Filtered packets count: {}", teid_filtered_packets.len());
-    */
+    let packets = senario_analysis(target, filtered_packets, &mut nodes).await;
+    let packets = match packets {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Error filtering by 5-tuple: {}", e);
+            return Err("Error filtering by 5-tuple".to_string());
+        }
+    };
 
-    let imsi_filtered_packets = filter_by_imsi(&target_imsi, tuple_filtered_packets);
-    println!("IMSI Filtered packets count: {}", imsi_filtered_packets.len());
+    println!("Nodes constructed: {:?}", nodes);
 
-    //7. Make Call Flow raw data
-    let call_flow = make_data( imsi_filtered_packets);
+    // //6. Filter by TEID of found previous packet
+    // let teid_filtered_packets = filter_by_teid(teid, tuple_filtered_packets).await;
+    // println!("TEID Filtered packets count: {}", teid_filtered_packets.len());
+
+    // //7. Filter by IMSI of found previous packet
+    // let imsi_filtered_packets = filter_by_imsi(&target_imsi, teid_filtered_packets);
+    // println!("IMSI Filtered packets count: {}", imsi_filtered_packets.len());
+
+    // //7. Make Call Flow raw data
+    let call_flow = make_data( packets);
 
     println!("Call Flow constructed with\n{:?}", call_flow);
     return call_flow;

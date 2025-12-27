@@ -132,6 +132,24 @@ pub fn get_gtp_hdr_len(input: &[u8]) -> usize
     len
 }
 
+pub fn find_ie_fteid(ies: &Vec<GtpIe>)
+-> Result<FTeidValue, String>
+{
+    for ie in ies {
+        if ie.ie_type == GTPV2C_IE_FTEID {
+            match &ie.ie_value {
+                GtpIeValue::FTeid(fteid) => {
+                    return Ok(fteid.clone());
+                }
+                _ => {
+                    return Err("FTEID IE has unexpected value type".to_string());
+                },
+            }
+        }
+    }
+    Err("FTIED IE not found".to_string())
+}
+
 pub fn find_ie_imsi(ies: &Vec<GtpIe>)
 -> Result<String, String>
 // -> Result<GtpIeValue, String>
@@ -271,7 +289,7 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
     if !teid.is_none() {
         add += 4;
     }
-    add += (4);
+    add += 4;
     // let (remaining, payload) = take((msg_len-add) as usize)(input)?;
 
     // if let AppLayerInfo::GTP(gtp) = &mut packet.app {

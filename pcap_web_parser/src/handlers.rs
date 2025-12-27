@@ -87,10 +87,12 @@ pub async fn handle_parse_summary(
             continue;
         }
 
+        println!("Received 'pcap' file field");
         // 원래 파일명(클라이언트가 제공한)
         let orig_filename = field.file_name().map(|s| s.to_string());
         let name = orig_filename.unwrap();
 
+        println!("Original filename: {}", name);
         /* 캐쉬에 등록 */
         let result = upload_file( &cache, &name, field,);
 
