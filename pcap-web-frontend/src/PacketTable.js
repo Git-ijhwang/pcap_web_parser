@@ -9,7 +9,7 @@ import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/GtpHeader";
 
 
-function PacketTable({ packets, fileId}) {
+function PacketTable({ packets, fileId, onCallFlow})  {
   const [loadingFlow, setLoadingFlow] = useState(false);
   const [flowError, setFlowError] = useState(null);
   const [callFlow, setCallFlow] = useState(null);
@@ -39,36 +39,37 @@ function PacketTable({ packets, fileId}) {
     setSelectedPacket(null);
   };
 
-  const fetchCallFlow = async (packetId) => {
+  // const fetchCallFlow = async (packetId) => {
 
-    setLoadingFlow(true);
-    setFlowError(null);
+  //   setLoadingFlow(true);
+  //   setFlowError(null);
 
-    try {
-      console.log("PacketID:", packetId);
-      const res = await fetch("/api/gtp/callflow", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(
-          {file_id: fileId , packet_id: packetId}),
-      });
+  //   try {
+  //     console.log("PacketID:", packetId);
+  //     const res = await fetch("/api/gtp/callflow", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(
+  //         {file_id: fileId , packet_id: packetId}),
+  //     });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
+  //     if (!res.ok) {
+  //       throw new Error(`HTTP ${res.status}`);
+  //     }
 
-            const data = await res.json();
-            setCallFlow(data);
-        }
-        catch (err) {
-            // console.err("Callflow fetch failed:", err);
-            setFlowError("Failed to load call flow");
-        } finally {
-            setLoadingFlow(false);
-        }
-    };
+  //           const data = await res.json();
+  //           setCallFlow(data);
+  //           setShowCallFlow(true);
+  //       }
+  //       catch (err) {
+  //           // console.err("Callflow fetch failed:", err);
+  //           setFlowError("Failed to load call flow");
+  //       } finally {
+  //           setLoadingFlow(false);
+  //       }
+  //   };
 
   const fetchPacketDetail = async (id) => {
     if (!fileId) {
@@ -154,19 +155,22 @@ function PacketTable({ packets, fileId}) {
   return (
     <div className="container mt-4">
 
+{!onCallFlow && (
       <button type="button"
-          className= "btn btn-sm btn-outline-secondary position-absolute"
-          style={{top:"12px", right:"12px", margin:"12px"}}
+          className= "btn btn-sm btn-outline-secondary position-absolute collaps-btn"
           onClick={() => setFilterCollapsed(c => !c)}
           aria-label="toggle collapse"
           >
         <i className={`bi ${filterCollapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
       </button>
+)}
 
-      <div className={`d-flex card gap-2 p-2 filter-wrapper ${filterCollapsed ? "filterCollapsed" : ""}`} >
+      <div className={`d-flex card gap-2 p-2 filter-wrapper `} >
 
         <h5>Packet Filters</h5>
-        <div className="d-flex gap-2">
+        <div className={`d-flex gap-2 pkt-filter-box
+        ${filterCollapsed ? "filterCollapsed" : ""}
+        `}>
 
           {/* Layer-3 */}
           <div className="l3-filter  card  gap-2 flex-fill" >
@@ -324,15 +328,17 @@ function PacketTable({ packets, fileId}) {
               <td>{pkt.protocol}</td>
               <td>{pkt.description}</td>
               <td>
-                {pkt.description === "Create Session Request [32]" && (
+                {pkt.description === "Create Session Request [32]" && onCallFlow && (
                   <button
                     className="btn btn-sm btn-outline-primary"
                     onClick={(e) => {
                       e.stopPropagation();
-                      fetchCallFlow(pkt.id); }} >
-                      <i className="bi bi-diagram-3"></i>
+                      onCallFlow(pkt.id);
+                    }} >
+                    <i className="bi bi-diagram-3"></i>
                   </button>
-                )}
+                )
+                }
               </td>
             </tr>
           ))

@@ -3,6 +3,7 @@ import {Modal, Button} from "react-bootstrap";
 import "./App.css";
 
 import PacketTable from "./PacketTable"
+import CallFlowView from "./CallFlowView"
 
 
 function App() {
@@ -15,8 +16,12 @@ function App() {
   // const [result, setResult] = useState(null);
   const [fileId, setFileId] = useState(null);
 
-  const [showCallFlow, setShowCallFlow] = useState(false);
   const [callFlowData, setCallFlowData] = useState(null);
+  const [showCallFlow, setShowCallFlow] = useState(false);
+  const [loadingFlow, setLoadingFlow] = useState(false);
+  const [flowError, setFlowError] = useState(null);
+  // const [onCallFlow, setOnCallFlow] = useState(false);
+  // const [callFlow, setCallFlow] = useState(null);
 
   // 파일 input ref 생성
   const fileInputRef = useRef(null);
@@ -80,13 +85,45 @@ function App() {
     }
   };
 
-  const fetchCallFlow = async (packetId) => {
-  const res = await fetch(`/api/callflow/${packetId}`);
-  const data = await res.json();
 
-  setCallFlowData(data);
-  setShowCallFlow(true);
-};
+  const fetchCallFlow = async (packetId) => {
+
+    setLoadingFlow(true);
+
+    try {
+      const res = await fetch("/api/gtp/callflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", },
+        body: JSON.stringify( {file_id: fileId , packet_id: packetId}),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("CallFlow data:", data);
+      setCallFlowData(data);
+      setShowCallFlow(true);
+    }
+    catch (err) {
+        setFlowError("Failed to load call flow");
+    }
+  };
+
+  // const fetchCallFlow = async (packetId) => {
+  //   const res = await fetch(`/api/callflow/${packetId}`);
+  //   const data = await res.json();
+
+  //   setCallFlowData(data);
+  //   setShowCallFlow(true);
+  // };
+
+  // ✅ 여기서 구현
+  const handleBackFromCallFlow = () => {
+    setShowCallFlow(false);
+    setCallFlowData(null);
+  };
 
 
   return (
@@ -95,7 +132,7 @@ function App() {
 
         <button type="button"
             className= "btn btn-sm btn-outline-secondary position-absolute"
-            style={{top:"12px", right:"12px", margin:"12px"}}
+          style={{top:"12px", right:"12px", margin:"12px"}}
             onClick={() => setCollapsed(c => !c)}
             aria-label="toggle collapse"
             >
@@ -137,24 +174,28 @@ function App() {
         </div>
       </div>
 
-      <div className="packetlist-card card shadow p-4 ">
+      <div className="packetlist-card card shadow p-4">
         {result?.packets && (
 
-<div className="viewport">
-  <div className={`slider ${showCallFlow ? "shift" : ""}`}>
-    <div className="panel table-panel">
-          <PacketTable packets={result.packets} fileId={fileId} />
-    </div>
-    <div className="panel callflow-panel">
-      <CallFlowView />
-    </div>
-  </div>
-</div>
+          <div className="viewport">
+            <div className={`slider ${showCallFlow ? "shift" : ""}`}>
+              {/* Table Panel */}
+              <div className="panel table-panel">
+                <PacketTable packets={result.packets} fileId={fileId}
+                    onCallFlow={fetchCallFlow} />
+              </div>
 
-
-
-
-
+              <div className="panel callflow-panel">
+                { CallFlowView && (
+                  < CallFlowView 
+                    data={callFlowData}
+                    loading={!callFlowData}
+                    onBack={handleBackFromCallFlow}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         <Modal show={selectedPacket !== null} onHide={() => setSelectedPacket(null)} centered size="lg">
@@ -188,3 +229,4 @@ function App() {
 }
 
 export default App;
+

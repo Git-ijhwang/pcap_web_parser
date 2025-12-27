@@ -8,6 +8,7 @@ use crate::ip::{self, ipv4::*, ipv6::*, port::*};
 use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
 use crate::types::*;
+use crate::parse_pcap::*;
 
 #[derive(Serialize, Debug)]
 pub struct CallFlow{
@@ -645,6 +646,43 @@ async fn filter_by_teid(orig_teid:u32, filtered_packets: Vec<OwnedPacket>)
 
 }
 
+pub fn check_gtp(packet: &OwnedPacket)
+-> bool
+{
+    let mut offset: usize = MIN_ETH_HDR_LEN;
+    let mut next_type = 0;
+
+    if packet.data.len() >= MIN_ETH_HDR_LEN {
+        //get next protocol from Ethernet
+        next_type = parse_ethernet(&packet.data);
+    }
+
+    println!("Next IP type: {:04x?}", next_type);
+    if next_type != 0x0800 {
+        return false
+    }
+
+    let mut hdr_len = MIN_ETH_HDR_LEN;
+
+    // --- Parse Layer 3 ---
+    let next_type = parse_ipv4_simple(&packet.data[offset..], None);
+
+    println!("Next l4 type: {}", next_type);
+    if next_type != PROTO_TYPE_UDP {
+        return false;
+    }
+    hdr_len += IP_HDR_LEN;
+    let port_number = parse_udp_simple ( &packet.data[hdr_len..], None);
+
+    println!("port number: {}", port_number);
+    if port_number != WELLKNOWN_PORT_GTPV2 {
+        return false;
+    }
+
+    true
+}
+
+
 fn checked_by_5tuple(tuple: &ip5tuple, packet: &OwnedPacket)
 -> bool
 {
@@ -669,6 +707,25 @@ fn checked_by_5tuple(tuple: &ip5tuple, packet: &OwnedPacket)
 
     false
 }
+
+async fn filtered_as_gtp(vecPackets: Vec<OwnedPacket>)
+->Result<Vec<OwnedPacket>, String>
+{
+    let mut filtered_packets = Vec::new();
+
+    for pkt in vecPackets.into_iter() {
+
+        if check_gtp(&pkt) {
+            filtered_packets.push(pkt);
+        }
+    }
+    if filtered_packets.is_empty() {
+        return Err("No GTP packets in pcap file".to_string());
+    }
+
+    Ok(filtered_packets)
+}
+
 
 async fn filter_by_5tuple(tuple:ip5tuple, vecPackets: Vec<OwnedPacket>)
 ->Result<Vec<OwnedPacket>, String>
@@ -915,9 +972,20 @@ make_call_flow (path: &PathBuf, id: usize)
     // println!("Filtered packets count: {}", tuple_filtered_packets.len());
 
     */
+    let filtered_packets = filtered_as_gtp(vecPackets).await;
+
+    let gtp_packets = match filtered_packets {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Error filtering by 5-tuple: {}", e);
+            return Err("Error filtering by 5-tuple".to_string());
+        }
+    };
+    println!("GTP Packets: {}", gtp_packets.len());
+
     let mut nodes = vec![];
 
-    let packets = senario_analysis(target, vecPackets, &mut nodes).await;
+    let packets = senario_analysis(target, gtp_packets, &mut nodes).await;
     let packets = match packets {
         Ok(v) => v,
         Err(e) => {

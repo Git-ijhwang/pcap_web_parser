@@ -32,7 +32,7 @@ fn format_timestamp(packet: &Packet) -> String
 }
 
 
-fn parse_ethernet(data: &[u8]) -> usize
+pub fn parse_ethernet(data: &[u8]) -> usize
 {
     // let mut ethertype_str = String::from("N/A");
     let mut offset = 0;
@@ -234,29 +234,33 @@ pub async fn simple_parse_pcap(path: &Path)
             next_type = parse_ethernet(&packet.data);
         }
         if next_type != 0x0800 {
+            idx += 1;
             continue;
         }
 
         hdr_len += MIN_ETH_HDR_LEN;
 
         // --- Parse Layer 3 ---
-        let v= match next_type {
+        let next_type= match next_type {
             //IPv4
             NEXT_HDR_IPV4 => {
-                Some(parse_ipv4_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
+                parse_ipv4_simple(&packet.data[hdr_len..], Some(&mut parsed_packet))
             },
 
             //IPv6
             NEXT_HDR_IPV6 => {
-                Some(parse_ipv6_simple(&packet.data[MIN_ETH_HDR_LEN..], &mut parsed_packet))
-            }
-            _       => None,
+                parse_ipv6_simple(&packet.data[hdr_len..], &mut parsed_packet)
+        }
+            _       => {
+                idx+=1;
+                continue;
+            },
         };
 
-        if v.is_none() {
-            break;
+        if next_type == 0 {
+            idx += 1;
+            continue;
         }
-        next_type = v.unwrap();
 
         hdr_len += IP_HDR_LEN;
 
@@ -269,7 +273,7 @@ pub async fn simple_parse_pcap(path: &Path)
                 },
 
                 PROTO_TYPE_UDP   => {
-                    (parse_udp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                    (parse_udp_simple ( &packet.data[hdr_len..], Some(&mut parsed_packet)),
                     UDP_HDR_LEN)
                 },
 
@@ -278,8 +282,16 @@ pub async fn simple_parse_pcap(path: &Path)
                     ICMP_HDR_LEN)
                 },
 
-                _   =>  (0, 0),
+                _       => {
+                    idx+=1;
+                    continue;
+                },
             };
+
+        if port_number == 0 || l4_hdr_len == 0 {
+            idx += 1;
+            continue;
+        }
 
         hdr_len += l4_hdr_len;
 
@@ -295,6 +307,7 @@ pub async fn simple_parse_pcap(path: &Path)
 
             _ => {
                 // (&[] as &[u8], GtpHeader::new())
+                idx+=1;
                 continue;
             },
         };
@@ -314,10 +327,5 @@ pub async fn simple_parse_pcap(path: &Path)
         packets : packets,
     };
 
-    if packet_len == idx-1 {
         Ok( result )
-    }
-    else {
-        Err("Fail".to_string())
-    }
 }
