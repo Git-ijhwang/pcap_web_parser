@@ -112,3 +112,27 @@
   opacity: 0;
   margin-top: 0;
 }
+
+
+
+/* Carousel */
+.viewport {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.slider {
+  display: flex;
+  width: 200%;
+  transition: transform 0.4s ease;
+}
+
+.panel {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.slider.shift {
+  transform: translateX(-50%);
+}

@@ -274,7 +274,7 @@ pub async fn simple_parse_pcap(path: &Path)
                 },
 
                 PROTO_TYPE_ICMP   => {
-                    ( parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                    (parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
                     ICMP_HDR_LEN)
                 },
 
@@ -286,8 +286,9 @@ pub async fn simple_parse_pcap(path: &Path)
         // --- Parse Application Layer ---
         match port_number {
             WELLKNOWN_PORT_GTPV2   => {
-                parse_gtpc (
-                    &packet.data[hdr_len..],
+                // parsed_packet.protocol.clear();
+                parsed_packet.protocol = "GTP2-C".to_string();
+                parse_gtpc ( &packet.data[hdr_len..],
                     &mut parsed_packet)
                     .map_err(|e| format!("GTP-C parse error: {:?}", e))?
             },

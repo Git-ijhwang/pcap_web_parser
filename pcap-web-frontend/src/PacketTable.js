@@ -229,9 +229,7 @@ function PacketTable({ packets, fileId}) {
             </div>
           </div>
 
-          {/*
-          Layer-4
-          */}
+          {/* Layer-4 */}
           <div className="l4-filter  card  gap-2 flex-fill" >
             {/* TCP */}
             <div className="d-flex align-items-center gap-2">
@@ -326,13 +324,15 @@ function PacketTable({ packets, fileId}) {
               <td>{pkt.protocol}</td>
               <td>{pkt.description}</td>
               <td>
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fetchCallFlow(pkt.id); }} >
-                    <i className="bi bi-diagram-3"></i>
-                </button>
+                {pkt.description === "Create Session Request [32]" && (
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fetchCallFlow(pkt.id); }} >
+                      <i className="bi bi-diagram-3"></i>
+                  </button>
+                )}
               </td>
             </tr>
           ))
@@ -394,7 +394,7 @@ function PacketTable({ packets, fileId}) {
 
         </Modal>
       )}
-  </div>
+    </div>
   );
 }
 

@@ -15,6 +15,8 @@ function App() {
   // const [result, setResult] = useState(null);
   const [fileId, setFileId] = useState(null);
 
+  const [showCallFlow, setShowCallFlow] = useState(false);
+  const [callFlowData, setCallFlowData] = useState(null);
 
   // 파일 input ref 생성
   const fileInputRef = useRef(null);
@@ -78,6 +80,14 @@ function App() {
     }
   };
 
+  const fetchCallFlow = async (packetId) => {
+  const res = await fetch(`/api/callflow/${packetId}`);
+  const data = await res.json();
+
+  setCallFlowData(data);
+  setShowCallFlow(true);
+};
+
 
   return (
     <div className="container mt-4">
@@ -129,10 +139,22 @@ function App() {
 
       <div className="packetlist-card card shadow p-4 ">
         {result?.packets && (
-          <PacketTable
-              packets={result.packets}
-              fileId={fileId}
-            />
+
+<div className="viewport">
+  <div className={`slider ${showCallFlow ? "shift" : ""}`}>
+    <div className="panel table-panel">
+          <PacketTable packets={result.packets} fileId={fileId} />
+    </div>
+    <div className="panel callflow-panel">
+      <CallFlowView />
+    </div>
+  </div>
+</div>
+
+
+
+
+
         )}
 
         <Modal show={selectedPacket !== null} onHide={() => setSelectedPacket(null)} centered size="lg">
