@@ -9,10 +9,11 @@ import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/GtpHeader";
 
 
-function PacketTable({ packets, fileId, onCallFlow})  {
+function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
   const [loadingFlow, setLoadingFlow] = useState(false);
   const [flowError, setFlowError] = useState(null);
   const [callFlow, setCallFlow] = useState(null);
+  const [showCallFlow, setShowCallFlow] = useState(false);
 
 // , currentFile , onFilterChange}) {
   const [selectedPacket, setSelectedPacket] = useState(null);
@@ -155,7 +156,7 @@ function PacketTable({ packets, fileId, onCallFlow})  {
   return (
     <div className="container mt-4">
 
-{!onCallFlow && (
+{!showCallFlow && (
       <button type="button"
           className= "btn btn-sm btn-outline-secondary position-absolute collaps-btn"
           onClick={() => setFilterCollapsed(c => !c)}

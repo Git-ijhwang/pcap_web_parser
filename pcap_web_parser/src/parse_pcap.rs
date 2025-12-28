@@ -306,7 +306,6 @@ pub async fn simple_parse_pcap(path: &Path)
             },
 
             _ => {
-                // (&[] as &[u8], GtpHeader::new())
                 idx+=1;
                 continue;
             },

@@ -7,17 +7,12 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: Option<&mut PacketSummary>) 
     let mut offset: usize = 0;
 
     offset += 2; //IHL(1byte) + Service Field(1byte)
-
     offset += 2; //Total Length (2bytes)
-
     offset += 2; //ID Field (2 bytes)
-
     offset += 2; //Fragment flag and offset (2bytes)
-
     offset += 1; //Time to Live (1byte)
 
     let next_hdr = ip_hdr.get(offset).copied().unwrap_or(0) as usize;
-    // let mut str_proto = String::new();
 
     if let Some(p) = packet.as_deref_mut() {
         if let Some(v) = protocol_to_str(next_hdr) {
@@ -27,10 +22,8 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: Option<&mut PacketSummary>) 
             eprintln!("[parse_ipv4_simple] Unknown protocol type {}", next_hdr);
         }
     }
-    // packet.protocol.push(str_proto);
 
     offset += 1; //Next Protocol (1byte)
-
     offset += 2; //Header Checksum Field (2bytes)
 
     let mut src_addr = Ipv4Addr::new(0,0,0,0);

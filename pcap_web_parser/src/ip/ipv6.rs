@@ -98,10 +98,9 @@ pub fn parse_ipv6(ip_hdr: &[u8], ip: &mut Ip6Info) -> usize
         ip_hdr[offset], ip_hdr[offset+1], ]);
     offset += 2;
 
-    let mut ext_hdr_flag = false;
     let next_hdr = ip_hdr[offset] as usize;
 
-    let mut str_proto = protocol_to_str(next_hdr).unwrap_or_default(); 
+    let str_proto = protocol_to_str(next_hdr).unwrap_or_default(); 
     offset += 1;
 
     let hl = ip_hdr[offset];
@@ -124,27 +123,6 @@ pub fn parse_ipv6(ip_hdr: &[u8], ip: &mut Ip6Info) -> usize
         eprintln!("failure to read dst addr")
     }
     offset += 16;
-
-    // let mut ip_print = String::new();
-    // ip_print = format!("\tI6\t
-    //     Src: {}  Dst:{}", src_addr6, dst_addr6);
-
-    // if short {
-    // }
-    // else {
-    //     if str_proto.len() > 0 {
-    //         ip_print = format!("
-    //         \tIP6\tVer:{}, TC:{}, FL:{}, Len:{}, Next:{}[{}] HL:{} Src: {}  Dst:{} ",
-    //         version, tc, fl, len, next_hdr, str_proto, hl, src_addr6, dst_addr6)
-    //     }
-    //     else {
-    //         ip_print = format!("
-    //         \tIP6\tVer:{}, TC:{}, FL:{}, Len:{}, Next:{} HL:{} Src: {}  Dst:{} ",
-    //         version, tc, fl, len, next_hdr, hl, src_addr6, dst_addr6)
-
-    //     }
-    // }
-    // println!("{}", ip_print);
 
     if str_proto.is_empty() {
         parse_ipv6_ext(next_hdr, &ip_hdr[offset..]);

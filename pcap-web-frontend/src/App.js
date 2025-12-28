@@ -10,10 +10,8 @@ function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [currentFile, setCurrentFile] = useState(null);
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [collapsed, setCollapsed] = useState(null);
-  // const [result, setResult] = useState(null);
   const [fileId, setFileId] = useState(null);
 
   const [callFlowData, setCallFlowData] = useState(null);
@@ -22,6 +20,7 @@ function App() {
   const [flowError, setFlowError] = useState(null);
   // const [onCallFlow, setOnCallFlow] = useState(false);
   // const [callFlow, setCallFlow] = useState(null);
+
 
   // 파일 input ref 생성
   const fileInputRef = useRef(null);
@@ -73,7 +72,6 @@ function App() {
 
       const json = await res.json();
       setResult(json.packets);
-      // setCurrentFile(json.file)
       setFileId(json.file_id);
 
     } catch (err) {
@@ -88,7 +86,7 @@ function App() {
 
   const fetchCallFlow = async (packetId) => {
 
-    setLoadingFlow(true);
+    // setLoadingFlow(true);
 
     try {
       const res = await fetch("/api/gtp/callflow", {
@@ -182,7 +180,8 @@ function App() {
               {/* Table Panel */}
               <div className="panel table-panel">
                 <PacketTable packets={result.packets} fileId={fileId}
-                    onCallFlow={fetchCallFlow} />
+                    onCallFlow={fetchCallFlow}
+                    showCallFlow={showCallFlow} />
               </div>
 
               <div className="panel callflow-panel">

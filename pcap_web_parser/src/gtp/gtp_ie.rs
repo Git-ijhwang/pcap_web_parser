@@ -304,10 +304,10 @@ pub fn parse_uli_ie(data: &[u8]) -> Result<GtpIeValue, String> {
             return Err("ECGI field incomplete".into());
         }
         let (mcc, mnc) = decode_mcc_mnc(data[offset], data[offset + 1], data[offset + 2]);
-        let eci = ((data[offset + 3] as u32) << 24)
-                | ((data[offset + 4] as u32) << 16)
-                | ((data[offset + 5] as u32) << 8)
-                |  (data[offset + 6] as u32);
+        let eci = ((data[offset + 3] as u32) << 24) |
+                ((data[offset + 4] as u32) << 16) |
+                ((data[offset + 5] as u32) << 8) |
+                (data[offset + 6] as u32);
         uli.ecgi = Some(EcgiValue { mcc, mnc, eci });
         offset += 7;
     }
@@ -427,11 +427,6 @@ fn parse_flow_label(comp_value: &[u8]) -> Result<PacketFilterComponent, String> 
          (comp_value[2] as u32);
 
     Ok(PacketFilterComponent::FlowLabel{label})
-}
-
-// fallback
-fn parse_unknown_component(t: u8, data: &[u8]) -> PacketFilterComponent {
-    PacketFilterComponent::Unknown { t, data: data.to_vec() }
 }
 
 pub fn decode_bearer_tft (input: &[u8])

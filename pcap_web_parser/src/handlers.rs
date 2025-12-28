@@ -72,7 +72,6 @@ async fn save_field_to_file(
 }
 
 pub async fn handle_parse_summary(
-    // State(cache): State<Cache>,
     State(state): State<Arc<AppState>>,
     mut multipart: Multipart)
 -> Response
@@ -179,46 +178,16 @@ let test = params.file_id;
 
     let cache = &state.cache;
 
-    // let filename = std::path::Path::new(id)
-    //     .file_name()
-    //     .and_then(|os| os.to_str())
-    //     .unwrap_or("");
-
-    // let key = filename
-    //     .trim_start_matches("web_parser-")
-    //     .trim_end_matches(".pcap");
-
-    //1. cache로부터 파일이름을 가져오기.
-    // let cache_read = state.cache.read().await;
-    // let cache_read = cache.read().await;
-    // let info = match cache_read.get(&params.file) {
-
-    //2. 파일 읽기
-    // let info = match cache_read.get(&file_name) {
-    //     Some(v) => v.clone(),
-    //     None => {
-    //         let msg = format!("File not found in cache.");
-    //         return (StatusCode::NOT_FOUND, msg).into_response();
-    //     }
-    // };
-
-    // drop(cache_read);
-
-    //3. PacketQuery로부터 ID가져오기
-
-    //4. 파일에서 ID가 동일한 packet 읽기.
     let parse_result =
         tokio::spawn(async move {
             //5. parsing하기
             parse_single_packet(&file_name, packet_id).await
         }).await;
 
-    //5. last used time update
     if let Some(info) = cache.write().await.get_mut(&uuid) {
         info.last_used = Instant::now();
     }
 
-    //6. 결과 return 하기
     match parse_result {
         Ok(Ok(parsed)) => {
             let msg = Json(parsed);
@@ -313,7 +282,7 @@ handle_cleanup(
     // State(cache): State<Cache>)
 -> (StatusCode, String)
 {
-    let ttl = Duration::from_secs(60 * 5); // 예: 5분 TTL
+    let ttl = Duration::from_secs(60 * 5);
     let cache = &state.cache;
     let mut write = cache.write().await;
     let now = Instant::now();
@@ -325,10 +294,8 @@ handle_cleanup(
     for key in keys {
         if let Some(info) = write.get(&key) {
             if now.duration_since(info.last_used) > ttl {
-                // 파일 삭제
                 let _ = fs::remove_file(&info.path).await;
 
-                // 캐시에서 제거
                 write.remove(&key);
 
                 removed_count += 1;

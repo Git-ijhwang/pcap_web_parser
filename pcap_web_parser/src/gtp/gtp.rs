@@ -152,7 +152,6 @@ pub fn find_ie_fteid(ies: &Vec<GtpIe>)
 
 pub fn find_ie_imsi(ies: &Vec<GtpIe>)
 -> Result<String, String>
-// -> Result<GtpIeValue, String>
 {
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_IMSI {
@@ -171,15 +170,13 @@ pub fn find_ie_imsi(ies: &Vec<GtpIe>)
 }
 
 pub fn get_gtp_teid<'a>(input: &'a [u8])
-// -> u16
 -> IResult<&'a[u8], u32>
 {
-    let start = input;
     let (input, flags) = be_u8(input)?;
     let t_flag = ((flags >> 3) & 0x01) == 1;
 
-    let (input, msg_type) = be_u8(input)?;
-    let (input, msg_len) = be_u16(input)?;
+    let (input, _) = be_u8(input)?;
+    let (input, _) = be_u16(input)?;
 
     let (input, teid) = if t_flag {
         let (input, teid) = be_u32(input)?;
@@ -192,7 +189,6 @@ pub fn get_gtp_teid<'a>(input: &'a [u8])
 }
 
 pub fn get_gtp_header(input: & [u8])
-// ->GtpHeader
 -> IResult<&[u8], GtpHeader>
 {
     let (input, flags) = be_u8(input)?;
@@ -234,7 +230,7 @@ pub fn get_gtp_header(input: & [u8])
     }
 
     add += 4;
-    let (remaining, payload) = take((msg_len-add) as usize)(input)?;
+    let (remaining, _) = take((msg_len-add) as usize)(input)?;
 
     Ok((remaining, GtpHeader {
         version,
@@ -280,9 +276,6 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
         (input, None)
     };
 
-    // println!("len {:?}", msg_len);
-        // println!("TEID {:?}", teid);
-        // println!("Seq {:?}", seq);
     let (input, _spare) = be_u8(input)?;
 
     let mut add = 0;
@@ -290,14 +283,6 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
         add += 4;
     }
     add += 4;
-    // let (remaining, payload) = take((msg_len-add) as usize)(input)?;
-
-    // if let AppLayerInfo::GTP(gtp) = &mut packet.app {
-    //     gtp.msg_type = msg_type;
-    //     gtp.msg_type_str = GTPV2_MSG_TYPES[msg_type as usize].to_string();
-    //     gtp.teid = teid.unwrap();
-    // }
-
 
     // GTP 메시지 전체 길이 계산
     let header_len = 8 + if t_flag { 4 } else { 0 } + if mp_flag { 1 } else { 0 }; 
@@ -322,5 +307,4 @@ pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
     };
 
     Ok (( input, info))
-        // GtpHeader { version, p_flag, t_flag, mp_flag, msg_type, msg_len, teid, seq, mp, }
 }
