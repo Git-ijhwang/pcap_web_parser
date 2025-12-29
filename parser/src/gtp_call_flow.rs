@@ -13,14 +13,14 @@ use crate::parse_pcap::*;
 #[derive(Serialize, Debug)]
 pub struct Bearer{
     pub lbi: u8,
-    pub ebi: u8,
+    pub ebi: Vec<u8>,
     pub ip: String,
 }
 impl Bearer {
     pub fn new() -> Self {
         Bearer {
             lbi: 0,
-            ebi: 0,
+            ebi: Vec::new(),
             ip: String::new(),
         }
     }
@@ -630,6 +630,11 @@ async fn extract_fteid( ies: Vec<GtpIe>)
     fteid.teid
 }
 
+async fn add_ebi(bearer: &mut Bearer, ebi: u8)
+{
+    bearer.ebi.push(ebi);
+}
+
 async fn extract_bearer_ctx(ies: Vec<GtpIe>)
 -> Bearer
 {
@@ -651,12 +656,14 @@ async fn extract_bearer_ctx(ies: Vec<GtpIe>)
 
     let ebi = find_ie_ebi(&subie.clone()).unwrap_or_default();
 
-    Bearer {
+    let ebis = vec![ebi];
+    let bearer = Bearer {
         lbi: ebi,
-        ebi: ebi,
+        ebi: ebis,
         ip: fteid.ipv4.unwrap(),
-    }
-    
+    };
+
+    bearer
 }
 
 async fn
@@ -1044,7 +1051,7 @@ make_call_flow (path: &PathBuf, id: usize)
     };
 
     //7. Make Call Flow raw data
-    let call_flow = make_data( packets);
+    let call_flow = make_data( packets).await;
 
     return call_flow;
 }
