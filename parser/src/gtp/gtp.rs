@@ -132,42 +132,6 @@ pub fn get_gtp_hdr_len(input: &[u8]) -> usize
     len
 }
 
-pub fn find_ie_fteid(ies: &Vec<GtpIe>)
--> Result<FTeidValue, String>
-{
-    for ie in ies {
-        if ie.ie_type == GTPV2C_IE_FTEID {
-            match &ie.ie_value {
-                GtpIeValue::FTeid(fteid) => {
-                    return Ok(fteid.clone());
-                }
-                _ => {
-                    return Err("FTEID IE has unexpected value type".to_string());
-                },
-            }
-        }
-    }
-    Err("FTIED IE not found".to_string())
-}
-
-pub fn find_ie_imsi(ies: &Vec<GtpIe>)
--> Result<String, String>
-{
-    for ie in ies {
-        if ie.ie_type == GTPV2C_IE_IMSI {
-            match &ie.ie_value {
-                GtpIeValue::Utf8String(s) => {
-                    return Ok(s.clone());
-                }
-                _ => {
-                    return Err("IMSI IE has unexpected value type".to_string());
-                },
-            }
-        }
-    }
-
-    Err("IMSI IE not found".to_string())
-}
 
 pub fn get_gtp_teid<'a>(input: &'a [u8])
 -> IResult<&'a[u8], u32>

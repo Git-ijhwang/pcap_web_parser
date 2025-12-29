@@ -11,12 +11,29 @@ use crate::types::*;
 use crate::parse_pcap::*;
 
 #[derive(Serialize, Debug)]
+pub struct Bearer{
+    pub lbi: u8,
+    pub ebi: u8,
+    pub ip: String,
+}
+impl Bearer {
+    pub fn new() -> Self {
+        Bearer {
+            lbi: 0,
+            ebi: 0,
+            ip: String::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Debug)]
 pub struct CallFlow{
     pub id: usize,
     pub timestamp: String,
     pub src_addr: String,
     pub dst_addr: String,
     pub message: String,
+    pub bearer: Bearer,
 }
 impl CallFlow{
     pub fn new() -> Self {
@@ -26,6 +43,7 @@ impl CallFlow{
             src_addr: String::new(),
             dst_addr: String::new(),
             message: String::new(),
+            bearer: Bearer::new(),
         }
     }
 }
@@ -55,6 +73,7 @@ impl Ip5Tuple{
 struct OwnedPacket {
     idx: i32,
     data: Vec<u8>,
+    ies: Vec<GtpIe>,
 }
 
 #[derive(Serialize, Debug)]
@@ -115,9 +134,14 @@ fn load_pcap(path: &PathBuf) -> Result<Vec<OwnedPacket>, String> {
     let mut packets = Vec::new();
 
     while let Ok(pkt) = cap.next_packet() {
-        packets.push(
-            OwnedPacket { idx, data: pkt.data.to_vec() }
+        packets.push (
+            OwnedPacket {
+                idx,
+                data: pkt.data.to_vec(),
+                ies: Vec::new()
+            }
         );
+
         idx += 1;
     }
 
@@ -134,23 +158,36 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
     let mut init_node = NodeInfo::new();
     let mut resp_node = NodeInfo::new();
     let mut third_node = NodeInfo::new();
-    // let tuple = target.tuple;
 
-    for pkt in vec_packets.into_iter() {
+    for mut pkt in vec_packets.into_iter() {
 
-        let msg_type = get_msg_type_from_header(&pkt);
-        let seq = get_seq_from_header(&pkt);
-        let teid = get_teid_from_header(&pkt);
+        let mut offset = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
+
+        let (_, hdr) = get_gtp_header(&pkt.data[offset..]).map_err(|e| {
+            eprintln!("GTP Message Type parse error: {:?}", e);
+            e
+        }).unwrap();
+
+        let msg_type = hdr.msg_type;
+        let seq = hdr.seq;
+        let teid = hdr.teid.unwrap();
+
         let tuple = extract_5tuple(&pkt).await;
+
+        offset += get_gtp_hdr_len(&pkt.data[offset..]);
+        let ies = parse_all_ies(&pkt.data[offset..]).unwrap_or_default();
+
+        pkt.ies = ies.clone();
 
         match msg_type {
             GTPV2C_CREATE_SESSION_REQ => {
-                let fteid_teid = extract_fteid(&pkt).await;
-                let imsi = extract_imsi(&pkt).await;
+                let fteid_teid = extract_fteid(ies.clone()).await;
+                let imsi = extract_imsi(ies.clone()).await;
 
                 if imsi != target.imsi {
                     continue;
                 }
+
                 //First Create Session Request Packet
                 //[mme] -> [sgw]  [pgw]
                 if init_node.status == 0 {
@@ -195,7 +232,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
             },
 
             GTPV2C_CREATE_SESSION_RSP => {
-                let fteid_teid = extract_fteid(&pkt).await;
+                let fteid_teid = extract_fteid(ies).await;
                 if init_node.status == 0 {
                     continue;
                 }
@@ -312,6 +349,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme] <- [sgw or spgw]
                 if check_node(&init_node, tuple.dst_addr, tuple.dst_port) {
                     if is_s11_seq_match(&init_node, seq){
+                        println!(" [mme] <- [sgw or spgw]");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -322,6 +360,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     // [mme]  [sgw] <- [pgw]
                     if third_node.status > 0 && check_node(&third_node, tuple.src_addr, tuple.src_port) {
                         if is_s5s8_seq_match(&resp_node, seq) {
+                            println!(" [mme]  [sgw] <- [pgw]");
                             filtered_packets.push(pkt);
                             continue;
                         }
@@ -330,6 +369,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme] -> [sgw or s/pgw]
                 else if check_node(&init_node, tuple.src_addr, tuple.src_port) {
                     if is_s11_seq_match(&resp_node, seq) {
+                        println!(" [mme] -> [sgw or s/pgw]");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -558,65 +598,65 @@ fn get_msg_type_from_header (packet: &OwnedPacket) -> u8
 
 
 async fn
-extract_imsi(packet: &OwnedPacket)
-// -> Result<GtpIeVal, String>
+extract_imsi( ies: Vec<GtpIe>)
 -> String
 {
-    let mut offset: usize = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
-
-    let imsi = String::new();
-    let hdr_size = get_gtp_hdr_len(&packet.data[offset..]);
-
-    offset += hdr_size;
-
-    let ies = parse_all_ies(&packet.data[offset..]);
-
-    let imsi = match ies {
-        Ok(ies) => {
-            let t = find_ie_imsi(&ies);
-            match t {
-                Ok(imsi_value) => {
-                    imsi_value
-                },
-                Err(e) => {
-                    return imsi;
-                }
-            }
+    let t = find_ie_imsi(&ies);
+    let imsi = match t {
+        Ok(imsi_value) => {
+            imsi_value
         },
-
         Err(e) => {
-            return imsi;
-        },
+            return "".to_string();
+        }
     };
 
     return imsi;
 }
 
-async fn extract_fteid(packet: &OwnedPacket) -> u32
+async fn extract_fteid( ies: Vec<GtpIe>)
+-> u32
 {
-    let mut offset: usize = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
-    offset += get_gtp_hdr_len(&packet.data[offset..]);
-    
-    let ies = parse_all_ies(&packet.data[offset..]);
-
-    let fteid = match ies {
-        Ok(ies) => {
-            let t = find_ie_fteid(&ies);
-            match t {
-                Ok(fteid_value) => {
-                    fteid_value
-                },
-                Err(_) => {
-                    return 0;
-                }
-            }
+    let t = find_ie_fteid(&ies);
+    let fteid = match t {
+        Ok(fteid_value) => {
+            fteid_value
         },
         Err(_) => {
             return 0;
-        },
+        }
     };
 
     fteid.teid
+}
+
+async fn extract_bearer_ctx(ies: Vec<GtpIe>)
+-> Bearer
+{
+    let subie = find_ie_bearer_ctx(&ies.clone()).unwrap_or_default();
+
+    let fteid = match find_ie_fteid(&subie.clone()) {
+        Ok(v) => v,
+        Err (e) => {
+            FTeidValue{
+                v4: false,
+                v6: false,
+                iface_type: 0,
+                teid: 0,
+                ipv4: None,
+                ipv6: None,
+            }
+        },
+    };
+
+    let ebi = find_ie_ebi(&subie.clone()).unwrap_or_default();
+
+    Bearer {
+        lbi: ebi,
+        ebi: ebi,
+        ip: fteid.ipv4.unwrap(),
+    }
+    
 }
 
 async fn
@@ -915,13 +955,13 @@ is_match_node( node: &NodeInfo, tuple: &Ip5Tuple )
     false
 }
 
-fn
-make_data( tuple_filtered_packets: Vec<OwnedPacket>)
+async fn
+make_data( flow_packets: Vec<OwnedPacket>)
 -> Result<Vec<CallFlow>, String>
 {
     let mut call_flow= Vec::new();
 
-    for pkt in tuple_filtered_packets {
+    for pkt in flow_packets {
         let mut offset: usize = 0;
         let mut cf = CallFlow::new();
 
@@ -939,6 +979,7 @@ make_data( tuple_filtered_packets: Vec<OwnedPacket>)
         let (_, message) = get_msg_type_from_gtpc (&pkt.data[offset..]).map_err(|e| format!("Error: {:?}", e))?;
 
         cf.message.push_str(&message);
+        cf.bearer = extract_bearer_ctx(pkt.ies).await;
 
         call_flow.push(cf);
     }
@@ -946,11 +987,12 @@ make_data( tuple_filtered_packets: Vec<OwnedPacket>)
     return Ok(call_flow);
 }
 
+
 pub async fn
 make_call_flow (path: &PathBuf, id: usize)
 -> Result<Vec<CallFlow>, String>
 {
-    let mut offset: usize = 0;
+    let mut offset = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
 
     //1. convert whole packets of pcap to vec
     let vec_packets = load_pcap(path)?;
@@ -958,17 +1000,20 @@ make_call_flow (path: &PathBuf, id: usize)
     //2. find the packet by id
     let packet = vec_packets.get(id-1).ok_or("Packet not found".to_string())?;
 
+    //2.1 parse all IEs
+    offset += get_gtp_hdr_len(&packet.data[offset..]);
+    let ies = parse_all_ies(&packet.data[offset..]).unwrap_or_default();
+
     //3. extract 5-tuple from previous found packet
     let tuple = extract_5tuple(&packet).await;
 
-    offset += MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
+    offset = MIN_ETH_HDR_LEN + IP_HDR_LEN + UDP_HDR_LEN;
 
     //4. extract TEID from previous found packet
-    let (_,  teid) = get_gtp_teid(&packet.data[offset..]).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
+    let (_, teid) = get_gtp_teid(&packet.data[offset..]).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
 
     //4.1 extract IMSI from previous found packet
-    let target_imsi = extract_imsi(&packet).await;
-    println!("Extracted IMSI: {}", target_imsi);
+    let target_imsi = extract_imsi(ies).await;
 
     let target = TargetInfo {
         tuple : tuple.clone(),

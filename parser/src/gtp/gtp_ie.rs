@@ -784,7 +784,8 @@ pub fn decode_ebi(input: &[u8])
         return Err("input is empty".into());
     }
 
-    let ebi  = input[0] & 0x0F;;
+    let ebi  = input[0] & 0x0F;
+
     Ok(GtpIeValue::Uint8(ebi))
 }
 
@@ -819,6 +820,15 @@ pub fn decode_apn(input: &[u8])
     Ok(GtpIeValue::Apn(apn))
 }
 
+pub fn decode_ipv4(input: &[u8])
+-> Result<GtpIeValue, String>
+{
+    let v = Ipv4Addr::from_octets([
+        input[0], input[1], input[2], input[3]
+    ]);
+    let ip = v.to_string();
+    Ok(GtpIeValue::Ipv4 (ip))
+}
 
 // pub fn decode_bcd(input: &[u8])
 // -> Result<GtpIeValue, String>
@@ -885,6 +895,78 @@ pub fn decode_bcd(input: &[u8]) -> Result<GtpIeValue, String> {
     Ok(GtpIeValue::Utf8String(digits))
 }
 
+pub fn find_ie_bearer_ctx(ies: &Vec<GtpIe>)
+-> Result<Vec<GtpIe>, String>
+{
+    for ie in ies {
+        if ie.ie_type == GTPV2C_IE_BEARER_CONTEXT {
+            match &ie.ie_value {
+                GtpIeValue::SubIeList(v) => {
+                    return Ok(v.clone());
+                }
+                _ => {
+                    return Err("FTEID IE has unexpected value type".to_string());
+                },
+            }
+        }
+    }
+    Err("BEARER CONTEXT IE not found".to_string())
+}
+
+pub fn find_ie_fteid(ies: &Vec<GtpIe>)
+-> Result<FTeidValue, String>
+{
+    for ie in ies {
+        if ie.ie_type == GTPV2C_IE_FTEID {
+            match &ie.ie_value {
+                GtpIeValue::FTeid(fteid) => {
+                    return Ok(fteid.clone());
+                }
+                _ => {
+                    return Err("FTEID IE has unexpected value type".to_string());
+                },
+            }
+        }
+    }
+    Err("FTIED IE not found".to_string())
+}
+
+pub fn find_ie_imsi(ies: &Vec<GtpIe>)
+-> Result<String, String>
+{
+    for ie in ies {
+        if ie.ie_type == GTPV2C_IE_IMSI {
+            match &ie.ie_value {
+                GtpIeValue::Utf8String(s) => {
+                    return Ok(s.clone());
+                }
+                _ => {
+                    return Err("IMSI IE has unexpected value type".to_string());
+                },
+            }
+        }
+    }
+
+    Err("IMSI IE not found".to_string())
+}
+
+pub fn find_ie_ebi(ies: &Vec<GtpIe>)
+-> Result<u8, String>
+{
+    for ie in ies {
+        if ie.ie_type == GTPV2C_IE_EBI {
+            match &ie.ie_value {
+                GtpIeValue::Uint8(s) => {
+                    return Ok(s.clone());
+                }
+                _ => {
+                    return Err("IMSI IE has unexpected value type".to_string());
+                },
+            }
+        }
+    }
+    Err("EBI IE not found".to_string())
+}
 
 pub fn parse_ie(input: &[u8])
 -> IResult<&[u8], GtpIe>
@@ -896,11 +978,9 @@ pub fn parse_ie(input: &[u8])
 
     let raw = input[..total_len].to_vec();
 
-    let (input, _type) = be_u8(input)?;
-    let (input, _len) = be_u16(input)?;
-    let (mut input, _inst) = be_u8(input)?;
+    let (mut input, _) = be_u32(input)?;
 
-    let mut gtp_ie = GtpIe{
+    let mut gtp_ie = GtpIe {
         ie_type,
         type_str: GTPV2_IE_TYPES[ie_type as usize].0.to_string(),
         length: ie_len as u16,
@@ -921,6 +1001,10 @@ pub fn parse_ie(input: &[u8])
                 Ok((rest, ie)) => {
                     sub_ies.push(ie);
                     remaining = rest;
+
+                    if remaining.len() < 4 {
+                        break;
+                    }
                 }
                 Err(_) => {
                     break;
@@ -963,13 +1047,14 @@ pub fn parse_ie(input: &[u8])
             GTPV2C_IE_FTEID =>
                 decode_fteid(value),
                 
-            GTPV2C_IE_IP_ADDRESS => {
-                let v = Ipv4Addr::from_octets([
-                    value[0], value[1], value[2], value[3]
-                ]);
-                let ip = v.to_string();
-                Ok(GtpIeValue::Ipv4 (ip))
-            },
+            GTPV2C_IE_IP_ADDRESS =>
+                decode_ipv4(value),
+                // let v = Ipv4Addr::from_octets([
+                //     value[0], value[1], value[2], value[3]
+                // ]);
+                // let ip = v.to_string();
+                // Ok(GtpIeValue::Ipv4 (ip))
+            // ,
 
             _ =>  match ie_len {
                     1 =>  Ok(GtpIeValue::Uint8(value[0] )),
@@ -1009,6 +1094,9 @@ pub fn parse_all_ies(mut input: &[u8])
             Ok((rest, ie)) => {
                 result.push(ie);
                 input = rest;
+                if input.len() < 4 {
+                    break;
+                }
             },
 
             Err(e) => {
