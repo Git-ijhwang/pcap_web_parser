@@ -24,6 +24,18 @@ pub struct FTeidValue {
     pub ipv4: Option<String>,
     pub ipv6: Option<String>,
 }
+impl FTeidValue {
+    pub fn new() -> Self {
+        FTeidValue {
+            v4: true,
+            v6: true,
+            iface_type: 0,
+            teid: 0,
+            ipv4: None,
+            ipv6: None,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ServingNetworkValue {
@@ -895,14 +907,18 @@ pub fn decode_bcd(input: &[u8]) -> Result<GtpIeValue, String> {
     Ok(GtpIeValue::Utf8String(digits))
 }
 
+
 pub fn find_ie_bearer_ctx(ies: &Vec<GtpIe>)
--> Result<Vec<GtpIe>, String>
+-> Result<Vec<Vec<GtpIe>>, String>
 {
+    let mut bearer_ctx_list = Vec::new();
+
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_BEARER_CONTEXT {
             match &ie.ie_value {
                 GtpIeValue::SubIeList(v) => {
-                    return Ok(v.clone());
+                    bearer_ctx_list.push(v.clone());
+                    // return Ok (v.clone());
                 }
                 _ => {
                     return Err("FTEID IE has unexpected value type".to_string());
@@ -910,17 +926,26 @@ pub fn find_ie_bearer_ctx(ies: &Vec<GtpIe>)
             }
         }
     }
-    Err("BEARER CONTEXT IE not found".to_string())
+
+    if bearer_ctx_list.is_empty() {
+        Err("BEARER CONTEXT IE not found".to_string())
+    }
+    else {
+        Ok(bearer_ctx_list)
+    }
 }
 
 pub fn find_ie_fteid(ies: &Vec<GtpIe>)
--> Result<FTeidValue, String>
+-> Result<Vec<FTeidValue>, String>
 {
+    let mut fteid_list = Vec::new();
+
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_FTEID {
             match &ie.ie_value {
                 GtpIeValue::FTeid(fteid) => {
-                    return Ok(fteid.clone());
+                    // return Ok(fteid.clone());
+                    fteid_list.push(fteid.clone());
                 }
                 _ => {
                     return Err("FTEID IE has unexpected value type".to_string());
@@ -928,7 +953,13 @@ pub fn find_ie_fteid(ies: &Vec<GtpIe>)
             }
         }
     }
-    Err("FTIED IE not found".to_string())
+
+    if fteid_list.is_empty() {
+        Err("FTIED IE not found".to_string())
+    }
+    else  {
+        Ok(fteid_list)
+    }
 }
 
 pub fn find_ie_imsi(ies: &Vec<GtpIe>)
@@ -950,6 +981,23 @@ pub fn find_ie_imsi(ies: &Vec<GtpIe>)
     Err("IMSI IE not found".to_string())
 }
 
+pub fn find_ie_ebi_in_bearer_ctx(ies: &Vec<GtpIe>)
+-> Result<u8, String>
+{
+    for ie in ies {
+        if ie.ie_type == GTPV2C_IE_EBI {
+            match &ie.ie_value {
+                GtpIeValue::Uint8(s) => {
+                    return Ok(s.clone());
+                }
+                _ => {
+                    return Err("IMSI IE has unexpected value type".to_string());
+                },
+            }
+        }
+    }
+    Err("EBI IE not found".to_string())
+}
 pub fn find_ie_ebi(ies: &Vec<GtpIe>)
 -> Result<u8, String>
 {
@@ -1085,9 +1133,9 @@ pub fn parse_all_ies(mut input: &[u8])
 {
     let mut result = Vec::new();
 
-    if input[1] == 0 && input[2] == 0 {
-        return Err(format!("Invalid IE Header"));
-    }
+    // if input[1] == 0 && input[2] == 0 {
+    //     return Err(format!("Invalid IE Header"));
+    // }
 
     while !input.is_empty () {
         match parse_ie(input) {

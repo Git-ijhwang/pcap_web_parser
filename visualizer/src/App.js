@@ -3,7 +3,7 @@ import {Modal, Button} from "react-bootstrap";
 import "./App.css";
 
 import PacketTable from "./PacketTable"
-import CallFlowView from "./CallFlowView"
+import CallFlowView from "./components/callflow/CallFlowView"
 
 
 function App() {

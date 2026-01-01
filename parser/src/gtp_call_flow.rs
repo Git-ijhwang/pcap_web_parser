@@ -9,19 +9,19 @@ use crate::l4::udp::*;
 use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
 use crate::types::*;
 use crate::parse_pcap::*;
+use crate::call_flow_test::*;
+
 
 #[derive(Serialize, Debug)]
 pub struct Bearer{
-    pub lbi: u8,
-    pub ebi: Vec<u8>,
-    pub ip: String,
+    pub ebi: u8,
+    pub fteid_list: Option<Vec<FTeidValue>>,
 }
 impl Bearer {
     pub fn new() -> Self {
         Bearer {
-            lbi: 0,
-            ebi: Vec::new(),
-            ip: String::new(),
+            ebi: 0,
+            fteid_list: None,
         }
     }
 }
@@ -33,7 +33,8 @@ pub struct CallFlow{
     pub src_addr: String,
     pub dst_addr: String,
     pub message: String,
-    pub bearer: Bearer,
+    pub ebi: Option<u8>,
+    pub bearer: Option<Vec<Bearer>>,
 }
 impl CallFlow{
     pub fn new() -> Self {
@@ -43,7 +44,8 @@ impl CallFlow{
             src_addr: String::new(),
             dst_addr: String::new(),
             message: String::new(),
-            bearer: Bearer::new(),
+            ebi: None,
+            bearer: None,
         }
     }
 }
@@ -168,9 +170,16 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
             e
         }).unwrap();
 
+        println!("Message Type: {}", hdr.msg_type);
+
         let msg_type = hdr.msg_type;
         let seq = hdr.seq;
-        let teid = hdr.teid.unwrap();
+        let teid = match hdr.teid {
+            Some(v) => v,
+            None => 0,
+        };
+        // hdr.teid.unwrap();
+
 
         let tuple = extract_5tuple(&pkt).await;
 
@@ -618,7 +627,7 @@ async fn extract_fteid( ies: Vec<GtpIe>)
 -> u32
 {
     let t = find_ie_fteid(&ies);
-    let fteid = match t {
+    let fteid_list  = match t {
         Ok(fteid_value) => {
             fteid_value
         },
@@ -627,44 +636,62 @@ async fn extract_fteid( ies: Vec<GtpIe>)
         }
     };
 
-    fteid.teid
+    if fteid_list.is_empty() {
+        return 0;
+    }
+
+    for fteid in fteid_list {
+        return fteid.teid;
+
+    }
+    return 0;
 }
 
-async fn add_ebi(bearer: &mut Bearer, ebi: u8)
-{
-    bearer.ebi.push(ebi);
-}
 
 async fn extract_bearer_ctx(ies: Vec<GtpIe>)
--> Bearer
+-> Result<Vec<Bearer>, String>
 {
-    let subie = find_ie_bearer_ctx(&ies.clone()).unwrap_or_default();
+    let mut bearer_list = Vec::new();
 
-    let fteid = match find_ie_fteid(&subie.clone()) {
+    let ret = find_ie_bearer_ctx(&ies.clone());
+
+    let bearer_ctxs = match ret {
         Ok(v) => v,
-        Err (e) => {
-            FTeidValue{
-                v4: false,
-                v6: false,
-                iface_type: 0,
-                teid: 0,
-                ipv4: None,
-                ipv6: None,
+        Err(e) => {
+            return Err(format!("Not exist BEARER CONTEXT IE").to_string());
+        }
+    };
+
+    for bearer_ctx in bearer_ctxs {
+        let mut bearer = Bearer::new();
+
+        let ret = find_ie_ebi_in_bearer_ctx(&bearer_ctx.clone());
+
+        let ebi = match ret {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(format!("Not exist EBI ie in BEARER CONTEXT IE").to_string());
             }
-        },
-    };
+        };
+        bearer.ebi = ebi;
 
-    let ebi = find_ie_ebi(&subie.clone()).unwrap_or_default();
+        let ret = find_ie_fteid(&bearer_ctx.clone());
 
-    let ebis = vec![ebi];
-    let bearer = Bearer {
-        lbi: ebi,
-        ebi: ebis,
-        ip: fteid.ipv4.unwrap(),
-    };
+        bearer.fteid_list = match ret {
+            Ok(v) => Some(v),
+            Err (e) => {
+                return Err(format!("Not exist FTEID ie in BEARER IE").to_string());
+            },
+        };
+        // bearer.fteid_list = fteid_list;
+        bearer_list.push(bearer);
+    }
 
-    bearer
+
+    Ok(bearer_list)
+
 }
+
 
 async fn
 extract_5tuple(packet: &OwnedPacket)
@@ -692,6 +719,7 @@ extract_5tuple(packet: &OwnedPacket)
 
     tuple
 }
+
 
 fn filter_by_imsi(target_imsi: &str, packets: Vec<OwnedPacket>)
 ->Vec<OwnedPacket>
@@ -986,7 +1014,26 @@ make_data( flow_packets: Vec<OwnedPacket>)
         let (_, message) = get_msg_type_from_gtpc (&pkt.data[offset..]).map_err(|e| format!("Error: {:?}", e))?;
 
         cf.message.push_str(&message);
-        cf.bearer = extract_bearer_ctx(pkt.ies).await;
+
+        let ret = extract_bearer_ctx(pkt.ies.clone()).await;
+        cf.bearer = match ret {
+            Ok(v) => {
+                Some(v)
+            },
+            Err(e) => {
+                eprintln!("{}", e);
+                None
+            }
+        };
+
+        let ret = find_ie_ebi(&pkt.ies.clone());
+        cf.ebi = match ret {
+            Ok(v) => Some(v),
+            Err(e) => {
+                format!("Not Exist EBI IE ").to_string();
+                None
+            }
+        };
 
         call_flow.push(cf);
     }
@@ -1041,8 +1088,8 @@ make_call_flow (path: &PathBuf, id: usize)
     let mut nodes = vec![];
 
     //6. Packets will be filtered by GTP Call procedure.
-    let packets = senario_analysis(target, gtp_packets, &mut nodes).await;
-    let packets = match packets {
+    let ret = senario_analysis(target, gtp_packets, &mut nodes).await;
+    let packets = match ret {
         Ok(v) => v,
         Err(e) => {
             eprintln!("Error filtering by 5-tuple: {}", e);
@@ -1052,6 +1099,8 @@ make_call_flow (path: &PathBuf, id: usize)
 
     //7. Make Call Flow raw data
     let call_flow = make_data( packets).await;
+    // let call_flow = make_mock_callflow().await;
+    // println!("callflow {:?}", call_flow);
 
     return call_flow;
 }

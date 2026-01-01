@@ -1,15 +1,21 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 /parser/target/
+/parser/target
 /target
 **/target
 parser/target
 
 # dependencies
 /node_modules
+
 /visualizer/node_modules
+/*.json
+.vscode
+/.vscode
 /.pnp
 .pnp.js
 /-*.*
+/*copy.*
 
 # testing
 /coverage
@@ -27,16 +33,3 @@ parser/target
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-parser/target/debug/.fingerprint/pcap_web_parser-99e9a3c1cda50b00/bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-99e9a3c1cda50b00/bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-99e9a3c1cda50b00/bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-dc8d3ff6385df43b/dep-test-bin-pcap_web_parser
-parser/target/flycheck0/stdout
-parser/target/debug/.fingerprint/pcap_web_parser-99e9a3c1cda50b00/bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-99e9a3c1cda50b00/dep-bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-99e9a3c1cda50b00/output-bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-dc8d3ff6385df43b/dep-test-bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-dc8d3ff6385df43b/output-test-bin-pcap_web_parser
-parser/target/debug/.fingerprint/pcap_web_parser-dc8d3ff6385df43b/test-bin-pcap_web_parser
-parser/target/flycheck0/stderr
-parser/target/flycheck0/stdout
