@@ -58,8 +58,6 @@ applyCallFlowToBearerState(state, cf)
         }
       });
     });
-
-
   }
 
   // ============ Create Bearer Request ============ 

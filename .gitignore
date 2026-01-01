@@ -1,16 +1,10 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-/parser/target/
 /parser/target
-/target
-**/target
-parser/target
 
 # dependencies
 /node_modules
-
 /visualizer/node_modules
 /*.json
-.vscode
 /.vscode
 /.pnp
 .pnp.js
