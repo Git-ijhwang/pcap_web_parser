@@ -1,5 +1,4 @@
 use std:: path::PathBuf;
-// use hyper::Response;
 use tokio::io::AsyncWriteExt;
 use tokio::fs;
 use uuid::Uuid;
@@ -21,7 +20,7 @@ use crate::file_manage::*;
 async fn upload_file(
     cache: &Cache,
     original_name: &str,// file_data: &[u8]
-    mut field: Field,
+    field: Field,
 ) -> Result<String, (StatusCode, String)>
 {
 
@@ -160,7 +159,6 @@ pub async fn handle_single_packet (
     Query(params): Query<PacketQuery> )
  -> Response
 {
-let test = params.file_id;
     let file_id = FileId(params.file_id);
     let packet_id = params.id;
 
@@ -238,10 +236,10 @@ handle_callflow(
     let packet_id = req.packet_id;
     // let packet_summary = state.pcaps;
 
-    let cache = &state.cache;
+    // let cache = &state.cache;
     let pcaps = &state.pcaps;
 
-    let (uuid, file_name) = match pcaps.get_file_name(file_id){
+    let (_, file_name) = match pcaps.get_file_name(file_id){
         Some(pkt) => (pkt.uuid, pkt.original_name),
         None => {
             return (

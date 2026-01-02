@@ -43,7 +43,8 @@ impl GtpHeader {
 
 
 pub fn get_msg_type_from_gtpc<'a>(input: &'a [u8])
--> IResult<&'a [u8], String> {
+    -> IResult<&'a [u8], String>
+{
     let (input, _flags) = be_u8(input)?;
     let (input, msg_type) = be_u8(input)?;
 
@@ -52,7 +53,7 @@ pub fn get_msg_type_from_gtpc<'a>(input: &'a [u8])
 
 
 pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary)
--> IResult<&'a[u8], GtpHeader>
+    -> IResult<&'a[u8], GtpHeader>
 {
     let (input, flags) = be_u8(input)?;
     let version = (flags >> 5) & 0x07;
@@ -113,7 +114,8 @@ pub fn parse_gtpc<'a>(input: &'a [u8], packet: &'a mut PacketSummary)
     }))
 }
 
-pub fn get_gtp_hdr_len(input: &[u8]) -> usize
+pub fn get_gtp_hdr_len(input: &[u8])
+    -> usize
 {
     // let (input, flags) = be_u8(input)?;
     let flags = input[0];
@@ -134,7 +136,7 @@ pub fn get_gtp_hdr_len(input: &[u8]) -> usize
 
 
 pub fn get_gtp_teid<'a>(input: &'a [u8])
--> IResult<&'a[u8], u32>
+    -> IResult<&'a[u8], u32>
 {
     let (input, flags) = be_u8(input)?;
     let t_flag = ((flags >> 3) & 0x01) == 1;
@@ -153,7 +155,7 @@ pub fn get_gtp_teid<'a>(input: &'a [u8])
 }
 
 pub fn get_gtp_header(input: & [u8])
--> IResult<&[u8], GtpHeader>
+    -> IResult<&[u8], GtpHeader>
 {
     let (input, flags) = be_u8(input)?;
     let version = (flags >> 5) & 0x07;
@@ -206,7 +208,7 @@ pub fn get_gtp_header(input: & [u8])
 
 
 pub fn parse_gtpc_detail<'a>(input: &'a [u8])//, packet: &'a mut PacketDetail)
--> IResult<&'a[u8], GtpInfo>
+    -> IResult<&'a[u8], GtpInfo>
 {
     let start = input;
     let (input, flags) = be_u8(input)?;

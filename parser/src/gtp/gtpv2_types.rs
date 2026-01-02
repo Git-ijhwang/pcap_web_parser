@@ -3,8 +3,8 @@
 pub const GTP_VERSION: u8 = 	                    	            0x02;
 pub const GTPV2_P_FLAG: u8 =                    		            0x10;
 pub const GTPV2_T_FLAG: u8 = 	     	                            0x08;
-pub const GTPV2C_MINIMUM_HEADER_SIZE: u8 = 		                8;
-const GTPV2C_EPC_SPECIFIC_HEADER_SIZE: u8 = 		            12;
+pub const GTPV2C_MINIMUM_HEADER_SIZE: u8 = 		                	8;
+const GTPV2C_EPC_SPECIFIC_HEADER_SIZE: u8 = 		            	12;
  
 // GTPv2-C Message Type Values
 pub const GTPV2C_ECHO_REQ: u8 = 		                            1;

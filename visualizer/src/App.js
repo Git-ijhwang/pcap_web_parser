@@ -18,9 +18,6 @@ function App() {
   const [showCallFlow, setShowCallFlow] = useState(false);
   const [loadingFlow, setLoadingFlow] = useState(false);
   const [flowError, setFlowError] = useState(null);
-  // const [onCallFlow, setOnCallFlow] = useState(false);
-  // const [callFlow, setCallFlow] = useState(null);
-
 
   // 파일 input ref 생성
   const fileInputRef = useRef(null);
@@ -109,15 +106,7 @@ function App() {
     }
   };
 
-  // const fetchCallFlow = async (packetId) => {
-  //   const res = await fetch(`/api/callflow/${packetId}`);
-  //   const data = await res.json();
 
-  //   setCallFlowData(data);
-  //   setShowCallFlow(true);
-  // };
-
-  // ✅ 여기서 구현
   const handleBackFromCallFlow = () => {
     setShowCallFlow(false);
     setCallFlowData(null);
@@ -177,6 +166,7 @@ function App() {
 
           <div className="viewport">
             <div className={`slider ${showCallFlow ? "shift" : ""}`}>
+
               {/* Table Panel */}
               <div className="panel table-panel">
                 <PacketTable packets={result.packets} fileId={fileId}
@@ -189,8 +179,7 @@ function App() {
                   < CallFlowView 
                     data={callFlowData}
                     loading={!callFlowData}
-                    onBack={handleBackFromCallFlow}
-                  />
+                    onBack={handleBackFromCallFlow} />
                 )}
               </div>
             </div>

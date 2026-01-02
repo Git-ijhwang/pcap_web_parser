@@ -52,8 +52,7 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: Option<&mut PacketSummary>) 
 }
 
 
-pub fn
-get_ip_addr(ip_hdr: &[u8])
+pub fn get_ip_addr(ip_hdr: &[u8])
 -> (Ipv4Addr, Ipv4Addr)
 {
     let mut offset: usize = 0;
@@ -80,8 +79,7 @@ get_ip_addr(ip_hdr: &[u8])
 }
 
 
-pub fn
-get_next_proto(ip_hdr: &[u8])
+pub fn get_next_proto(ip_hdr: &[u8])
 -> usize
 {
     let mut offset: usize = 0;
@@ -93,8 +91,7 @@ get_next_proto(ip_hdr: &[u8])
 }
 
 
-pub fn
-parse_ipv4( ip_hdr: &[u8], ip: &mut IpInfo)
+pub fn parse_ipv4( ip_hdr: &[u8], ip: &mut IpInfo)
 -> usize
 {
     let mut offset: usize = 0;

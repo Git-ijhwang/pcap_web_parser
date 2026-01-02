@@ -14,6 +14,7 @@ EBIBox({ x, y, width, height, ebiObj }) {
         stroke={ebiObj.pending ? "#fcc419" : "#666"}
         strokeDasharray={ebiObj.pending ? "3,2" : "0"} // 대기 중일 땐 점선
       />
+
       <text x={x + 10} y={y + 18} fontSize={12}>
         EBI: {ebiObj.ebi || "Pending"}
         {/* TeID: {ebiObj.teid} */}

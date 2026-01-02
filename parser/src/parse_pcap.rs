@@ -1,6 +1,3 @@
-use std::net::Ipv4Addr;
-use axum::extract;
-use serde::Serialize;
 use std::process;
 use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};
@@ -10,8 +7,6 @@ use crate::ip::{self, ipv4::*, ipv6::*, port::{self, *}};
 use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::gtp::{gtp::*, gtp_ie::*};
 use crate::types::*;
-
-use std::time::Instant;
 
 const NEXT_HDR_IPV4: usize = 0x0800;
 const NEXT_HDR_IPV6: usize = 0x86dd;
@@ -173,13 +168,17 @@ parse_single_packet(path: &PathBuf, id: usize)
 
 
     // --- Parse Layer 4 ---
-    let (port_number, l4_hdr_len) = parse_l4(next_type, &packet.data[offset..], &mut parsed_packet).await;
+    let (port_number, l4_hdr_len) =
+        parse_l4(next_type, &packet.data[offset..], &mut parsed_packet).await;
 
     offset += l4_hdr_len;
 
     // --- Parse Application Layer ---
     if port_number == WELLKNOWN_PORT_GTPV2 {
-        let (rest, mut gtpinfo) = parse_gtpc_detail( &packet.data[offset..]).map_err(|e| format!("GTP-C parse error: {:?}", e))?;
+        let (rest, mut gtpinfo) =
+            parse_gtpc_detail( &packet.data[offset..]).map_err(
+                |e| format!("GTP-C parse error: {:?}", e)
+            )?;
 
         let result = match parse_all_ies(rest) {
 
@@ -317,8 +316,6 @@ pub async fn simple_parse_pcap(path: &Path)
     }
 
     let packet_len = packets.len();
-    // let duration = start.elapsed(); // 경과 시간 측정
-    // println!("Parsing took {:?}", duration);
 
     let result = ParsedResult {
         file: path.to_string_lossy().to_string(),

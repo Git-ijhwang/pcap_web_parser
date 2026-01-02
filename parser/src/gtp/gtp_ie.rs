@@ -56,8 +56,6 @@ pub struct BearerQoSValue {
 }
 
 
-
-
 #[derive(Debug, Clone, Serialize)]
 pub struct TaiValue {
     pub mcc: String,
@@ -196,17 +194,11 @@ pub enum GtpIeValue {
     UserLocationInfo(UliValue),
     BearerTFT(BearerTFT),
 
-    // 복합 구조 (예: Bearer Context, Indication Flags 등)
-    // SubIeList([GtpIe;5]),
     SubIeList(Vec<GtpIe>),
 
     None,
 }
 
-// #[derive(Debug, Serialize)]
-// pub struct IeWithRaw  {
-//     pub decoded: GtpIeValue,
-// }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct GtpIe {
@@ -216,13 +208,11 @@ pub struct GtpIe {
     pub instance: u8,
     pub ie_value: GtpIeValue,
     pub raw: Vec<u8>,
-    // pub value: Vec<u8>,
-    // pub ie_val: ie_with_raw,
-    // pub sub_ies: Vec<GtpIe>,
 }
 
 
-pub fn decode_mcc_mnc(d1: u8, d2: u8, d3: u8) -> (String, String)
+pub fn decode_mcc_mnc(d1: u8, d2: u8, d3: u8)
+    -> (String, String)
 {
     let mcc = format!("{}{}{}", d1 & 0x0F, d1 >> 4, d2 & 0x0F);
     let mnc1 = d2 >> 4;
@@ -240,7 +230,9 @@ pub fn decode_mcc_mnc(d1: u8, d2: u8, d3: u8) -> (String, String)
     (mcc, mnc)
 }
 
-pub fn parse_uli_ie(data: &[u8]) -> Result<GtpIeValue, String> {
+pub fn parse_uli_ie(data: &[u8])
+    -> Result<GtpIeValue, String>
+{
     if data.len() < 1 {
         return Err("ULI IE too short".into());
     }
@@ -339,7 +331,9 @@ pub fn parse_uli_ie(data: &[u8]) -> Result<GtpIeValue, String> {
 }
 
 
-fn parse_ipv4_remote(data: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_ipv4_remote(data: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     // commonly IPv4 component is 8 bytes: 4 bytes address + 4 bytes mask
     if data.len() < 8 {
         return Err(format!("IPv4 component length must be 8, got {}", data.len()));
@@ -351,7 +345,9 @@ fn parse_ipv4_remote(data: &[u8]) -> Result<PacketFilterComponent, String> {
     Ok(PacketFilterComponent::Ipv4Addr { addr, mask })
 }
 
-fn parse_ipv6_remote(data: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_ipv6_remote(data: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     // commonly IPv6 component is 32 bytes: 16 bytes addr + 16 bytes mask
     if data.len() < 32 {
         return Err(format!("IPv6 component length must be 32, got {}", data.len()));
@@ -361,7 +357,9 @@ fn parse_ipv6_remote(data: &[u8]) -> Result<PacketFilterComponent, String> {
     Ok(PacketFilterComponent::Ipv6Addr { addr, mask })
 }
 
-fn parse_protocol(data: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_protocol(data: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     if data.len() < 1 {
         return Err(format!("Protocol component length must be 1, got {}", data.len()));
     }
@@ -369,7 +367,8 @@ fn parse_protocol(data: &[u8]) -> Result<PacketFilterComponent, String> {
 }
 
 fn parse_single_local_port(data: &[u8])
--> Result<PacketFilterComponent, String> {
+    -> Result<PacketFilterComponent, String>
+{
     if data.len() < 2 {
         return Err(format!("Single port component length must be 2, got {}", data.len()));
     }
@@ -377,7 +376,9 @@ fn parse_single_local_port(data: &[u8])
     Ok(PacketFilterComponent::SinglePort { port })
 }
 
-fn parse_local_port_range(data: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_local_port_range(data: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     if data.len() < 4 {
         return Err(format!("Port range component length must be 4, got {}", data.len()));
     }
@@ -387,7 +388,8 @@ fn parse_local_port_range(data: &[u8]) -> Result<PacketFilterComponent, String> 
     Ok(PacketFilterComponent::PortRange { start, end })
 }
 
-fn parse_single_remote_port(data: &[u8]) -> Result<PacketFilterComponent, String>
+fn parse_single_remote_port(data: &[u8])
+    -> Result<PacketFilterComponent, String>
 {
     if data.len() < 2 {
         return Err(format!("Single port component length must be 2, got {}", data.len()));
@@ -397,7 +399,9 @@ fn parse_single_remote_port(data: &[u8]) -> Result<PacketFilterComponent, String
     Ok(PacketFilterComponent::SinglePort { port })
 }
 
-fn parse_remote_port_range(data: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_remote_port_range(data: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     if data.len() < 4 {
         return Err(format!("Port range component length must be 4, got {}", data.len()));
     }
@@ -409,7 +413,9 @@ fn parse_remote_port_range(data: &[u8]) -> Result<PacketFilterComponent, String>
 
 
 // Security parameter index (SPI) – 4 bytes
-fn parse_spi(comp_value: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_spi(comp_value: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     if comp_value.len() < 4 {
         return Err("SPI must be 4 bytes".into());
     }
@@ -418,7 +424,9 @@ fn parse_spi(comp_value: &[u8]) -> Result<PacketFilterComponent, String> {
 }
 
 // Type of Service / Traffic class (2 bytes)
-fn parse_tos(comp_value: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_tos(comp_value: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     if comp_value.len() < 2 {
         return Err("TOS/Traffic class must be 2 bytes".into());
     }
@@ -429,7 +437,9 @@ fn parse_tos(comp_value: &[u8]) -> Result<PacketFilterComponent, String> {
 }
 
 // Flow label (3 bytes)
-fn parse_flow_label(comp_value: &[u8]) -> Result<PacketFilterComponent, String> {
+fn parse_flow_label(comp_value: &[u8])
+    -> Result<PacketFilterComponent, String>
+{
     if comp_value.len() < 3 {
         return Err("Flow label must be 3 bytes".into());
     }
@@ -633,7 +643,7 @@ pub fn decode_serving_network( input: &[u8])
 
 
 pub fn decode_fteid(input: &[u8])
--> Result<GtpIeValue, String>
+    -> Result<GtpIeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -704,7 +714,7 @@ pub fn decode_fteid(input: &[u8])
 
 
 pub fn decode_bearerqos(input: &[u8])
--> Result<GtpIeValue, String>
+    -> Result<GtpIeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -760,7 +770,7 @@ pub fn decode_bearerqos(input: &[u8])
 
 
 pub fn decode_ambr(input: &[u8])
--> Result<GtpIeValue, String>
+    -> Result<GtpIeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -790,7 +800,7 @@ pub fn decode_ambr(input: &[u8])
 
 
 pub fn decode_ebi(input: &[u8])
--> Result<GtpIeValue, String>
+    -> Result<GtpIeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -802,7 +812,7 @@ pub fn decode_ebi(input: &[u8])
 }
 
 pub fn decode_apn(input: &[u8])
--> Result<GtpIeValue, String>
+    -> Result<GtpIeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -833,7 +843,7 @@ pub fn decode_apn(input: &[u8])
 }
 
 pub fn decode_ipv4(input: &[u8])
--> Result<GtpIeValue, String>
+    -> Result<GtpIeValue, String>
 {
     let v = Ipv4Addr::from_octets([
         input[0], input[1], input[2], input[3]
@@ -842,40 +852,10 @@ pub fn decode_ipv4(input: &[u8])
     Ok(GtpIeValue::Ipv4 (ip))
 }
 
-// pub fn decode_bcd(input: &[u8])
-// -> Result<GtpIeValue, String>
-// {
-//     if input.is_empty() {
-//         return Err("input is empty".into());
-//     }
 
-//     let mut digits = String::with_capacity(input.len() * 2);
-
-//     for &b in input {
-//         let low = (b & 0x0F) as u8;
-//         let high = ((b >> 4) & 0x0F) as u8;
-
-//         // low nibble must be 0..=9
-//         if low <= 9 {
-//             digits.push(char::from(b'0' + low));
-//         } else if high == 0x0F {
-//             // high nibble: if 0xF, it is filler -> odd length, stop adding second digit
-//             break;
-//         } else {
-//             return Err(format!("invalid BCD digit in low nibble: 0x{:x}", low));
-//         }
-
-//         if high <= 9 {
-//             digits.push(char::from(b'0' + high));
-//         } else {
-//             return Err(format!("invalid BCD digit in high nibble: 0x{:x}", high));
-//         }
-//     }
-
-//     Ok(GtpIeValue::Utf8String(digits))
-// }
-
-pub fn decode_bcd(input: &[u8]) -> Result<GtpIeValue, String> {
+pub fn decode_bcd(input: &[u8])
+    -> Result<GtpIeValue, String>
+{
     if input.is_empty() {
         return Err("BCD input empty".into());
     }
@@ -909,7 +889,7 @@ pub fn decode_bcd(input: &[u8]) -> Result<GtpIeValue, String> {
 
 
 pub fn find_ie_bearer_ctx(ies: &Vec<GtpIe>)
--> Result<Vec<Vec<GtpIe>>, String>
+    -> Result<Vec<Vec<GtpIe>>, String>
 {
     let mut bearer_ctx_list = Vec::new();
 
@@ -936,7 +916,7 @@ pub fn find_ie_bearer_ctx(ies: &Vec<GtpIe>)
 }
 
 pub fn find_ie_fteid(ies: &Vec<GtpIe>)
--> Result<Vec<FTeidValue>, String>
+    -> Result<Vec<FTeidValue>, String>
 {
     let mut fteid_list = Vec::new();
 
@@ -963,7 +943,7 @@ pub fn find_ie_fteid(ies: &Vec<GtpIe>)
 }
 
 pub fn find_ie_imsi(ies: &Vec<GtpIe>)
--> Result<String, String>
+    -> Result<String, String>
 {
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_IMSI {
@@ -982,7 +962,7 @@ pub fn find_ie_imsi(ies: &Vec<GtpIe>)
 }
 
 pub fn find_ie_ebi_in_bearer_ctx(ies: &Vec<GtpIe>)
--> Result<u8, String>
+    -> Result<u8, String>
 {
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_EBI {
@@ -998,8 +978,10 @@ pub fn find_ie_ebi_in_bearer_ctx(ies: &Vec<GtpIe>)
     }
     Err("EBI IE not found".to_string())
 }
+
+
 pub fn find_ie_ebi(ies: &Vec<GtpIe>)
--> Result<u8, String>
+    -> Result<u8, String>
 {
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_EBI {
@@ -1017,7 +999,7 @@ pub fn find_ie_ebi(ies: &Vec<GtpIe>)
 }
 
 pub fn parse_ie(input: &[u8])
--> IResult<&[u8], GtpIe>
+    -> IResult<&[u8], GtpIe>
 {
     let ie_type = input[0];
     let ie_len = u16::from_be_bytes([input[1], input[2]]) as usize;
@@ -1097,12 +1079,6 @@ pub fn parse_ie(input: &[u8])
                 
             GTPV2C_IE_IP_ADDRESS =>
                 decode_ipv4(value),
-                // let v = Ipv4Addr::from_octets([
-                //     value[0], value[1], value[2], value[3]
-                // ]);
-                // let ip = v.to_string();
-                // Ok(GtpIeValue::Ipv4 (ip))
-            // ,
 
             _ =>  match ie_len {
                     1 =>  Ok(GtpIeValue::Uint8(value[0] )),
@@ -1129,13 +1105,9 @@ pub fn parse_ie(input: &[u8])
 
 
 pub fn parse_all_ies(mut input: &[u8])
--> Result<Vec<GtpIe>, String>
+    -> Result<Vec<GtpIe>, String>
 {
     let mut result = Vec::new();
-
-    // if input[1] == 0 && input[2] == 0 {
-    //     return Err(format!("Invalid IE Header"));
-    // }
 
     while !input.is_empty () {
         match parse_ie(input) {

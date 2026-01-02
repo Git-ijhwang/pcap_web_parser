@@ -15,17 +15,15 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
   const [callFlow, setCallFlow] = useState(null);
   const [showCallFlow, setShowCallFlow] = useState(false);
 
-// , currentFile , onFilterChange}) {
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [filterCollapsed, setFilterCollapsed] = useState(false);
+  // const [filterCollapsed, setFilterCollapsed] = useState(false);
   const [modalSections, setModalSections] = useState({
     l3: false,
     l4: false,
     app: false
   });
 
-  // 필터 가능한 프로토콜 목록
   const [filters, setFilters] = useState({
     tcp:   { enabled: false, port: "" },
     udp:   { enabled: false, port: "" },
@@ -40,38 +38,6 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
     setSelectedPacket(null);
   };
 
-  // const fetchCallFlow = async (packetId) => {
-
-  //   setLoadingFlow(true);
-  //   setFlowError(null);
-
-  //   try {
-  //     console.log("PacketID:", packetId);
-  //     const res = await fetch("/api/gtp/callflow", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify(
-  //         {file_id: fileId , packet_id: packetId}),
-  //     });
-
-  //     if (!res.ok) {
-  //       throw new Error(`HTTP ${res.status}`);
-  //     }
-
-  //           const data = await res.json();
-  //           setCallFlow(data);
-  //           setShowCallFlow(true);
-  //       }
-  //       catch (err) {
-  //           // console.err("Callflow fetch failed:", err);
-  //           setFlowError("Failed to load call flow");
-  //       } finally {
-  //           setLoadingFlow(false);
-  //       }
-  //   };
-
   const fetchPacketDetail = async (id) => {
     if (!fileId) {
       alert("No file selected!");
@@ -81,7 +47,6 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
     try {
       const res = await fetch(
         `/api/packet_detail?file_id=${fileId}&id=${encodeURIComponent(id)}`
-        // `/api/packet_detail?file=${encodeURIComponent(currentFile)}&id=${encodeURIComponent(id)}`
       );
 
       if (!res.ok) {
@@ -100,7 +65,6 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
   };
 
 
-  // packets가 없으면 Modal 렌더링 자체를 하지 않음
   function isValidPort(port) {
     const n = Number(port);
     if ( Number.isInteger(n) && n > 0 && n < 65535 ) {
@@ -156,22 +120,23 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
   return (
     <div className="container mt-4">
 
-{!showCallFlow && (
-      <button type="button"
-          className= "btn btn-sm btn-outline-secondary position-absolute collaps-btn"
-          onClick={() => setFilterCollapsed(c => !c)}
-          aria-label="toggle collapse"
-          >
-        <i className={`bi ${filterCollapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
-      </button>
-)}
+      {/* {!showCallFlow && (
+        <button type="button"
+            className= "btn btn-sm btn-outline-secondary position-absolute collaps-btn"
+            onClick={() => setFilterCollapsed(c => !c)}
+            aria-label="toggle collapse"
+            >
+          <i className={`bi ${filterCollapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
+        </button>
+      )} */}
 
       <div className={`d-flex card gap-2 p-2 filter-wrapper `} >
 
         <h5>Packet Filters</h5>
+
         <div className={`d-flex gap-2 pkt-filter-box
-        ${filterCollapsed ? "filterCollapsed" : ""}
         `}>
+        {/* ${filterCollapsed ? "filterCollapsed" : ""} */}
 
           {/* Layer-3 */}
           <div className="l3-filter  card  gap-2 flex-fill" >
@@ -315,46 +280,41 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
         <tbody>
           {filteredPackets || filteredPackets.length > 0 ? (
             filteredPackets.map((pkt) => (
+              <tr key={pkt.id}
+                onClick={() => fetchPacketDetail(pkt.id) }
+                style={{ cursor: "pointer" }}>
 
-            <tr key={pkt.id}
-              onClick={() => fetchPacketDetail(pkt.id) }
-              style={{ cursor: "pointer" }}>
-
-              <td>{pkt.id}</td>
-              <td>{pkt.ts}</td>
-              <td>{pkt.src_ip}</td>
-              <td>{pkt.dst_ip}</td>
-              <td>{pkt.src_port}</td>
-              <td>{pkt.dst_port}</td>
-              <td>{pkt.protocol}</td>
-              <td>{pkt.description}</td>
-              <td>
-                {pkt.description === "Create Session Request [32]" && onCallFlow && (
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCallFlow(pkt.id);
-                    }} >
-                    <i className="bi bi-diagram-3"></i>
-                  </button>
-                )
-                }
+                <td>{pkt.id}</td>
+                <td>{pkt.ts}</td>
+                <td>{pkt.src_ip}</td>
+                <td>{pkt.dst_ip}</td>
+                <td>{pkt.src_port}</td>
+                <td>{pkt.dst_port}</td>
+                <td>{pkt.protocol}</td>
+                <td>{pkt.description}</td>
+                <td>
+                  {pkt.description === "Create Session Request [32]" && onCallFlow && (
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCallFlow(pkt.id);
+                      }} >
+                      <i className="bi bi-diagram-3"></i>
+                    </button>
+                  ) }
+                </td>
+              </tr>
+            ))
+          ):(
+            <tr>
+              <td colSpan="8" className="text-center text-muted">
+                No packets loaded
               </td>
             </tr>
-          ))
-        ):(
-          <tr>
-            <td colSpan="8" className="text-center text-muted">
-              No packets loaded
-            </td>
-            </tr>
-        )}
+          )}
         </tbody>
       </table>
-
-
-
 
       {/* ✅ Modal은 packets가 존재하고 선택된 패킷이 있을 때만 보여줌 */}
         {selectedPacket && (
