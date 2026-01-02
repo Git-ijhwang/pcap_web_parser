@@ -2,7 +2,7 @@ use std::net::Ipv4Addr;
 use crate::ip::port::*;
 use crate::types::*;
 
-pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: Option<&mut PacketSummary>) -> usize
+pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: &mut PacketSummary) -> usize
 {
     let mut offset: usize = 0;
 
@@ -14,13 +14,11 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: Option<&mut PacketSummary>) 
 
     let next_hdr = ip_hdr.get(offset).copied().unwrap_or(0) as usize;
 
-    if let Some(p) = packet.as_deref_mut() {
-        if let Some(v) = protocol_to_str(next_hdr) {
-            p.protocol.push_str(&v);
-        }
-        else {
-            eprintln!("[parse_ipv4_simple] Unknown protocol type {}", next_hdr);
-        }
+    if let Some(v) = protocol_to_str(next_hdr) {
+        packet.protocol.push_str(&v);
+    }
+    else {
+        eprintln!("[parse_ipv4_simple] Unknown protocol type {}", next_hdr);
     }
 
     offset += 1; //Next Protocol (1byte)
@@ -43,10 +41,8 @@ pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: Option<&mut PacketSummary>) 
         eprintln!("Failure to read Src Addr");
     }
 
-    if let Some(p) = packet.as_deref_mut() {
-        p.src_ip.push_str(&src_addr.to_string());
-        p.dst_ip.push_str(&dst_addr.to_string());
-    }
+    packet.src_ip.push_str(&src_addr.to_string());
+    packet.dst_ip.push_str(&dst_addr.to_string());
 
     next_hdr
 }

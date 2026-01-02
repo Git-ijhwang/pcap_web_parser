@@ -152,6 +152,7 @@ parse_single_packet(path: &PathBuf, id: usize)
         return Err("Layer 2 parsing faile".to_string());
     };
     offset += MIN_ETH_HDR_LEN;
+    println!("Layer 2");
 
     // --- Parse Layer 3 (IPv4, IPinIP or IPv6) ---
     loop {
@@ -166,6 +167,7 @@ parse_single_packet(path: &PathBuf, id: usize)
         }
     }
 
+    println!("Layer 3");
 
     // --- Parse Layer 4 ---
     let (port_number, l4_hdr_len) =
@@ -173,6 +175,7 @@ parse_single_packet(path: &PathBuf, id: usize)
 
     offset += l4_hdr_len;
 
+    println!("Layer 4");
     // --- Parse Application Layer ---
     if port_number == WELLKNOWN_PORT_GTPV2 {
         let (rest, mut gtpinfo) =
@@ -243,13 +246,13 @@ pub async fn simple_parse_pcap(path: &Path)
         let next_type= match next_type {
             //IPv4
             NEXT_HDR_IPV4 => {
-                parse_ipv4_simple(&packet.data[hdr_len..], Some(&mut parsed_packet))
+                parse_ipv4_simple(&packet.data[hdr_len..], &mut parsed_packet)
             },
 
             //IPv6
             NEXT_HDR_IPV6 => {
                 parse_ipv6_simple(&packet.data[hdr_len..], &mut parsed_packet)
-        }
+            }
             _       => {
                 idx+=1;
                 continue;
@@ -267,18 +270,24 @@ pub async fn simple_parse_pcap(path: &Path)
         let (port_number, l4_hdr_len) =
             match next_type {
                 PROTO_TYPE_TCP   => {
-                    (parse_tcp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
-                    TCP_HDR_LEN)
+                    (
+                        parse_tcp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                        TCP_HDR_LEN
+                    )
                 },
 
                 PROTO_TYPE_UDP   => {
-                    (parse_udp_simple ( &packet.data[hdr_len..], Some(&mut parsed_packet)),
-                    UDP_HDR_LEN)
+                    (
+                        parse_udp_simple ( &packet.data[hdr_len..], Some(&mut parsed_packet)),
+                        UDP_HDR_LEN
+                    )
                 },
 
                 PROTO_TYPE_ICMP   => {
-                    (parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
-                    ICMP_HDR_LEN)
+                    (
+                        parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
+                        ICMP_HDR_LEN
+                    )
                 },
 
                 _       => {
@@ -297,17 +306,13 @@ pub async fn simple_parse_pcap(path: &Path)
         // --- Parse Application Layer ---
         match port_number {
             WELLKNOWN_PORT_GTPV2   => {
-                // parsed_packet.protocol.clear();
                 parsed_packet.protocol = "GTP2-C".to_string();
-                parse_gtpc ( &packet.data[hdr_len..],
-                    &mut parsed_packet)
-                    .map_err(|e| format!("GTP-C parse error: {:?}", e))?
+                let _ = parse_gtpc (
+                        &packet.data[hdr_len..],
+                        &mut parsed_packet);
             },
 
-            _ => {
-                idx+=1;
-                continue;
-            },
+            _ => {},
         };
 
         packets.push(parsed_packet);
@@ -323,5 +328,5 @@ pub async fn simple_parse_pcap(path: &Path)
         packets : packets,
     };
 
-        Ok( result )
+    Ok (result)
 }

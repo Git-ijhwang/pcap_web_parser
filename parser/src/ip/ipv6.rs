@@ -52,7 +52,7 @@ pub fn parse_ipv6_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
         packet.protocol.push_str(&v);
     }
     else {
-        eprintln!("Unknown protocol type {}", next_hdr);
+        eprintln!("[parse_ipv6_simple] Unknown protocol type {}", next_hdr);
     }
 
     let mut src_addr6 = Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0);
