@@ -45,7 +45,6 @@ pub fn parse_ethernet(data: &[u8]) -> usize
     offset += 6;
 
     let next_type = u16::from_be_bytes([data[offset], data[offset+1]]) as usize;
-    // println!("\tMAC:\n\t\t{}\n\t\t{}", src_mac, dst_mac );
 
     next_type
 }
@@ -54,7 +53,6 @@ fn print_timestamp(idx:usize, packet: &Packet)
     -> String
 {
     let ts = format_timestamp(packet);
-    // println!( "[{:05}] {}\tlen:{}", idx, ts, packet.header.len );
     format!( "{}",ts).to_string()
 }
 
@@ -152,7 +150,6 @@ parse_single_packet(path: &PathBuf, id: usize)
         return Err("Layer 2 parsing faile".to_string());
     };
     offset += MIN_ETH_HDR_LEN;
-    println!("Layer 2");
 
     // --- Parse Layer 3 (IPv4, IPinIP or IPv6) ---
     loop {
@@ -167,7 +164,6 @@ parse_single_packet(path: &PathBuf, id: usize)
         }
     }
 
-    println!("Layer 3");
 
     // --- Parse Layer 4 ---
     let (port_number, l4_hdr_len) =
@@ -175,7 +171,6 @@ parse_single_packet(path: &PathBuf, id: usize)
 
     offset += l4_hdr_len;
 
-    println!("Layer 4");
     // --- Parse Application Layer ---
     if port_number == WELLKNOWN_PORT_GTPV2 {
         let (rest, mut gtpinfo) =
@@ -218,8 +213,6 @@ pub async fn simple_parse_pcap(path: &Path)
     let mut idx: usize = 1;
     let mut packets: Vec<PacketSummary> = Vec::new();
 
-    // let start = Instant::now(); // Start time duration to parse packet.
-
     while let Ok(packet) = cap.next_packet() {
 
         let mut hdr_len = 0;
@@ -235,7 +228,8 @@ pub async fn simple_parse_pcap(path: &Path)
             //get next protocol from Ethernet
             next_type = parse_ethernet(&packet.data);
         }
-        if next_type != 0x0800 {
+
+        if next_type != 0x0800 && next_type != 0x86dd {
             idx += 1;
             continue;
         }
@@ -292,12 +286,14 @@ pub async fn simple_parse_pcap(path: &Path)
 
                 _       => {
                     idx+=1;
+                    packets.push(parsed_packet);
                     continue;
                 },
             };
 
         if port_number == 0 || l4_hdr_len == 0 {
             idx += 1;
+            packets.push(parsed_packet);
             continue;
         }
 

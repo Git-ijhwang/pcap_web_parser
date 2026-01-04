@@ -36,6 +36,7 @@ async fn upload_file(
         save_field_to_file(field, &tmp_path).await {
             let msg = format!("Failed to save uploaded file: {}", e);
             let ret = (StatusCode::INTERNAL_SERVER_ERROR, msg);//.into_response();
+            println!("Error?");
             return Err(ret);
         }
 
@@ -50,6 +51,7 @@ async fn upload_file(
 
     cache.write().await.insert(uuid.clone(), info);
 
+    println!("OK?");
     Ok(uuid) // 캐시 접근용 키 반환
 }
 
@@ -125,6 +127,7 @@ pub async fn handle_parse_summary(
             Ok(Ok(parsed)) => {
                 // let _ = tokio::fs::remove_file(&tmp_path).await;
                 // let msg = Json(parsed);
+                println!("parsed: {:?}", parsed.clone().packets);
                 let file_id = state.pcaps.insert_file(uuid, tmp_path.clone(),
                     parsed.clone().packets);
 

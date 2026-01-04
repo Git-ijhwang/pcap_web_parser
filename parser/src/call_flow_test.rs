@@ -429,18 +429,6 @@ pub async fn make_mock_callflow()
       
     });
 
-    // v.push(CallFlow {
-    //     id: 7,
-    //     timestamp: String::new(),
-    //     src_addr: "10.10.3.73".into(),
-    //     dst_addr: "10.10.1.71".into(),
-    //     message: "Modify Bearer Response".into(),
-    //     ebi: None,
-    //     bearer: Some(Bearer {
-    //         ebi: 6,
-    //         ip: "10.10.1.71".into(),
-    //     }),
-    // });
     v.push(CallFlow {
         id: 13,
         timestamp: String::new(),
