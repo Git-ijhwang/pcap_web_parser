@@ -29,7 +29,6 @@ applyCallFlowToBearerState(state, cf)
   if (!next[src_addr]) next[src_addr] = {};
   if (!next[dst_addr]) next[dst_addr] = {};
 
-  // console.log("Call FLow #",cf.id, " Message: ", cf.message);
 
   // ============ Create Session Request ============ 
   if (cf.message.includes("Create Session Request") && Array.isArray(cf.bearer)) {
@@ -50,12 +49,11 @@ applyCallFlowToBearerState(state, cf)
 
       cf.bearer.forEach(b => {
         const ebiNum = b.ebi ? Number(b.ebi) : lbi;
+        const bearer_fteid = b.fteid || [];
         
         // MME(src)는 fteid가 없을 수 있으므로, EBI만으로 중복 체크 및 생성
         const isDuplicate = currentEbiList.some(e => e.ebi === ebiNum);
         // next[nodeAddr][lbi].ebiList
-
-        console.log("===> Is Duplicate: ", isDuplicate);
 
         if (!isDuplicate) {
           // next[nodeAddr][lbi].ebiList.
@@ -63,13 +61,16 @@ applyCallFlowToBearerState(state, cf)
             ebi: ebiNum,
             pending: true, // 아직 터널 정보가 미완성이므로 pending
             active: false,
-            matchKey: { ebi: ebiNum }, // EBI를 매칭 키로 사용
+            matchKey: {
+              ebi: ebiNum,
+              iface_type: bearer_fteid.iface_type || null,
+              teid: bearer_fteid.teid || null,
+            }, // EBI를 매칭 키로 사용
             tunnels: {
-              s11: null,
               s1u_enb: null,
               s1u_sgw: null,
-              s5s8_c: null,
-              s5s8_u: null,
+              s5s8_sgw: null,
+              s5s8_pgw: null,
             }
           });
         }
@@ -90,32 +91,44 @@ applyCallFlowToBearerState(state, cf)
           if (!item.pending) return item;
 
           // 1. TEID 기반 매칭
-          let matched = cf.bearer.find(b => 
+          let matched_bearer = cf.bearer.find(b => 
             (b.fteid_list || []).some(f => 
-              f.iface_type === item.matchKey.iface_type && f.teid === item.matchKey.teid
+              f.iface_type === item.matchKey.iface_type &&
+              f.teid === item.matchKey.teid
             )
           );
 
           // 2. MME/SGW 비대칭 TEID 대응 (순서 기반 매칭)
-          if (!matched && nodeAddr === src_addr) {
+          if (!matched_bearer && nodeAddr === src_addr) {
             const pIdx = pendingItems.findIndex(p => p.matchKey.teid === item.matchKey.teid);
             if (pIdx !== -1 && cf.bearer[pIdx]) {
-              matched = cf.bearer[pIdx];
+              matched_bearer = cf.bearer[pIdx];
             }
           }
 
-          if (matched) {
+          if (matched_bearer) {
             const updatedTunnels = { ...item.tunnels };
-            (matched.fteid_list || []).forEach(f => {
+            (matched_bearer.fteid_list || []).forEach(f => {
+
               const ip = f.ipv4 || f.ipv6 || null;
-              if (f.iface_type === 10 || f.iface_type === 11) updatedTunnels.s11 = { teid: f.teid, ip };
-              if (f.iface_type === 6 || f.iface_type === 7) updatedTunnels.s5s8_c = { teid: f.teid, ip };
-              if (f.iface_type === 4 || f.iface_type === 5) updatedTunnels.s5s8_u = { teid: f.teid, ip };
+                if (f.iface_type === 0)
+                  updatedTunnels.s1u_enb = { teid: f.teid, ip };
+
+                if (f.iface_type === 1)
+                  updatedTunnels.s1u_sgw = { teid: f.teid, ip };
+
+                if (f.iface_type === 4)
+                  updatedTunnels.s5s8_sgw = { teid: f.teid, ip };
+
+                if (f.iface_type === 5)
+                  updatedTunnels.s5s8_pgw = { teid: f.teid, ip };
+
+
             });
 
             return {
               ...item,
-              ebi: Number(matched.ebi),
+              ebi: Number(matched_bearer.ebi),
               pending: false,
               active: true,
               tunnels: updatedTunnels
@@ -158,7 +171,10 @@ applyCallFlowToBearerState(state, cf)
             currentEbiList.push({
               ebi: null,
               pending: true,
-              matchKey: { teid: matchFteid.teid, iface_type: matchFteid.iface_type },
+              matchKey: {
+                teid: matchFteid.teid,
+                iface_type: matchFteid.iface_type
+              },
               tunnels: {
                 s1u_enb: null,
                 s1u_sgw: null,
@@ -167,8 +183,6 @@ applyCallFlowToBearerState(state, cf)
               },
               active: false,
             });
-            // console.log(`[Request] Pending bearer created for ${nodeAddr} (TEID: ${matchFteid.teid})`);
-            // console.log(`[Flow #${cf.id}] Added pending bearer to ${nodeAddr}`);
           } else {
             console.log(`[Flow #${cf.id}] Duplicate bearer skipped for ${nodeAddr}`);
           }
@@ -195,7 +209,8 @@ applyCallFlowToBearerState(state, cf)
           // matchKey(TEID)가 일치하는 bearer 정보 찾기
           let matched = bearer.find(b => 
             (b.fteid_list || []).some(f => 
-              f.iface_type === item.matchKey.iface_type && f.teid === item.matchKey.teid
+              f.iface_type === item.matchKey.iface_type &&
+              f.teid === item.matchKey.teid
             )
           );
 
@@ -203,13 +218,11 @@ applyCallFlowToBearerState(state, cf)
             const pIdx = pendingItems.findIndex(p => p.matchKey.teid === item.matchKey.teid);
             if (pIdx !== -1 && bearer[pIdx]) {
               matched = bearer[pIdx];
-              // console.log(`[MME Match] Flow #${cf.id}: Pending Index ${pIdx} -> EBI ${matched.ebi}`);
             }
           }
 
           if (matched) {
             // 일치하는 정보를 찾으면 pending을 풀고 EBI 번호 할당
-            // console.log(`[Flow #${cf.id}] Updating Node ${nodeAddr}: EBI ${matched.ebi} confirmed.`);
 
             const updatedTunnels = { ...item.tunnels };
 
@@ -217,12 +230,16 @@ applyCallFlowToBearerState(state, cf)
               const ip = f.ipv4 || f.ipv6 || null;
               // 각 인터페이스 타입별로 터널 정보 업데이트
               if (f.iface_type === 0 || f.iface_type === 1) {
-                if (f.iface_type === 0) updatedTunnels.s1u_enb = { teid: f.teid, ip };
-                if (f.iface_type === 1) updatedTunnels.s1u_sgw = { teid: f.teid, ip };
+                if (f.iface_type === 0)
+                  updatedTunnels.s1u_enb = { teid: f.teid, ip };
+                if (f.iface_type === 1)
+                  updatedTunnels.s1u_sgw = { teid: f.teid, ip };
               }
               if (f.iface_type === 4 || f.iface_type === 5) {
-                if (f.iface_type === 4) updatedTunnels.s5s8_sgw = { teid: f.teid, ip };
-                if (f.iface_type === 5) updatedTunnels.s5s8_pgw = { teid: f.teid, ip };
+                if (f.iface_type === 4)
+                  updatedTunnels.s5s8_sgw = { teid: f.teid, ip };
+                if (f.iface_type === 5)
+                  updatedTunnels.s5s8_pgw = { teid: f.teid, ip };
               }
             });
 
@@ -240,6 +257,7 @@ applyCallFlowToBearerState(state, cf)
     });
   }
 
+  // ============ Modify Bearer Request ============ 
   else if (cf.message.includes("Modify Bearer Request") && Array.isArray(cf.bearer)) {
     [src_addr, dst_addr].forEach(nodeAddr => {
       const nodeState = next[nodeAddr];
@@ -258,14 +276,16 @@ applyCallFlowToBearerState(state, cf)
             (b.fteid_list || []).forEach(f => {
               const ip = f.ipv4 || f.ipv6 || null;
               // Interface Type 0: S1-U eNB F-TEID가 여기서 업데이트됨
-              if (f.iface_type === 0) updatedTunnels.s1u_enb = { teid: f.teid, ip };
-              if (f.iface_type === 1) updatedTunnels.s1u_sgw = { teid: f.teid, ip };
+              if (f.iface_type === 0)
+                updatedTunnels.s1u_enb = { teid: f.teid, ip };
+              if (f.iface_type === 1)
+                updatedTunnels.s1u_sgw = { teid: f.teid, ip };
             });
 
             // 데이터 갱신 및 활성화 상태로 변경
             targetBearer.tunnels = updatedTunnels;
-            targetBearer.active = true;
-            targetBearer.pending = false;
+            targetBearer.active = false;//true;
+            targetBearer.pending = true;//false;
           }
         });
       });
@@ -300,45 +320,79 @@ applyCallFlowToBearerState(state, cf)
             targetBearer.pending = false; // 모든 절차 완료
             targetBearer.active = true;   // 통신 준비 완료
             
-            console.log(`[Modify Response] EBI ${targetEbi} is now fully ACTIVE on ${nodeAddr}`);
+          }
+        });
+      });
+    });
+  }
+  // ============ Delete Bearer Request ============ 
+  else if (cf.message.includes("Delete Bearer Request")){
+    [src_addr, dst_addr].forEach(nodeAddr => {
+      const nodeState = next[nodeAddr];
+      if (!nodeState) return;
+
+      const targetEbi = Number(cf.ebi);
+
+      Object.keys(nodeState).forEach(lbi => {
+        const targetBearer = nodeState[lbi].ebiList.find(e => e.ebi === targetEbi);
+        
+        if (targetBearer) {
+          targetBearer.deletePending = true;
+          targetBearer.active = false; // 더 이상 활성 상태가 아님을 표시
+        }
+      });
+    });
+  }
+  // ============ Delete Bearer Response ============ 
+  else if (cf.message.includes("Delete Bearer Response") && Array.isArray(cf.bearer)) {
+    [src_addr, dst_addr].forEach(nodeAddr => {
+      const nodeState = next[nodeAddr];
+      if (!nodeState) return;
+      cf.bearer.forEach(b => {
+        const targetEbi = Number(b.ebi);
+
+        Object.keys(nodeState).forEach(lbi => {
+          // 해당 EBI를 리스트에서 제외 (실제 데이터 삭제)
+          const initialCount = nodeState[lbi].ebiList.length;
+          nodeState[lbi].ebiList = nodeState[lbi].ebiList.filter(e => e.ebi !== targetEbi);
+          
+          if (nodeState[lbi].ebiList.length < initialCount) {
+            console.log(`[Delete Bearer Response] Ebi ${targetEbi} removed from ${nodeAddr}`);
+          }
+
+          // 만약 세션 내에 베어러가 하나도 남지 않았다면 LBI 세션 자체를 정리할 수도 있습니다.
+          if (nodeState[lbi].ebiList.length === 0) {
+            delete nodeState[lbi];
           }
         });
       });
     });
   }
 
-  // ============ Delete Bearer  ============ 
-  else if (cf.message.includes("Delete Bearer") && cf.ebi !== undefined) {
-    let delEbi = cf.ebi !== undefined ? Number(cf.ebi) : (bearer?.[0]?.ebi ? Number(bearer[0].ebi) : null);
-
-    if (delEbi !== null) {
-      [src_addr, dst_addr].forEach(nodeAddr => {
-        const nodeState = next[nodeAddr];
-        if (!nodeState) return;
-
-        Object.keys(nodeState).forEach(lbi => {
-          // 1. EBI 필터링
-          nodeState[lbi].ebiList = nodeState[lbi].ebiList.filter(e => e.ebi !== delEbi);
-          
-          // 2. LBI 자체가 삭제 대상인 경우 (LBI == EBI) 혹은 하위 EBI가 하나도 없는 경우 세션 삭제 고려
-          if (Number(lbi) === delEbi || nodeState[lbi].ebiList.length === 0) {
-            delete nodeState[lbi];
-          }
-        });
+  else if (cf.message.includes("Delete Session Request")){
+    [src_addr, dst_addr].forEach(nodeAddr => {
+      const nodeState = next[nodeAddr];
+      if (!nodeState) return;
+      Object.keys(nodeState).forEach(lbi => {
+        nodeState[lbi] = {
+          ...nodeState[lbi],
+          pending: true,
+        }
+        nodeState[lbi].ebiList = nodeState[lbi].ebiList.map(item => ({
+          ...item,
+          pending:true,
+          active: false,
+        }))
       });
-    }
+    });
   }
-
-  /* Delete Session */
-  else if (cf.message.includes("Delete Session")) {
+  else if (cf.message.includes("Delete Session Response")){
     delete next[src_addr];
     delete next[dst_addr];
   }
 
   return next;
 }
-
-
 
 
 function CallFlowGraph({ data, step }) {

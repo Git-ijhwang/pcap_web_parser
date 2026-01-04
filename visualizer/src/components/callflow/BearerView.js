@@ -3,16 +3,17 @@ import React,{ useMemo }  from "react";
 function
 EBIBox({ x, y, width, height, ebiObj }) {
   const tunnels = ebiObj.tunnels || {};
+  const isPending = ebiObj.pending === true;
+  const isDelPending = ebiObj.deletePending === true;
   return (
     <g>
       <rect
         x={x} y={y}
         width={width} height={height}
         rx={6} ry={6}
-        // fill="#ffffff" stroke="#666"
-        fill={ebiObj.pending ? "#fff9db" : "#ffffff"} // 대기 중일 땐 연한 노란색
-        stroke={ebiObj.pending ? "#fcc419" : "#666"}
-        strokeDasharray={ebiObj.pending ? "3,2" : "0"} // 대기 중일 땐 점선
+        fill={isPending ? "#fff9db" : isDelPending? "#fa7f7fff":"#ffffff"} // 대기 중일 땐 연한 노란색
+        stroke={isPending||isDelPending ? "#fcc419" : "#666"}
+        strokeDasharray={isPending||isDelPending ? "3,2" : "none"} // 대기 중일 땐 점선
       />
 
       <text x={x + 10} y={y + 18} fontSize={12}>
@@ -50,6 +51,7 @@ LBIBox({ x, y, lbiObj }) {
   const headerHeight = 28;
   const ebiHeight = 26;
   const padding = 10;
+  const isPending = lbiObj.pending === true;
 
   const boxHeight =
     headerHeight + ebiList.length * (ebiHeight + 6) + padding;
@@ -60,7 +62,8 @@ LBIBox({ x, y, lbiObj }) {
         x={x} y={y}
         width={boxWidth} height={boxHeight}
         rx={8} ry={8}
-        fill="#f1f3f5" stroke="#333"
+        fill={isPending ? "#fff9db" : "#f1f3f5"}
+        stroke="#333"
       />
 
       <text x={x + 10} y={y + 18} fontSize={13} fontWeight="bold">
