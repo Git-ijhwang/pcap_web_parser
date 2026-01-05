@@ -1,7 +1,7 @@
 use crate::ip::port::*;
 use crate::types::*;
 
-pub fn parse_tcp_simple(tcp: &[u8], packet: & mut PacketSummary) -> u16
+pub fn parse_tcp_simple(tcp: &[u8], packet: &mut PacketSummary) -> u16
 {
     if tcp.len() < 20 {
         println!( "TCP header too short");
@@ -12,6 +12,7 @@ pub fn parse_tcp_simple(tcp: &[u8], packet: & mut PacketSummary) -> u16
 
     packet.src_port = src_port;
     packet.dst_port = dst_port;
+    packet.l4_type = "TCP".to_string();
 
     dst_port
 }

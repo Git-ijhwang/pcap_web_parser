@@ -69,20 +69,20 @@ export default function UdpHeader({ udp }) {
                     </td>
                   </tr>
 
-                {udp.payload ? (
-                  <>
-                  <tr>
-                    <th>Payload</th>
-                    <td>
-                      {udp.payload && udp.payload.length > 5 
-                        ? udp.payload.slice(0, 5) + "..." 
-                        : udp.payload}
-                    </td>
-                  </tr>
-                  </>
-                ) : (
-                  <></>
-                )}
+                  {udp.payload ? (
+                    <>
+                      <tr>
+                        <th>Payload</th>
+                        <td>
+                          {udp.payload && udp.payload.length > 5 
+                            ? udp.payload.slice(0, 5) + "..." 
+                            : udp.payload}
+                        </td>
+                      </tr>
+                    </>
+                  ) : (
+                    <></>
+                  )}
 
                 </tbody>
               </table>

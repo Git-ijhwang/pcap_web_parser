@@ -1,7 +1,7 @@
 use crate::ip::port::*;
 use crate::types::*;
 
-pub fn parse_udp_simple (udp: &[u8], mut packet: Option<& mut PacketSummary>) -> u16
+pub fn parse_udp_simple (udp: &[u8], mut packet: &mut PacketSummary) -> u16
 {
     let mut pos = 0;
 
@@ -10,10 +10,9 @@ pub fn parse_udp_simple (udp: &[u8], mut packet: Option<& mut PacketSummary>) ->
 
     let dst_port = u16::from_be_bytes([udp[pos], udp[pos+1]]);
 
-    if let Some(p) = packet.as_deref_mut() {
-        p.src_port = src_port;
-        p.dst_port = dst_port;
-    }
+    packet.src_port = src_port;
+    packet.dst_port = dst_port;
+    packet.l4_type = "UDP".to_string();
 
     dst_port
 }

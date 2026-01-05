@@ -789,7 +789,7 @@ pub fn check_gtp(packet: &OwnedPacket)
 
     offset += IP_HDR_LEN;
     let (_, dst_port) = get_udp_port(&packet.data[offset..]);
-    if dst_port != WELLKNOWN_PORT_GTPV2 {
+    if dst_port != L4_PORT_GTPV2 {
         return false;
     }
 

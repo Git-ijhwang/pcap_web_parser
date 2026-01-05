@@ -19,6 +19,7 @@ pub fn parse_icmp_simple (icmp: &[u8], packet: &mut PacketSummary)
     packet.src_port = 0;
     packet.dst_port = 0;
     packet.description = desc;
+    packet.l4_type = "ICMP".to_string();
 
     0
 }

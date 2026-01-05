@@ -23,7 +23,16 @@ fn format_timestamp(packet: &Packet) -> String
 
     let dt: DateTime<Local> = Local.from_local_datetime(&naive).unwrap();
 
-    dt.format("%Y-%m-%d %H:%M:%S%.6f").to_string()
+    // dt.format("%Y-%m-%d %H:%M:%S%.6f").to_string()
+    dt.format("%H:%M:%S%.3f").to_string()
+}
+
+
+fn print_timestamp(idx:usize, packet: &Packet)
+    -> String
+{
+    let ts = format_timestamp(packet);
+    format!( "{}",ts).to_string()
 }
 
 
@@ -47,13 +56,6 @@ pub fn parse_ethernet(data: &[u8]) -> usize
     let next_type = u16::from_be_bytes([data[offset], data[offset+1]]) as usize;
 
     next_type
-}
-
-fn print_timestamp(idx:usize, packet: &Packet)
-    -> String
-{
-    let ts = format_timestamp(packet);
-    format!( "{}",ts).to_string()
 }
 
 
@@ -172,7 +174,7 @@ parse_single_packet(path: &PathBuf, id: usize)
 
     // --- Parse Application Layer ---
     match port_number {
-        WELLKNOWN_PORT_GTPV2 => {
+        L4_PORT_GTPV2 => {
             let (rest, mut gtpinfo) =
                 parse_gtpc_detail( &packet.data[offset..]).map_err(
                     |e| format!("GTP-C parse error: {:?}", e)
@@ -233,7 +235,7 @@ pub async fn simple_parse_pcap(path: &Path)
             next_type = parse_ethernet(&packet.data);
         }
 
-        if next_type != 0x0800 && next_type != 0x86dd {
+        if next_type != NEXT_HDR_IPV4 && next_type != NEXT_HDR_IPV6 {
             idx += 1;
             continue;
         }
@@ -265,6 +267,7 @@ pub async fn simple_parse_pcap(path: &Path)
         hdr_len += IP_HDR_LEN;
 
         // --- Parse Layer 4 ---
+
         let (port_number, l4_hdr_len) =
             match next_type {
                 PROTO_TYPE_TCP   => {
@@ -276,7 +279,7 @@ pub async fn simple_parse_pcap(path: &Path)
 
                 PROTO_TYPE_UDP   => {
                     (
-                        parse_udp_simple ( &packet.data[hdr_len..], Some(&mut parsed_packet)),
+                        parse_udp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
                         UDP_HDR_LEN
                     )
                 },
@@ -306,7 +309,7 @@ pub async fn simple_parse_pcap(path: &Path)
         parsed_packet.length = tot_len - hdr_len;
         // --- Parse Application Layer ---
         match port_number {
-            WELLKNOWN_PORT_GTPV2   => {
+            L4_PORT_GTPV2   => {
                 parsed_packet.protocol = "GTP2-C".to_string();
                 let _ = parse_gtpc (
                         &packet.data[hdr_len..],
@@ -317,9 +320,8 @@ pub async fn simple_parse_pcap(path: &Path)
             },
         };
 
-        packets.push(parsed_packet);
-
         idx += 1;
+        packets.push(parsed_packet);
     }
 
     let packet_len = packets.len();

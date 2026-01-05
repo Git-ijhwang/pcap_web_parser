@@ -84,7 +84,7 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
   const filteredPackets = packets?.filter(pkt => {
 
     if (filters.tcp.enabled) {
-      if (pkt.protocol !== "TCP") return false;
+      if (pkt.l4_type !== "TCP") return false;
       if (filters.tcp.port && isValidPort(filters.tcp.port)) {
         const n = Number(filters.tcp.port);
         if (pkt.src_port !== n && pkt.dst_port !== n) return false;
@@ -92,7 +92,7 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
     }
 
     if (filters.udp.enabled) {
-      if (pkt.protocol !== "UDP") return false;
+      if (pkt.l4_type !== "UDP") return false;
       if (filters.udp.port && isValidPort(filters.udp.port)) {
         const n = Number(filters.udp.port);
         if (pkt.src_port !== n && pkt.dst_port !== n) return false;
@@ -270,8 +270,8 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
             <th>Timestamp</th>
             <th>Source IP</th>
             <th>Destination IP</th>
-            <th>Src Port</th>
-            <th>Dst Port</th>
+            {/* <th>Src Port</th> */}
+            {/* <th>Dst Port</th> */}
             <th>Protocol</th>
             <th>Length</th>
             <th>Description</th>
@@ -289,8 +289,8 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
                 <td>{pkt.ts}</td>
                 <td>{pkt.src_ip}</td>
                 <td>{pkt.dst_ip}</td>
-                <td>{pkt.src_port}</td>
-                <td>{pkt.dst_port}</td>
+                {/* <td>{pkt.src_port}</td> */}
+                {/* <td>{pkt.dst_port}</td> */}
                 <td>{pkt.protocol}</td>
                 <td>{pkt.length}</td>
                 <td>{pkt.description}</td>
