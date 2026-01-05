@@ -62,6 +62,7 @@ pub fn parse_single_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
     pos += 2;
 
     let chksum = u16::from_be_bytes([udp_buf[pos], udp_buf[pos+1]]);
+    pos += 2;
 
 
     udp.src_port = src_port;
@@ -72,9 +73,17 @@ pub fn parse_single_udp(udp_buf: &[u8], udp: & mut UdpInfo) -> u16
     if str_dst_port.len() > 0 {
         udp.str_dst_port = str_dst_port;
     }
+
     udp.length = len;
     udp.checksum = chksum;
-    udp.raw.extend_from_slice(&udp_buf[0..8]);
+    udp.raw.extend_from_slice(&udp_buf[0..pos]);
+
+    if src_port == 2123 {
+        udp.payload = None;
+    }
+    else {
+        udp.payload = Some(udp_buf[pos..].to_vec());
+    }
 
     dst_port
 }

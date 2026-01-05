@@ -892,39 +892,21 @@ function GtpIeTable({ ies, level = 0 })
 // }
 
 
-
 export default function GtpHeader({ gtp }) {
   const [viewMode, setViewMode] = useState("decoded");
-    const [hoveredRaw, setHoveredRaw] = useState(null); // ★ hover 상태
-    const [hoverTop, setHoverTop] = useState(0);  // 두 번째 HexDump top
+  const [hoveredRaw, setHoveredRaw] = useState(null); // ★ hover 상태
+  const [hoverTop, setHoverTop] = useState(0);  // 두 번째 HexDump top
+  const fullHexRef = useRef();
 
+  useEffect(() => {
+    // console.log("useEffect 실행");
+    // console.log("fullHexRef.current:", fullHexRef.current);
 
-const fullHexRef = useRef();
-
-useEffect(() => {
-
-  console.log("useEffect 실행");
-  console.log("fullHexRef.current:", fullHexRef.current);
-
-  if (fullHexRef.current) {
-    console.log("offsetHeight:", fullHexRef.current.offsetHeight);
-
-    setHoverTop(fullHexRef.current.offsetHeight + 12); // 12px gap
-  }
-}, [viewMode, gtp.raw]); // 메시지가 바뀌면 갱신
-// useEffect(() => {
-//   if (!fullHexRef.current) return;
-
-//   const observer = new ResizeObserver(() => {
-//     console.log("ResizeObserver fired, height:", fullHexRef.current.offsetHeight);
-//     setHoverTop(fullHexRef.current.offsetHeight + 12);
-//   });
-
-//   observer.observe(fullHexRef.current);
-
-//   return () => observer.disconnect();
-// }, [gtp.raw]);
-
+    if (fullHexRef.current) {
+      // console.log("offsetHeight:", fullHexRef.current.offsetHeight);
+      setHoverTop(fullHexRef.current.offsetHeight + 12); // 12px gap
+    }
+  }, [viewMode, gtp.raw]); // 메시지가 바뀌면 갱신
 
   if (!gtp) return null;
 
@@ -932,26 +914,23 @@ useEffect(() => {
     <div className="card mb-3">
       <div className="card-header gtp-header d-flex justify-content-between align-items-center">
         <strong>Application Layer</strong>
-          <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
 
+        <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
 
-            {/* Label 먼저 */}
-            <label className="form-check-label me-5" htmlFor="gtpSwitch">
-              {viewMode === "raw" ? "Raw" : "Decoded"}
-            </label>
+          <label className="form-check-label me-5" htmlFor="gtpSwitch">
+            {viewMode === "raw" ? "Raw" : "Decoded"}
+          </label>
 
-
-            {/* Switch 버튼 */}
-            <input
-              className="form-check-input"
-              type="checkbox"
-              role="switch"
-              id="gtpSwitch"
-              checked={viewMode === "raw"}
-              onChange={() =>
-                setViewMode(viewMode === "raw" ? "decoded" : "raw")
-              }
-            />
+          <input
+            className="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="gtpSwitch"
+            checked={viewMode === "raw"}
+            onChange={() =>
+              setViewMode(viewMode === "raw" ? "decoded" : "raw")
+            }
+          />
         </div>
       </div>
 
@@ -1030,156 +1009,138 @@ useEffect(() => {
               </table>
             </div>
 
-            {/* <div 
-               style={{
-                  position: "sticky",
-                  top: "10px",
-                  height: "fit-content",   // 높이 지정
-                  overflowX: "auto",
-                  background: "#111a23",
-                  zIndex: 1000,
-                  borderRadius: "10px"
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: "0 0 400px" }}>
+    
+            {/* 전체 GTP HexDump */}
+            <div 
+              ref={fullHexRef}
+              style={{
+                position: "sticky",
+                top: "10px",
+                height: "fit-content",
+                overflowX: "auto",
+                overflowY: "auto",
+                background: "#111a23",
+                borderRadius: "10px",
+                padding: "8px"
+              }} >
+              <GtpHexDump raw={gtp.raw} />
+            </div>
+
+            {/* Hovered IE HexDump */}
+            <div
+              style={{
+                position: "sticky",
+                top: `${hoverTop}px`, 
+                // maxHeight: "400px",
+                height: "fit-content",
+                overflowX: "auto",
+                overflowY: "auto",
+                background: "#1b1f27",
+                borderRadius: "10px",
+                padding: "8px"
               }}
             >
-              <GtpHexDump raw={gtp.raw} /> 
-            {hoveredRaw ? <GtpHexDump raw={hoveredRaw} /> : <div>Hover an IE to see raw data</div>}
+              {hoveredRaw ? <GtpHexDump raw={hoveredRaw} /> : <div style={{ color: "#888" }}>Hover an IE to see raw data</div>}
             </div>
-          </div> */}
-          {/* 오른쪽: HexDump 영역 */}
-  <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: "0 0 400px" }}>
-    
-    {/* 전체 GTP HexDump */}
-    <div 
-      ref={fullHexRef}
-      style={{
-        position: "sticky",
-        top: "10px",
-        height: "fit-content",
-        overflowX: "auto",
-        overflowY: "auto",
-        background: "#111a23",
-        borderRadius: "10px",
-        padding: "8px"
-      }}
-    >
-      <GtpHexDump raw={gtp.raw} />
-    </div>
-
-    {/* Hovered IE HexDump */}
-    <div
-      style={{
-        position: "sticky",
-        top: `${hoverTop}px`, 
-        // maxHeight: "400px",
-        height: "fit-content",
-        overflowX: "auto",
-        overflowY: "auto",
-        background: "#1b1f27",
-        borderRadius: "10px",
-        padding: "8px"
-      }}
-    >
-      {hoveredRaw ? <GtpHexDump raw={hoveredRaw} /> : <div style={{ color: "#888" }}>Hover an IE to see raw data</div>}
-    </div>
-  </div>
-</div>
+            </div>
+          </div>
 
         ) : (
 
           <div>
-          <table className="ip-table ">
-            <tbody>
+            <table className="ip-table ">
+              <tbody>
 
-              <tr>
-                <th colSpan="33" style={{ textAlign: "center" }}>
-                  <b>GTP Header</b>
-                </th>
-              </tr>
+                <tr>
+                  <th colSpan="33" style={{ textAlign: "center" }}>
+                    <b>GTP Header</b>
+                  </th>
+                </tr>
 
-              {/* Header Row */}
-              <tr>
-                <th style={{ borderLeft: "" }}>Octet</th>
-                <th colSpan="8">0</th>
-                <th colSpan="8">1</th>
-                <th colSpan="8">2</th>
-                <th colSpan="8">3</th>
-              </tr>
+                {/* Header Row */}
+                <tr>
+                  <th style={{ borderLeft: "" }}>Octet</th>
+                  <th colSpan="8">0</th>
+                  <th colSpan="8">1</th>
+                  <th colSpan="8">2</th>
+                  <th colSpan="8">3</th>
+                </tr>
 
-              <tr>
-                <th>Bit</th>
-                  {[...Array(32)].map((_, i) => (
-                    <th key={i}>{i}</th>
-                  ))}
-              </tr>
+                <tr>
+                  <th>Bit</th>
+                    {[...Array(32)].map((_, i) => (
+                      <th key={i}>{i}</th>
+                    ))}
+                </tr>
 
-              <tr>
-                <th>0</th>
-                <td colSpan="3"><i>Version:</i> {gtp.version}</td>
-                <td colSpan="1"><i>P:</i>
-                  {gtp.p_flag ? "1" : "0"}
-                </td>
-                <td colSpan="1"><i>T:</i> {gtp.t_flag ? "1" : "0"}</td>
-                <td colSpan="1"><i>MP:</i> {gtp.mp_flag ? "1" : "0"}</td>
-                <td colSpan="2"><i>Reserved</i> </td>
-
-                <td colSpan="8"><i>Message Type:</i>{gtp.msg_type_str} [{gtp.msg_type}] </td>
-                <td colSpan="16"><i>Message Length:</i>{gtp.msg_len} </td>
-              </tr>
-
-              <tr>
-                <th>32</th>
-                { gtp.t_flag ? (
-                  <td colSpan="32"><i>TEID:0x</i>
-                      {gtp.teid != null ? gtp.teid.toString(16)
-                      // .toUpperCase()
-                      .padStart(8, "0") : "-"}
-                      {/* {gtp.teid} */}
+                <tr>
+                  <th>0</th>
+                  <td colSpan="3"><i>Version:</i> {gtp.version}</td>
+                  <td colSpan="1"><i>P:</i>
+                    {gtp.p_flag ? "1" : "0"}
                   </td>
-                ) : (
-                  <>
-                  <td colSpan="24"><i>Sequence Number:0x</i>
-                              {gtp.seq != null ? gtp.seq.toString(16).padStart(8, "0")
-                              // .toUpperCase()
-                              : "-"}
-                  {/* {gtp.seq} */}
+                  <td colSpan="1"><i>T:</i> {gtp.t_flag ? "1" : "0"}</td>
+                  <td colSpan="1"><i>MP:</i> {gtp.mp_flag ? "1" : "0"}</td>
+                  <td colSpan="2"><i>Reserved</i> </td>
+
+                  <td colSpan="8"><i>Message Type:</i>{gtp.msg_type_str} [{gtp.msg_type}] </td>
+                  <td colSpan="16"><i>Message Length:</i>{gtp.msg_len} </td>
+                </tr>
+
+                <tr>
+                  <th>32</th>
+                    { gtp.t_flag ? (
+                      <td colSpan="32"><i>TEID:0x</i>
+                        {gtp.teid != null ? gtp.teid.toString(16)
+                        // .toUpperCase()
+                        .padStart(8, "0") : "-"}
+                        {/* {gtp.teid} */}
+                      </td>
+                    ) : (
+                      <>
+                        <td colSpan="24"><i>Sequence Number:0x</i>
+                          {gtp.seq != null ? gtp.seq.toString(16).padStart(8, "0")
+                          // .toUpperCase()
+                          : "-"}
+                          {/* {gtp.seq} */}
+                        </td>
+                        {/* <td colSpan="8"><i>Sequence Number</i> </td> */}
+                        <td colSpan="8"><i>Spare</i> </td>
+                      </>
+                    )}
+                </tr>
+
+                <tr>
+                  <th>64</th>
+                  { gtp.t_flag ? (
+                    <>
+                    <td colSpan="24"><i>Sequence Number:0x</i>
+                        {gtp.seq != null ? gtp.seq.toString(16)
+                          .padStart(6, "0") : "-"}
+                    </td>
+                    <td colSpan="8"><i>Spare</i> </td>
+                    </>
+                  ):(<></>)}
+                </tr>
+
+                <tr>
+                  <td colSpan="33" style={{ paddingLeft: "20px" }}>
+                    <b>IE Contents:</b>
+                    <GtpIeViewer ies={gtp.ies} />
+
                   </td>
-                  {/* <td colSpan="8"><i>Sequence Number</i> </td> */}
-                  <td colSpan="8"><i>Spare</i> </td>
-                  </>
-                )}
-              </tr>
+                </tr>
 
-              <tr>
-                <th>64</th>
-                { gtp.t_flag ? (
-                  <>
-                  <td colSpan="24"><i>Sequence Number:0x</i>
-                      {gtp.seq != null ? gtp.seq.toString(16)
-                        .padStart(6, "0") : "-"}
-                  </td>
-                  <td colSpan="8"><i>Spare</i> </td>
-                  </>
-                ):(<></>)}
-              </tr>
-
-              <tr>
-                <td colSpan="33" style={{ paddingLeft: "20px" }}>
-                  <b>IE Contents:</b>
-                  <GtpIeViewer ies={gtp.ies} />
-
-                </td>
-              </tr>
-
-            </tbody>
-          </table>
+              </tbody>
+            </table>
 
             <p></p>
-          {/* GTP Group IEs */}
+            {/* GTP Group IEs */}
 
 
           </div>
         )}
-
       </div>
     </div>
   );

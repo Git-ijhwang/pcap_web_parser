@@ -49,12 +49,12 @@ export default function TcpHeader({ tcp }) {
 
                     <tr>
                       <th>Source Port</th>
-                      <td>{tcp.src_port}</td>
+                      <td> {tcp.str_src_port} [{tcp.src_port}] </td>
                     </tr>
 
                     <tr>
                       <th>Destination Port</th>
-                      <td>{tcp.dst_port}</td>
+                      <td> {tcp.str_dst_port} [{tcp.dst_port}] </td>
                     </tr>
 
                     <tr>
@@ -109,12 +109,49 @@ export default function TcpHeader({ tcp }) {
                       <td>{tcp.urgent}</td>
                     </tr>
 
+                  {tcp.payload ? (
+                    <>
+                      <tr>
+                        <th>Payload</th>
+                        <td>
+                          {tcp.payload && tcp.payload.length > 5 
+                            ? tcp.payload.slice(0, 5) + "..." 
+                            : tcp.payload}
+                        </td>
+                      </tr>
+                    </>
+                  ) : (
+                    <></>
+                  )}
+
                   </tbody>
                 </table>
               </div>
 
-              <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
-                <HexDump raw={tcp.raw} /> 
+              <div style={{ 
+                  flex: "1 1 auto", 
+                  display: "flex", 
+                  flexDirection: "column",
+                  gap: "15px",
+                  minWidth: 0
+                }}>
+
+                <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+                  <div style={{ fontWeight: "bold", marginBottom: "5px" }}>TCP Header</div>
+                  <HexDump raw={tcp.raw} /> 
+                </div>
+
+                {tcp.payload ? (
+                  <>
+                    <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+                      <div style={{ fontWeight: "bold", marginBottom: "5px" }}>Payload ( {tcp.payload.length} bytes )</div>
+                      <HexDump raw={tcp.payload} /> 
+                    </div>
+                  </>
+                ) : (
+                  <> </>
+                )}
+
               </div>
 
             </div>
@@ -196,6 +233,18 @@ export default function TcpHeader({ tcp }) {
                     {tcp.urgent}
                   </td>
                 </tr>
+
+                {tcp.payload ? (
+                  <>
+                    <tr>
+                      <th>128</th>
+                      <td colSpan="32"><i>Payload..</i> 
+                      </td>
+                    </tr>
+                  </>
+                ) : (
+                  <></>
+                )}
 
               </tbody>
             </table>

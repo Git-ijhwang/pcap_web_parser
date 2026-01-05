@@ -273,6 +273,7 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
             <th>Src Port</th>
             <th>Dst Port</th>
             <th>Protocol</th>
+            <th>Length</th>
             <th>Description</th>
             <th>Action</th>
           </tr>
@@ -291,6 +292,7 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
                 <td>{pkt.src_port}</td>
                 <td>{pkt.dst_port}</td>
                 <td>{pkt.protocol}</td>
+                <td>{pkt.length}</td>
                 <td>{pkt.description}</td>
                 <td>
                   {pkt.description === "Create Session Request [32]" && onCallFlow && (
@@ -348,7 +350,6 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
                 {selectedPacket?.packet?.app?.GTP && (
                   <GtpHeader gtp={selectedPacket.packet.app.GTP} />
                 )}
-
               </div>
             )}
           </Modal.Body>

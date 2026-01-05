@@ -66,17 +66,45 @@ export default function IcmpHeader({ icmp }) {
                     <td>{icmp.seq}</td>
                   </tr>
 
+                  <tr>
+                    <th>Payload</th>
+                    <td>
+                      {icmp.payload && icmp.payload.length > 5 
+                        ? icmp.payload.slice(0, 5) + "..." 
+                        : icmp.payload}
+                    </td>
+                  </tr>
 
                 </tbody>
               </table>
             </div>
 
-            <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
-              <HexDump raw={icmp.raw} /> 
+            <div style={{ 
+                flex: "1 1 auto", 
+                display: "flex", 
+                flexDirection: "column",
+                gap: "15px",
+                minWidth: 0
+              }}>
+
+              <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+                <div style={{ fontWeight: "bold", marginBottom: "5px" }}>ICMP Header</div>
+                <HexDump raw={icmp.raw} /> 
+              </div>
+
+              {icmp.payload ? (
+                <>
+                  <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+                    <div style={{ fontWeight: "bold", marginBottom: "5px" }}>Payload</div>
+                    <HexDump raw={icmp.payload} /> 
+                  </div>
+                </>
+              ) : (
+                <></>
+              )}
             </div>
 
           </div>
-
         ) : (
           <table className="ip-table ">
             <tbody>
@@ -118,6 +146,19 @@ export default function IcmpHeader({ icmp }) {
                   {icmp.checksum != null ? icmp.checksum.toString(16).toUpperCase().padStart(4, "0") : "-"}
                 </td>
               </tr>
+
+              {icmp.payload ? (
+                <>
+                  <tr>
+                    <th>64</th>
+                    <td colSpan="32"><i>Payload..</i> 
+                    </td>
+                  </tr>
+                </>
+              ) : (
+                <></>
+              )}
+
             </tbody>
           </table>
         )}

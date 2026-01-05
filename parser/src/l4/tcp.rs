@@ -47,25 +47,27 @@ pub fn parse_single_tcp(tcp_buf: &[u8], tcp: & mut TcpInfo) -> u16
         eprintln!("Unknown protocol type {}", src_port);
     }
 
-    // let mut str_dst_port = "".to_string();
-    // if let Some(v) = port_to_str(dst_port) {
-    //     str_dst_port = v;
-    // }
-    // else {
-    //     eprintln!("Unknown protocol type {}", dst_port);
-    // }
+    let mut str_dst_port = "".to_string();
+    if let Some(v) = port_to_str(dst_port) {
+        str_dst_port = v;
+    }
+    else {
+        eprintln!("Unknown protocol type {}", dst_port);
+    }
 
     tcp.src_port        = src_port;
     tcp.src_port_str    = str_src_port;
-    tcp.dst_port = dst_port;
-    tcp.seq = seq_num;
-    tcp.ack = ack_num;
-    tcp.flags = flags;
-    tcp.window = win_size;
-    tcp.header_sz = data_offset;
-    tcp.checksum = chksum;
-    tcp.urgent = 0;
+    tcp.dst_port        = dst_port;
+    tcp.dst_port_str    = str_dst_port;
+    tcp.seq             = seq_num;
+    tcp.ack             = ack_num;
+    tcp.flags           = flags;
+    tcp.window          = win_size;
+    tcp.header_sz       = data_offset;
+    tcp.checksum        = chksum;
+    tcp.urgent          = 0;
     tcp.raw.extend_from_slice(&tcp_buf[0..20]);
+    tcp.payload = Some((tcp_buf[20..]).to_vec());
         
     dst_port
 }

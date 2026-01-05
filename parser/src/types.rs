@@ -160,6 +160,7 @@ pub struct IcmpInfo {
     pub id: u16,
     pub seq: u16,
     pub raw: Vec<u8>,
+    pub payload: Option<Vec<u8>>,
 }
 impl  IcmpInfo {
     pub fn new() -> Self {
@@ -170,6 +171,7 @@ impl  IcmpInfo {
             id: 0,
             seq: 0,
             raw: Vec::new(),
+            payload: None,
         }
     }
 }
@@ -184,6 +186,7 @@ pub struct UdpInfo {
     pub length: u16,
     pub checksum: u16,
     pub raw: Vec<u8>,
+    pub payload: Option<Vec<u8>>,
 }
 
 impl  UdpInfo {
@@ -196,6 +199,7 @@ impl  UdpInfo {
             length: 0,
             checksum: 0,
             raw: Vec::new(),
+            payload: None,
         }
     }
 }
@@ -205,6 +209,7 @@ pub struct TcpInfo {
     pub src_port: u16,
     pub src_port_str: String,
     pub dst_port: u16,
+    pub dst_port_str: String,
     pub seq: u32,
     pub ack: u32,
     pub header_sz: u8,
@@ -213,6 +218,7 @@ pub struct TcpInfo {
     pub checksum: u16,
     pub urgent: u16,
     pub raw: Vec<u8>,
+    pub payload: Option<Vec<u8>>,
 }
 impl  TcpInfo {
     pub fn new() -> Self {
@@ -220,6 +226,7 @@ impl  TcpInfo {
             src_port: 0,
             src_port_str: String::new(),
             dst_port: 0,
+            dst_port_str: String::new(),
             seq: 0,
             ack: 0,
             header_sz: 0,
@@ -228,6 +235,7 @@ impl  TcpInfo {
             checksum: 0,
             urgent: 0,
             raw: Vec::new(),
+            payload: None,
         }
     }
 }

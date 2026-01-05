@@ -164,7 +164,6 @@ parse_single_packet(path: &PathBuf, id: usize)
         }
     }
 
-
     // --- Parse Layer 4 ---
     let (port_number, l4_hdr_len) =
         parse_l4(next_type, &packet.data[offset..], &mut parsed_packet).await;
@@ -172,24 +171,28 @@ parse_single_packet(path: &PathBuf, id: usize)
     offset += l4_hdr_len;
 
     // --- Parse Application Layer ---
-    if port_number == WELLKNOWN_PORT_GTPV2 {
-        let (rest, mut gtpinfo) =
-            parse_gtpc_detail( &packet.data[offset..]).map_err(
-                |e| format!("GTP-C parse error: {:?}", e)
-            )?;
+    match port_number {
+        WELLKNOWN_PORT_GTPV2 => {
+            let (rest, mut gtpinfo) =
+                parse_gtpc_detail( &packet.data[offset..]).map_err(
+                    |e| format!("GTP-C parse error: {:?}", e)
+                )?;
 
-        let result = match parse_all_ies(rest) {
+            let result = match parse_all_ies(rest) {
 
-            Ok(v) => v,
-            Err(_) => {
-                // return Err(format!("Parse All failed: {}", e));
-                Vec::new()
-            }
-        };
+                Ok(v) => v,
+                Err(_) => {
+                    // return Err(format!("Parse All failed: {}", e));
+                    Vec::new()
+                }
+            };
 
-        gtpinfo.ies = result;
-        parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
-    }
+            gtpinfo.ies = result;
+            parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
+        },
+        _ => {
+        },
+    };
 
     Ok(ParsedDetail {
         id,
@@ -216,6 +219,7 @@ pub async fn simple_parse_pcap(path: &Path)
     while let Ok(packet) = cap.next_packet() {
 
         let mut hdr_len = 0;
+        let tot_len = packet.len();
 
         // --- Parse TimeStamp ---
         let mut parsed_packet : PacketSummary = PacketSummary::new();
@@ -299,6 +303,7 @@ pub async fn simple_parse_pcap(path: &Path)
 
         hdr_len += l4_hdr_len;
 
+        parsed_packet.length = tot_len - hdr_len;
         // --- Parse Application Layer ---
         match port_number {
             WELLKNOWN_PORT_GTPV2   => {
@@ -308,7 +313,8 @@ pub async fn simple_parse_pcap(path: &Path)
                         &mut parsed_packet);
             },
 
-            _ => {},
+            _ => {
+            },
         };
 
         packets.push(parsed_packet);

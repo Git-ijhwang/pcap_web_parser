@@ -42,13 +42,15 @@ pub fn parse_single_icmp(icmp_buf: &[u8], icmp: &mut IcmpInfo)
     offset += 2;
 
     let seq = u16::from_be_bytes([icmp_buf[offset], icmp_buf[offset + 1]]);
+    offset += 2;
 
-    icmp.icmp_type = icmp_type;
-    icmp.code = code;
-    icmp.checksum = checksum;
-    icmp.id = id;
-    icmp.seq = seq;
-    icmp.raw.extend_from_slice(&icmp_buf);
+    icmp.icmp_type  = icmp_type;
+    icmp.code       = code;
+    icmp.checksum   = checksum;
+    icmp.id         = id;
+    icmp.seq        = seq;
+    icmp.raw.extend_from_slice(&icmp_buf[0..offset]);
+    icmp.payload = Some(icmp_buf[offset..].to_vec());
 
     0
 }

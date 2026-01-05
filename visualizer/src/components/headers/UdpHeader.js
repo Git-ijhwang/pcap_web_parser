@@ -69,12 +69,43 @@ export default function UdpHeader({ udp }) {
                     </td>
                   </tr>
 
+                {udp.payload ? (
+                  <>
+                  <tr>
+                    <th>Payload</th>
+                    <td>
+                      {udp.payload && udp.payload.length > 5 
+                        ? udp.payload.slice(0, 5) + "..." 
+                        : udp.payload}
+                    </td>
+                  </tr>
+                  </>
+                ) : (
+                  <></>
+                )}
+
                 </tbody>
               </table>
             </div>
 
-            <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
-              <HexDump raw={udp.raw} /> 
+            <div style={{ flex: "1 1 auto", display: "flex", 
+                flexDirection: "column", gap: "15px", minWidth: 0 }}>
+
+              <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+                <div style={{ fontWeight: "bold", marginBottom: "5px" }}>UDP Header</div>
+                <HexDump raw={udp.raw} /> 
+              </div>
+
+              <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
+                {udp.payload ? (
+                  <>
+                    <div style={{ fontWeight: "bold", marginBottom: "5px" }}>Payload ( {udp.payload.length} bytes )</div>
+                    <HexDump raw={udp.payload} /> 
+                  </>
+                ) : (
+                  <></>
+                )}
+              </div>
             </div>
 
           </div>
@@ -117,6 +148,19 @@ export default function UdpHeader({ udp }) {
                   {udp.checksum != null ? udp.checksum.toString(16).toUpperCase().padStart(4, "0") : "-"}
                 </td>
               </tr>
+
+              {udp.payload ? (
+                <>
+                  <tr>
+                    <th>128</th>
+                    <td colSpan="32"><i>Payload..</i> 
+                    </td>
+                  </tr>
+                </>
+              ) : (
+                <></>
+              )}
+
             </tbody>
           </table>
         )}
