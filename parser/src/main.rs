@@ -18,6 +18,7 @@ mod parse_pcap;
 mod ip;
 mod types;
 mod l4;
+mod pfcp;
 mod gtp_call_flow;
 mod call_flow_test;
 

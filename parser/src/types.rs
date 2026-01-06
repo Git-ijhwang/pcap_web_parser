@@ -4,6 +4,7 @@ use tokio::sync::RwLock;
 use std::time::Instant;
 
 use crate::gtp::gtp_ie::*;
+use crate::pfcp::pfcp_ie::*;
 
 pub type Cache = Arc<RwLock<HashMap<String, FileInfo>>>;
 
@@ -245,7 +246,7 @@ impl  TcpInfo {
 #[derive(Serialize, Debug)]
 pub enum AppLayerInfo {
     GTP(GtpInfo),
-    // HTTP(HttpInfo),
+    PFCP(PfcpInfo),
     None,
 }
 
@@ -286,6 +287,25 @@ impl GtpInfo {
             raw: Vec::new(),
         }
     }
+}
+
+#[derive(Serialize, Debug)]
+pub struct PfcpInfo {
+    pub version: u8,
+    pub fo_flag: bool,
+    pub mp_flag: bool,
+    pub s_flag: bool,
+
+    pub msg_type: u8,
+    pub msg_type_str: String,
+    pub msg_len: u16,
+
+    pub seid: Option<u64>,
+
+    pub seq: u32,
+    pub mp: Option<u8>,
+    pub ies: Vec<PfcpIe>,
+    pub raw: Vec<u8>,
 }
 
 #[derive(Serialize, Debug)]

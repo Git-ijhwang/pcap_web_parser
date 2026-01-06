@@ -6,6 +6,7 @@ use pcap::{Capture, Packet};
 use crate::ip::{self, ipv4::*, ipv6::*, port::{self, *}};
 use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::gtp::{gtp::*, gtp_ie::*};
+use crate::pfcp::pfcp::*;
 use crate::types::*;
 
 const NEXT_HDR_IPV4: usize = 0x0800;
@@ -192,6 +193,10 @@ parse_single_packet(path: &PathBuf, id: usize)
             gtpinfo.ies = result;
             parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
         },
+
+        L4_PORT_PFCP => {
+        },
+
         _ => {
         },
     };
@@ -314,6 +319,12 @@ pub async fn simple_parse_pcap(path: &Path)
                 let _ = parse_gtpc (
                         &packet.data[hdr_len..],
                         &mut parsed_packet);
+            },
+
+            L4_PORT_PFCP => {
+                parsed_packet.protocol = "PCFP".to_string();
+                let _ = parse_pfcp( &packet.data[hdr_len..],
+                &mut parsed_packet);
             },
 
             _ => {
