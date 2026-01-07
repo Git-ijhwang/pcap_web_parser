@@ -41,8 +41,8 @@ impl PfcpHeader {
     }
 }
 
-pub fn parse_pfcp<'a>(input: &'a[u8], packet: &mut PacketSummary)
-    -> IResult<&'a[u8], PfcpHeader>
+fn head_parser<'a>(input: &'a[u8])
+    -> IResult<&[u8], PfcpHeader>
 {
     let (input, flags) = be_u8(input)?;
     let version = (flags >> 5) & 0x07;
@@ -77,10 +77,6 @@ pub fn parse_pfcp<'a>(input: &'a[u8], packet: &mut PacketSummary)
 
     let (input, _spare) = be_u8(input)?;
 
-    packet.description = format!("{} [{}]",
-        PFCP_MSG_TYPES[msg_type as usize], msg_type).to_string();
-
-
     let header = PfcpHeader {
         version,
         fo_flag,
@@ -96,8 +92,40 @@ pub fn parse_pfcp<'a>(input: &'a[u8], packet: &mut PacketSummary)
     Ok((input, header))
 }
 
+pub fn parse_pfcp<'a>(input: &'a[u8], packet: &mut PacketSummary)
+    -> IResult<&'a[u8], PfcpHeader>
+{
 
-// pub fn parse_pfcp_detail<'a>(input: &'a[u8])
-//     -> IResult<&'a[u8]>, PfcpHeader>
-// {
-// }
+    let (rest, head) = head_parser(input)?;
+
+    packet.description = format!("{} [{}]",
+        PFCP_MSG_TYPES[head.msg_type as usize], head.msg_type).to_string();
+
+    Ok((rest, head))
+}
+
+
+pub fn parse_pfcp_detail<'a>(input: &'a[u8])
+    -> IResult<&'a[u8], PfcpInfo>
+{
+    let (rest, head) = head_parser(input)?;
+
+    let info = PfcpInfo {
+        version: head.version,
+        fo_flag: head.fo_flag,
+        mp_flag: head.mp_flag,
+        s_flag: head.s_flag,
+
+        msg_type: head.msg_type,
+        msg_type_str: PFCP_MSG_TYPES[head.msg_type as usize].to_string(),
+        msg_len: head.msg_len,
+        seid: head.seid,
+        seq: head.seq,
+        mp: head.mp,
+        ies: Vec::new(),
+        raw: input[..head.msg_len as usize].to_vec(),
+    };
+
+    Ok ((rest, info))
+
+}

@@ -6,7 +6,7 @@ use pcap::{Capture, Packet};
 use crate::ip::{self, ipv4::*, ipv6::*, port::{self, *}};
 use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::gtp::{gtp::*, gtp_ie::*};
-use crate::pfcp::pfcp::*;
+use crate::pfcp::{pfcp::*, pfcp_ie::*};
 use crate::types::*;
 
 const NEXT_HDR_IPV4: usize = 0x0800;
@@ -195,6 +195,11 @@ parse_single_packet(path: &PathBuf, id: usize)
         },
 
         L4_PORT_PFCP => {
+            let (rest, mut pfcpinfo) = parse_pfcp_detail(&packet.data[offset..]).map_err( |e| format!("PFCP parse error: {:?}", e))?;
+            let result = match parse_all_pfcp_ies(rest) {
+                Ok(v) => v,
+                Err(_) => Vec::new(),
+            };
         },
 
         _ => {

@@ -29,63 +29,63 @@ pub const PFCP_SESSION_REPORT_REQUEST: u8           = 56;
 pub const PFCP_SESSION_REPORT_RESPONSE: u8          = 57;
 
 pub static PFCP_MSG_TYPES: [&str; 57] = [
-    "Heartbeat Request",                //1
-    "Heartbeat Response",               //2
-    "PFD Management Request",           //3
-    "PFD Management Response",          //4
-    "Association Setup Reuqest",        //5
-    "Association Setup Response",       //6
-    "Association Update Request",       //7
-    "Association Update Response",      //8
-    "Association Release Request",      //9
-    "Association Release Response",     //10
-    "Version Not Suported Response",    //11
-    "Node Report Request",              //12
-    "Node Report Response",             //13
-    "Session Set Deletion Request",     //14
-    "Session Set Deletion Response",    //15
-    "Session Set Modification Request", //16
-    "Session Set Modification Response",//17
-    "Unknwon",                          //18
-    "Unknwon",                          //19
-    "Unknwon",                          //20
-    "Unknwon",                          //21
-    "Unknwon",                          //22
-    "Unknwon",                          //23
-    "Unknwon",                          //24
-    "Unknwon",                          //25
-    "Unknwon",                          //26
-    "Unknwon",                          //27
-    "Unknwon",                          //28
-    "Unknwon",                          //29
-    "Unknwon",                          //30
-    "Unknwon",                          //31
-    "Unknwon",                          //32
-    "Unknwon",                          //33
-    "Unknwon",                          //34
-    "Unknwon",                          //35
-    "Unknwon",                          //36
-    "Unknwon",                          //37
-    "Unknwon",                          //38
-    "Unknwon",                          //39
-    "Unknwon",                          //40
-    "Unknwon",                          //41
-    "Unknwon",                          //42
-    "Unknwon",                          //43
-    "Unknwon",                          //44
-    "Unknwon",                          //45
-    "Unknwon",                          //46
-    "Unknwon",                          //47
-    "Unknwon",                          //48
-    "Unknwon",                          //49
-    "Session Establishment Request",    //50
-    "Session Establishment Response",   //51
-    "Session Modification Request",     //52
-    "Session Modification Response",    //53
-    "Session Deletetion Request",       //54
-    "Session Deletetion Response",      //55
-    "Session Report Request",           //56
-    "Session Report Response",          //57
+    "PFCP Heartbeat Request",                //1
+    "PFCP Heartbeat Response",               //2
+    "PFCP PFD Management Request",           //3
+    "PFCP PFD Management Response",          //4
+    "PFCP Association Setup Reuqest",        //5
+    "PFCP Association Setup Response",       //6
+    "PFCP Association Update Request",       //7
+    "PFCP Association Update Response",      //8
+    "PFCP Association Release Request",      //9
+    "PFCP Association Release Response",     //10
+    "PFCP Version Not Suported Response",    //11
+    "PFCP Node Report Request",              //12
+    "PFCP Node Report Response",             //13
+    "PFCP Session Set Deletion Request",     //14
+    "PFCP Session Set Deletion Response",    //15
+    "PFCP Session Set Modification Request", //16
+    "PFCP Session Set Modification Response",//17
+    "PFCP Unknwon",                          //18
+    "PFCP Unknwon",                          //19
+    "PFCP Unknwon",                          //20
+    "PFCP Unknwon",                          //21
+    "PFCP Unknwon",                          //22
+    "PFCP Unknwon",                          //23
+    "PFCP Unknwon",                          //24
+    "PFCP Unknwon",                          //25
+    "PFCP Unknwon",                          //26
+    "PFCP Unknwon",                          //27
+    "PFCP Unknwon",                          //28
+    "PFCP Unknwon",                          //29
+    "PFCP Unknwon",                          //30
+    "PFCP Unknwon",                          //31
+    "PFCP Unknwon",                          //32
+    "PFCP Unknwon",                          //33
+    "PFCP Unknwon",                          //34
+    "PFCP Unknwon",                          //35
+    "PFCP Unknwon",                          //36
+    "PFCP Unknwon",                          //37
+    "PFCP Unknwon",                          //38
+    "PFCP Unknwon",                          //39
+    "PFCP Unknwon",                          //40
+    "PFCP Unknwon",                          //41
+    "PFCP Unknwon",                          //42
+    "PFCP Unknwon",                          //43
+    "PFCP Unknwon",                          //44
+    "PFCP Unknwon",                          //45
+    "PFCP Unknwon",                          //46
+    "PFCP Unknwon",                          //47
+    "PFCP Unknwon",                          //48
+    "PFCP Unknwon",                          //49
+    "PFCP Session Establishment Request",    //50
+    "PFCP Session Establishment Response",   //51
+    "PFCP Session Modification Request",     //52
+    "PFCP Session Modification Response",    //53
+    "PFCP Session Deletetion Request",       //54
+    "PFCP Session Deletetion Response",      //55
+    "PFCP Session Report Request",           //56
+    "PFCP Session Report Response",          //57
 ];
 
 
@@ -445,18 +445,18 @@ pub const PFCP_IE_N6_ROUTING_INFORMATION: u16			= 351;
 
 pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("Reserved", false),
-("Create PDR",false),
-("PDI",false),
-("Create FAR",false),
-("Forwarding Parameters",false),
-("Duplicating Parameters",false),
-("Create URR",false),
-("Create QER",false),
-("Created PDR",false),
-("Update PDR",false),
-("Update FAR",false),
-("Update Forwarding Parameters",false),
-("Update BAR (PFCP Session Report Response)",false),
+("Create PDR",true),
+("PDI",true),
+("Create FAR",true),
+("Forwarding Parameters",true),
+("Duplicating Parameters",true),
+("Create URR",true),
+("Create QER",true),
+("Created PDR",true),
+("Update PDR",true),
+("Update FAR",true),
+("Update Forwarding Parameters",true),
+("Update BAR (PFCP Session Report Response)",true),
 ("Update URR",false),
 ("Update QER",false),
 ("Remove PDR",false),
@@ -495,15 +495,15 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("DL Buffering Suggested Packet Count",false),
 ("PFCPSMReq-Flags",false),
 ("PFCPSRRsp-Flags",false),
-("Load Control Information",false),
+("Load Control Information",true),
 ("Sequence Number",false),
 ("Metric",false),
-("Overload Control Information",false),
+("Overload Control Information",true),
 ("Timer",false),
 ("PDR ID",false),
 ("F-SEID",false),
-("Application ID's PFDs",false),
-("PFD context",false),
+("Application ID's PFDs", true),
+("PFD context",true),
 ("Node ID",false),
 ("PFD contents",false),
 ("Measurement Method",false),
@@ -512,7 +512,7 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("FQ-CSID",false),
 ("Volume Measurement",false),
 ("Duration Measurement",false),
-("Application Detection Information",false),
+("Application Detection Information",true),
 ("Time of First Packet",false),
 ("Time of Last Packet",false),
 ("Quota Holding Time",false),
@@ -522,14 +522,14 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("Start Time",false),
 ("End Time",false),
 ("Query URR",false),
-("Usage Report (Session Modification Response)",false),
-("Usage Report (Session Deletion Response)",false),
-("Usage Report (Session Report Request)",false),
+("Usage Report (Session Modification Response)",true),
+("Usage Report (Session Deletion Response)",true),
+("Usage Report (Session Report Request)",true),
 ("URR ID",false),
 ("Linked URR ID",false),
-("Downlink Data Report",false),
+("Downlink Data Report",true),
 ("Outer Header Creation",false),
-("Create BAR",false),
+("Create BAR",true),
 ("Update BAR (Session Modification Request)",false),
 ("Remove BAR",false),
 ("BAR ID",false),
@@ -543,13 +543,13 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("Recovery Time Stamp",false),
 ("DL Flow Level Marking",false),
 ("Header Enrichment",false),
-("Error Indication Report",false),
+("Error Indication Report",true),
 ("Measurement Information",false),
 ("Node Report Type",false),
-("User Plane Path Failure Report",false),
+("User Plane Path Failure Report",true),
 ("Remote GTP-U Peer",false),
 ("UR-SEQN",false),
-("Update Duplicating Parameters",false),
+("Update Duplicating Parameters",true),
 ("Activate Predefined Rules",false),
 ("Deactivate Predefined Rules",false),
 ("FAR ID",false),
@@ -562,7 +562,7 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("Time Quota Mechanism",false),
 ("Reserved",false),
 ("User Plane Inactivity Timer",false),
-("Aggregated URRs",false),
+("Aggregated URRs",true),
 ("Multiplier",false),
 ("Aggregated URR ID",false),
 ("Subsequent Volume Quota",false),
@@ -571,12 +571,12 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("QFI",false),
 ("Query URR Reference",false),
 ("Additional Usage Reports Information",false),
-("Create Traffic Endpoint",false),
-("Created Traffic Endpoint",false),
+("Create Traffic Endpoint",true),
+("Created Traffic Endpoint",true),
 ("Update Traffic Endpoint",false),
 ("Remove Traffic Endpoint",false),
 ("Traffic Endpoint ID",false),
-("Ethernet Packet Filter",false),
+("Ethernet Packet Filter",true),
 ("MAC address",false),
 ("C-TAG",false),
 ("S-TAG",false),
@@ -587,11 +587,11 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("Suggested Buffering Packets Count",false),
 ("User ID",false),
 ("Ethernet PDU Session Information",false),
-("Ethernet Traffic Information",false),
+("Ethernet Traffic Information",true),
 ("MAC Addresses Detected",false),
 ("MAC Addresses Removed",false),
 ("Ethernet Inactivity Timer",false),
-("Additional Monitoring Time",false),
+("Additional Monitoring Time",true),
 ("Event Quota",false),
 ("Event Threshold",false),
 ("Subsequent Event Quota",false),
@@ -609,8 +609,8 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("PFCPAUReq-Flags",false),
 ("Activation Time",false),
 ("Deactivation Time",false),
-("Create MAR",false),
-("3GPP Access Forwarding Action Information",false),
+("Create MAR",true),
+("3GPP Access Forwarding Action Information",true),
 ("Non-3GPP Access Forwarding Action Information",false),
 ("Remove MAR",false),
 ("Update MAR",false),
@@ -627,85 +627,85 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("SMF Set ID",false),
 ("Quota Validity Time",false),
 ("Number of Reports",false),
-("PFCP Session Retention Information (within PFCP Association Setup Request)",false),
+("PFCP Session Retention Information (within PFCP Association Setup Request)",true),
 ("PFCPASRsp-Flags",false),
 ("CP PFCP Entity IP Address",false),
 ("PFCPSEReq-Flags",false),
-("User Plane Path Recovery Report",false),
-("IP Multicast Addressing Info within PFCP Session Establishment Request",false),
-("Join IP Multicast Information IE within Usage Report",false),
-("Leave IP Multicast Information IE within Usage Report",false),
+("User Plane Path Recovery Report",true),
+("IP Multicast Addressing Info within PFCP Session Establishment Request",true),
+("Join IP Multicast Information IE within Usage Report",true),
+("Leave IP Multicast Information IE within Usage Report",true),
 ("IP Multicast Address",false),
 ("Source IP Address",false),
 ("Packet Rate Status",false),
 ("Create Bridge/Router Info",false),
-("Created Bridge/Router Info",false),
+("Created Bridge/Router Info",true),
 (" Port Number",false),
 ("NW-TT Port Number",false),
 ("5GS User Plane Node ID",false),
 ("TSC Management Information IE within PFCP Session Modification Request",false),
 ("TSC Management Information IE within PFCP Session Modification Response",false),
-("TSC Management Information IE within PFCP Session Report Request",false),
+("TSC Management Information IE within PFCP Session Report Request",true),
 ("Port Management Information Container",false),
-("Clock Drift Control Information",false),
+("Clock Drift Control Information",true),
 ("Requested Clock Drift Information",false),
-("Clock Drift Report",false),
+("Clock Drift Report",true),
 ("Time Domain Number",false),
 ("Time Offset Threshold",false),
 ("Cumulative rateRatio Threshold",false),
 ("Time Offset Measurement",false),
 ("Cumulative rateRatio Measurement",false),
 ("Remove SRR",false),
-("Create SRR",false),
+("Create SRR",true),
 ("Update SRR",false),
-("Session Report",false),
+("Session Report",true),
 ("SRR ID",false),
-("Access Availability Control Information",false),
+("Access Availability Control Information",true),
 ("Requested Access Availability Information",false),
-("Access Availability Report",false),
+("Access Availability Report",true),
 ("Access Availability Information",false),
-("Provide ATSSS Control Information",false),
-("ATSSS Control Parameters",false),
+("Provide ATSSS Control Information",true),
+("ATSSS Control Parameters",true),
 ("MPTCP Control Information",false),
 ("ATSSS-LL Control Information",false),
 ("PMF Control Information",false),
-("MPTCP Parameters",false),
-("ATSSS-LL Parameters",false),
-("PMF Parameters",false),
+("MPTCP Parameters",true),
+("ATSSS-LL Parameters",true),
+("PMF Parameters",true),
 ("MPTCP Address Information",false),
 ("Link-Specific Multipath IP Address",false),
 ("PMF Address Information",false),
 ("ATSSS-LL Information",false),
 ("Data Network Access Identifier",false),
-("UE IP address Pool Information",false),
+("UE IP address Pool Information",true),
 ("Average Packet Delay",false),
 ("Minimum Packet Delay",false),
 ("Maximum Packet Delay",false),
 ("QoS Report Trigger",false),
-("GTP-U Path QoS Control Information",false),
-("GTP-U Path QoS Report (PFCP Node Report Request)",false),
-("QoS Information in GTP-U Path QoS Report",false),
+("GTP-U Path QoS Control Information",true),
+("GTP-U Path QoS Report (PFCP Node Report Request)",true),
+("QoS Information in GTP-U Path QoS Report",true),
 ("GTP-U Path Interface Type",false),
-("QoS Monitoring per QoS flow Control Information",false),
+("QoS Monitoring per QoS flow Control Information",true),
 ("Requested QoS Monitoring",false),
 ("Reporting Frequency",false),
 ("Packet Delay Thresholds",false),
 ("Minimum Wait Time",false),
-("QoS Monitoring Report",false),
+("QoS Monitoring Report",true),
 ("QoS Monitoring Measurement",false),
 ("MT-EDT Control Information",false),
 ("DL Data Packets Size",false),
 ("QER Control Indications",false),
-("Packet Rate Status Report",false),
+("Packet Rate Status Report",true),
 ("NF Instance ID",false),
 ("Ethernet Context Information",false),
-("Redundant Transmission Parameters",false),
-("Updated PDR",false),
+("Redundant Transmission Parameters",true),
+("Updated PDR",true),
 ("S-NSSAI",false),
 ("IP version",false),
 ("PFCPASReq-Flags",false),
 ("Data Status",false),
-("Provide RDS configuration information",false),
+("Provide RDS configuration information",true),
 ("RDS configuration information",false),
 ("Query Packet Rate Status IE within PFCP Session Modification Request",false),
 ("Packet Rate Status Report IE within PFCP Session Modification Response",false),
@@ -714,16 +714,16 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("UE IP Address Usage Information",false),
 ("Number of UE IP Addresses",false),
 ("Validity Timer",false),
-("Redundant Transmission Forwarding Parameters",false),
-("Transport Delay Reporting",false),
-("Partial Failure Information",false),
+("Redundant Transmission Forwarding Parameters",true),
+("Transport Delay Reporting",true),
+("Partial Failure Information",true),
 ("Spare",false),
 ("Offending IE Information",false),
 ("RAT Type",false),
-("L2TP Tunnel Information",false),
-("L2TP Session Information",false),
+("L2TP Tunnel Information",true),
+("L2TP Session Information",true),
 ("L2TP User Authentication",false),
-("Created L2TP Session",false),
+("Created L2TP Session",true),
 ("LNS Address",false),
 ("Tunnel Preference",false),
 ("Calling Number",false),
@@ -734,58 +734,58 @@ pub static PFCP_IE_TYPES: [(&str, bool);352] = [
 ("Maximum Receive Unit",false),
 ("Thresholds",false),
 ("Steering Mode Indicator",false),
-("PFCP Session Change Info",false),
+("PFCP Session Change Info",true),
 ("Group ID",false),
 ("CP IP Address",false),
 ("IP Address and Port number Replacement",false),
 ("DNS Query/Response Filter",false),
-("Direct Reporting Information",false),
+("Direct Reporting Information",true),
 ("Event Notification URI",false),
 ("Notification Correlation ID",false),
 ("Reporting Flags",false),
 ("Predefined Rules Name",false),
-("MBS Session N4mb Control Information",false),
-("MBS Multicast Parameters",false),
-("Add MBS Unicast Parameters",false),
-("MBS Session N4mb Information",false),
-("Remove MBS Unicast Parameters",false),
+("MBS Session N4mb Control Information",true),
+("MBS Multicast Parameters",true),
+("Add MBS Unicast Parameters",true),
+("MBS Session N4mb Information",true),
+("Remove MBS Unicast Parameters",true),
 ("MBS Session Identifier",false),
 ("Multicast Transport Information",false),
 ("MBSN4mbReq-Flags",false),
 ("Local Ingress Tunnel",false),
 ("MBS Unicast Parameters ID",false),
-("MBS Session N4 Control Information",false),
-("MBS Session N4 Information",false),
+("MBS Session N4 Control Information",true),
+("MBS Session N4 Information",true),
 ("MBSN4Resp-Flags",false),
 ("Tunnel Password",false),
 ("Area Session ID",false),
-("Peer UP Restart Report",false),
-("DSCP to PPI Control Information",false),
+("Peer UP Restart Report",true),
+("DSCP to PPI Control Information",true),
 ("DSCP to PPI Mapping Information",false),
 ("PFCPSDRsp-Flags",false),
 ("QER Indications",false),
 ("Vendor-Specific Node Report Type",false),
 ("Configured Time Domain",false),
 ("Metadata",false),
-("Traffic Parameter Measurement Control Information",false),
-("Traffic Parameter Measurement Report",false),
+("Traffic Parameter Measurement Control Information",true),
+("Traffic Parameter Measurement Report",true),
 ("Traffic Parameter Threshold",false),
 ("DL Periodicity",false),
 ("N6 Jitter Measurement",false),
 ("Traffic Parameter Measurement Indication",false),
 ("UL Periodicity",false),
 ("MPQUIC Control Information",false),
-("MPQUIC Parameters",false),
+("MPQUIC Parameters",true),
 ("MPQUIC Address Information",false),
 ("Transport Mode",false),
-("Protocol Description",false),
+("Protocol Description",true),
 ("Reporting Suggestion Info",false),
 ("TL-Container",false),
 ("Measurement Indication",false),
 ("HPLMN S-NSSAI",false),
 ("Media Transport Protocol",false),
-("RTP Header Extension Information",false),
-("RTP Payload Information",false),
+("RTP Header Extension Information",true),
+("RTP Payload Information",true),
 ("RTP Header Extension Type",false),
 ("RTP Header Extension ID",false),
 ("RTP Payload Type",false),

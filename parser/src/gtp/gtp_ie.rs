@@ -166,7 +166,7 @@ pub struct UliValue {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub enum GtpIeValue {
+pub enum IeValue {
     // Raw bytes (해석되지 않은 기본 형태)
     Raw(Vec<u8>),
 
@@ -206,7 +206,7 @@ pub struct GtpIe {
     pub type_str: String,
     pub length: u16,
     pub instance: u8,
-    pub ie_value: GtpIeValue,
+    pub ie_value: IeValue,
     pub raw: Vec<u8>,
 }
 
@@ -231,7 +231,7 @@ pub fn decode_mcc_mnc(d1: u8, d2: u8, d3: u8)
 }
 
 pub fn parse_uli_ie(data: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if data.len() < 1 {
         return Err("ULI IE too short".into());
@@ -327,7 +327,7 @@ pub fn parse_uli_ie(data: &[u8])
         offset += 5;
     }
 
-    Ok(GtpIeValue::UserLocationInfo(uli))
+    Ok(IeValue::UserLocationInfo(uli))
 }
 
 
@@ -452,7 +452,7 @@ fn parse_flow_label(comp_value: &[u8])
 }
 
 pub fn decode_bearer_tft (input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.len() < 3 {
         return Err("ServingNetwork IE: length must be more than 3 bytes".into());
@@ -616,11 +616,11 @@ pub fn decode_bearer_tft (input: &[u8])
         bearer_tft.packet_filter_list.push(pkt_filter);
     }
 
-    Ok(GtpIeValue::BearerTFT(bearer_tft))
+    Ok(IeValue::BearerTFT(bearer_tft))
 }
 
 pub fn decode_serving_network( input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.len() < 3 {
         return Err("ServingNetwork IE: length must be 3".into());
@@ -638,12 +638,12 @@ pub fn decode_serving_network( input: &[u8])
         mnc,
     };
 
-    Ok(GtpIeValue::ServingNetwork(sn))
+    Ok(IeValue::ServingNetwork(sn))
 }
 
 
 pub fn decode_fteid(input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -709,12 +709,12 @@ pub fn decode_fteid(input: &[u8])
         ipv6,
     };
 
-    Ok(GtpIeValue::FTeid(fteid))
+    Ok(IeValue::FTeid(fteid))
 }
 
 
 pub fn decode_bearerqos(input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -764,13 +764,13 @@ pub fn decode_bearerqos(input: &[u8])
         gbr_ul,
         gbr_dl,
     };
-    Ok(GtpIeValue::BearerQoS(qos))
+    Ok(IeValue::BearerQoS(qos))
 
 }
 
 
 pub fn decode_ambr(input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -795,12 +795,12 @@ pub fn decode_ambr(input: &[u8])
         ul:uplink,
         dl:dnlink
     };
-    Ok(GtpIeValue::Ambr(ambr))
+    Ok(IeValue::Ambr(ambr))
 }
 
 
 pub fn decode_ebi(input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -808,11 +808,11 @@ pub fn decode_ebi(input: &[u8])
 
     let ebi  = input[0] & 0x0F;
 
-    Ok(GtpIeValue::Uint8(ebi))
+    Ok(IeValue::Uint8(ebi))
 }
 
 pub fn decode_apn(input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -839,22 +839,22 @@ pub fn decode_apn(input: &[u8])
 
     let apn = labels.join(".");
 
-    Ok(GtpIeValue::Apn(apn))
+    Ok(IeValue::Apn(apn))
 }
 
 pub fn decode_ipv4(input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     let v = Ipv4Addr::from_octets([
         input[0], input[1], input[2], input[3]
     ]);
     let ip = v.to_string();
-    Ok(GtpIeValue::Ipv4 (ip))
+    Ok(IeValue::Ipv4 (ip))
 }
 
 
 pub fn decode_bcd(input: &[u8])
-    -> Result<GtpIeValue, String>
+    -> Result<IeValue, String>
 {
     if input.is_empty() {
         return Err("BCD input empty".into());
@@ -884,7 +884,7 @@ pub fn decode_bcd(input: &[u8])
         }
     }
 
-    Ok(GtpIeValue::Utf8String(digits))
+    Ok(IeValue::Utf8String(digits))
 }
 
 
@@ -896,7 +896,7 @@ pub fn find_ie_bearer_ctx(ies: &Vec<GtpIe>)
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_BEARER_CONTEXT {
             match &ie.ie_value {
-                GtpIeValue::SubIeList(v) => {
+                IeValue::SubIeList(v) => {
                     bearer_ctx_list.push(v.clone());
                     // return Ok (v.clone());
                 }
@@ -923,7 +923,7 @@ pub fn find_ie_fteid(ies: &Vec<GtpIe>)
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_FTEID {
             match &ie.ie_value {
-                GtpIeValue::FTeid(fteid) => {
+                IeValue::FTeid(fteid) => {
                     // return Ok(fteid.clone());
                     fteid_list.push(fteid.clone());
                 }
@@ -948,7 +948,7 @@ pub fn find_ie_imsi(ies: &Vec<GtpIe>)
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_IMSI {
             match &ie.ie_value {
-                GtpIeValue::Utf8String(s) => {
+                IeValue::Utf8String(s) => {
                     return Ok(s.clone());
                 }
                 _ => {
@@ -967,7 +967,7 @@ pub fn find_ie_ebi_in_bearer_ctx(ies: &Vec<GtpIe>)
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_EBI {
             match &ie.ie_value {
-                GtpIeValue::Uint8(s) => {
+                IeValue::Uint8(s) => {
                     return Ok(s.clone());
                 }
                 _ => {
@@ -986,7 +986,7 @@ pub fn find_ie_ebi(ies: &Vec<GtpIe>)
     for ie in ies {
         if ie.ie_type == GTPV2C_IE_EBI {
             match &ie.ie_value {
-                GtpIeValue::Uint8(s) => {
+                IeValue::Uint8(s) => {
                     return Ok(s.clone());
                 }
                 _ => {
@@ -998,7 +998,7 @@ pub fn find_ie_ebi(ies: &Vec<GtpIe>)
     Err("EBI IE not found".to_string())
 }
 
-pub fn parse_ie(input: &[u8])
+fn parse_ie(input: &[u8])
     -> IResult<&[u8], GtpIe>
 {
     let ie_type = input[0];
@@ -1016,7 +1016,7 @@ pub fn parse_ie(input: &[u8])
         length: ie_len as u16,
         instance: ie_inst,
 
-        ie_value: GtpIeValue::None,
+        ie_value: IeValue::None,
         raw,
     };
 
@@ -1041,7 +1041,7 @@ pub fn parse_ie(input: &[u8])
                 },
             }
         }
-        gtp_ie.ie_value = GtpIeValue::SubIeList(sub_ies);
+        gtp_ie.ie_value = IeValue::SubIeList(sub_ies);
 
         input = &input[ie_len as usize..];
     }
@@ -1081,22 +1081,22 @@ pub fn parse_ie(input: &[u8])
                 decode_ipv4(value),
 
             _ =>  match ie_len {
-                    1 =>  Ok(GtpIeValue::Uint8(value[0] )),
+                    1 =>  Ok(IeValue::Uint8(value[0] )),
                     2 => {
                         let v = u16::from_be_bytes([value[0],value[1]]);
-                        Ok(GtpIeValue::Uint16(v))
+                        Ok(IeValue::Uint16(v))
                     },
                     4 =>  match ie_type {
                         _ => {
                             let v = u32::from_be_bytes([ value[0], value[1], value[2], value[3] ]);
-                            Ok(GtpIeValue::Uint32(v))
+                            Ok(IeValue::Uint32(v))
                         }
                     }
-                    _ => Ok(GtpIeValue::Raw(value.to_vec())),
+                    _ => Ok(IeValue::Raw(value.to_vec())),
                 },
         };
 
-        gtp_ie.ie_value = val.unwrap_or(GtpIeValue::None);
+        gtp_ie.ie_value = val.unwrap_or(IeValue::None);
         input = next;
     }
 
