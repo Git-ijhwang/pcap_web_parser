@@ -8,6 +8,7 @@ use nom::{
 use std::convert::TryInto;
 
 use crate::gtp::gtpv2_types::*;
+use crate::pfcp::{pfcp_ie::*, types::*};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct AmbrValue {
@@ -166,7 +167,13 @@ pub struct UliValue {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub enum IeValue {
+pub enum ValueOfIeType {
+    GTP(GtpIe),
+    PFCP(PfcpIe),
+    None,
+}
+#[derive(Debug, Clone, Serialize)]
+pub enum IeValue<T> {
     // Raw bytes (해석되지 않은 기본 형태)
     Raw(Vec<u8>),
 
@@ -189,12 +196,13 @@ pub enum IeValue {
     // 2. Composite-but-not-grouped
     Ambr(AmbrValue),
     FTeid(FTeidValue),
+    FSeid(FSeidValue),
     ServingNetwork(ServingNetworkValue),
     BearerQoS(BearerQoSValue),
     UserLocationInfo(UliValue),
     BearerTFT(BearerTFT),
 
-    SubIeList(Vec<GtpIe>),
+    SubIeList(Vec<T>),
 
     None,
 }
@@ -206,7 +214,7 @@ pub struct GtpIe {
     pub type_str: String,
     pub length: u16,
     pub instance: u8,
-    pub ie_value: IeValue,
+    pub ie_value: IeValue<GtpIe>,
     pub raw: Vec<u8>,
 }
 
@@ -231,7 +239,7 @@ pub fn decode_mcc_mnc(d1: u8, d2: u8, d3: u8)
 }
 
 pub fn parse_uli_ie(data: &[u8])
-    -> Result<IeValue, String>
+    -> Result<IeValue<GtpIe>, String>
 {
     if data.len() < 1 {
         return Err("ULI IE too short".into());
@@ -452,7 +460,7 @@ fn parse_flow_label(comp_value: &[u8])
 }
 
 pub fn decode_bearer_tft (input: &[u8])
-    -> Result<IeValue, String>
+    -> Result<IeValue<GtpIe>, String>
 {
     if input.len() < 3 {
         return Err("ServingNetwork IE: length must be more than 3 bytes".into());
@@ -619,8 +627,8 @@ pub fn decode_bearer_tft (input: &[u8])
     Ok(IeValue::BearerTFT(bearer_tft))
 }
 
-pub fn decode_serving_network( input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_serving_network<T>( input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     if input.len() < 3 {
         return Err("ServingNetwork IE: length must be 3".into());
@@ -642,8 +650,8 @@ pub fn decode_serving_network( input: &[u8])
 }
 
 
-pub fn decode_fteid(input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_fteid<T>(input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -713,8 +721,8 @@ pub fn decode_fteid(input: &[u8])
 }
 
 
-pub fn decode_bearerqos(input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_bearerqos<T>(input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -769,8 +777,8 @@ pub fn decode_bearerqos(input: &[u8])
 }
 
 
-pub fn decode_ambr(input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_ambr<T>(input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -799,8 +807,8 @@ pub fn decode_ambr(input: &[u8])
 }
 
 
-pub fn decode_ebi(input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_ebi<T>(input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -811,8 +819,8 @@ pub fn decode_ebi(input: &[u8])
     Ok(IeValue::Uint8(ebi))
 }
 
-pub fn decode_apn(input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_apn<T>(input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     if input.is_empty() {
         return Err("input is empty".into());
@@ -842,8 +850,8 @@ pub fn decode_apn(input: &[u8])
     Ok(IeValue::Apn(apn))
 }
 
-pub fn decode_ipv4(input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_ipv4<T>(input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     let v = Ipv4Addr::from_octets([
         input[0], input[1], input[2], input[3]
@@ -853,8 +861,8 @@ pub fn decode_ipv4(input: &[u8])
 }
 
 
-pub fn decode_bcd(input: &[u8])
-    -> Result<IeValue, String>
+pub fn decode_bcd<T>(input: &[u8])
+    -> Result<IeValue<T>, String>
 {
     if input.is_empty() {
         return Err("BCD input empty".into());
@@ -1010,9 +1018,11 @@ fn parse_ie(input: &[u8])
 
     let (mut input, _) = be_u32(input)?;
 
+    let (type_str, is_group) = GTPV2_IE_TYPES.get(ie_type as usize).map(|(s, g)| (s.to_string(), *g)).unwrap_or_else(|| ("Out of bound".to_string(), false));
+
     let mut gtp_ie = GtpIe {
         ie_type,
-        type_str: GTPV2_IE_TYPES[ie_type as usize].0.to_string(),
+        type_str,
         length: ie_len as u16,
         instance: ie_inst,
 
@@ -1020,9 +1030,7 @@ fn parse_ie(input: &[u8])
         raw,
     };
 
-    let is_grouped = GTPV2_IE_TYPES[ie_type as usize].1;
-
-    if is_grouped {
+    if is_group {
         let mut sub_ies: Vec<GtpIe> = Vec::new();
         let mut remaining = &input[..ie_len as usize];
 
@@ -1051,34 +1059,34 @@ fn parse_ie(input: &[u8])
         let val = match ie_type {
             GTPV2C_IE_IMSI
             | GTPV2C_IE_MEI
-            | GTPV2C_IE_MSISDN => decode_bcd(value),
+            | GTPV2C_IE_MSISDN => decode_bcd::<GtpIe>(value),
 
             GTPV2C_IE_APN =>
-                decode_apn(value),
+                decode_apn::<GtpIe>(value),
 
             GTPV2C_IE_AMBR =>
-                decode_ambr(value),
+                decode_ambr::<GtpIe>(value),
 
             GTPV2C_IE_EBI =>
-                decode_ebi(value),
+                decode_ebi::<GtpIe>(value),
 
             GTPV2C_IE_BEARER_QOS =>
-                decode_bearerqos(value),
+                decode_bearerqos::<GtpIe>(value),
 
             GTPV2C_IE_SERVING_NETWORK =>
-                decode_serving_network(value),
+                decode_serving_network::<GtpIe>(value),
+
+            GTPV2C_IE_FTEID =>
+                decode_fteid::<GtpIe>(value),
+                
+            GTPV2C_IE_IP_ADDRESS =>
+                decode_ipv4::<GtpIe>(value),
 
             GTPV2C_IE_BEARER_TFT =>
                 decode_bearer_tft(value),
 
             GTPV2C_IE_ULI =>
-                parse_uli_ie(value,),
-
-            GTPV2C_IE_FTEID =>
-                decode_fteid(value),
-                
-            GTPV2C_IE_IP_ADDRESS =>
-                decode_ipv4(value),
+                parse_uli_ie(value),
 
             _ =>  match ie_len {
                     1 =>  Ok(IeValue::Uint8(value[0] )),
