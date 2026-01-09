@@ -364,6 +364,7 @@ if (cf.message.includes("Create Session Request") && Array.isArray(cf.bearer)) {
     [src_addr, dst_addr].forEach(nodeAddr => {
       const nodeState = next[nodeAddr];
       if (!nodeState) return;
+
       cf.bearer.forEach(b => {
         const targetEbi = Number(b.ebi);
 
@@ -376,7 +377,6 @@ if (cf.message.includes("Create Session Request") && Array.isArray(cf.bearer)) {
             console.log(`[Delete Bearer Response] Ebi ${targetEbi} removed from ${nodeAddr}`);
           }
 
-          // 만약 세션 내에 베어러가 하나도 남지 않았다면 LBI 세션 자체를 정리할 수도 있습니다.
           if (nodeState[lbi].ebiList.length === 0) {
             delete nodeState[lbi];
           }
@@ -384,24 +384,29 @@ if (cf.message.includes("Create Session Request") && Array.isArray(cf.bearer)) {
       });
     });
   }
-
+  // ============ Delete Session Request ============ 
   else if (cf.message.includes("Delete Session Request")){
     [src_addr, dst_addr].forEach(nodeAddr => {
       const nodeState = next[nodeAddr];
+
       if (!nodeState) return;
+
       Object.keys(nodeState).forEach(lbi => {
         nodeState[lbi] = {
           ...nodeState[lbi],
           pending: true,
         }
-        nodeState[lbi].ebiList = nodeState[lbi].ebiList.map(item => ({
-          ...item,
-          pending:true,
-          active: false,
+        nodeState[lbi].ebiList =
+          nodeState[lbi].ebiList.map(item => ({
+            ...item,
+            pending:true,
+            active: false,
         }))
+
       });
     });
   }
+  // ============ Delete Session Response ============ 
   else if (cf.message.includes("Delete Session Response")){
     delete next[src_addr];
     delete next[dst_addr];
@@ -438,7 +443,7 @@ function CallFlowGraph({ data, step }) {
       {/* 1. 노드 수직선 및 헤더 */}
       {nodes.map(node => (
         <g key={node}>
-          <line x1={nodeX[node]} y1={70} x2={nodeX[node]} y2={height - 250} stroke="#aaa" />
+          <line x1={nodeX[node]} y1={70} x2={nodeX[node]} y2={height - 200} stroke="#aaa" />
           <text x={nodeX[node]} y={50} textAnchor="middle" fontWeight="bold">{node}</text>
         </g>
       ))}
