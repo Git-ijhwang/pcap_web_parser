@@ -87,7 +87,8 @@ async fn parse_l3( next_type: usize, ip_hdr: &[u8],
 }
 
 
-async fn parse_l4( next_type: usize, data_buf: &[u8],
+async fn parse_l4( next_type: usize,
+    data_buf: &[u8],
     parsed_packet: &mut PacketDetail)
 -> (u16, usize)
 {
@@ -120,6 +121,47 @@ async fn parse_l4( next_type: usize, data_buf: &[u8],
 
     }
 
+}
+
+async fn parse_app(port_number: u16,
+    data_buf: &[u8],
+    parsed_packet: &mut PacketDetail)
+{
+    match port_number {
+        L4_PORT_GTPV2 => {
+            let (rest, mut gtpinfo) =
+                parse_gtpc_detail(data_buf)
+                    .map_err( |e| format!("GTP-C parse error: {:?}", e)).unwrap();
+
+            let result = match parse_all_ies(rest) {
+
+                Ok(v) => v,
+                Err(_) => {
+                    // return Err(format!("Parse All failed: {}", e));
+                    Vec::new()
+                }
+            };
+
+            gtpinfo.ies = result;
+            parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
+        },
+
+        L4_PORT_PFCP => {
+            let (rest, mut pfcpinfo) =
+                parse_pfcp_detail(data_buf)
+                    .map_err( |e| format!("PFCP parse error: {:?}", e)).unwrap();
+
+            let result = match parse_all_pfcp_ies(rest) {
+                Ok(v) => v,
+                Err(_) => Vec::new(),
+            };
+            pfcpinfo.ies = result;
+            parsed_packet.app = AppLayerInfo::PFCP(pfcpinfo);
+        },
+
+        _ => {
+        },
+    };
 }
 
 
@@ -174,37 +216,7 @@ parse_single_packet(path: &PathBuf, id: usize)
     offset += l4_hdr_len;
 
     // --- Parse Application Layer ---
-    match port_number {
-        L4_PORT_GTPV2 => {
-            let (rest, mut gtpinfo) =
-                parse_gtpc_detail( &packet.data[offset..]).map_err(
-                    |e| format!("GTP-C parse error: {:?}", e)
-                )?;
-
-            let result = match parse_all_ies(rest) {
-
-                Ok(v) => v,
-                Err(_) => {
-                    // return Err(format!("Parse All failed: {}", e));
-                    Vec::new()
-                }
-            };
-
-            gtpinfo.ies = result;
-            parsed_packet.app = AppLayerInfo::GTP(gtpinfo);
-        },
-
-        L4_PORT_PFCP => {
-            let (rest, mut pfcpinfo) = parse_pfcp_detail(&packet.data[offset..]).map_err( |e| format!("PFCP parse error: {:?}", e))?;
-            let result = match parse_all_pfcp_ies(rest) {
-                Ok(v) => v,
-                Err(_) => Vec::new(),
-            };
-        },
-
-        _ => {
-        },
-    };
+    parse_app(port_number, &packet.data[offset..], &mut parsed_packet).await;
 
     Ok(ParsedDetail {
         id,
@@ -277,7 +289,6 @@ pub async fn simple_parse_pcap(path: &Path)
         hdr_len += IP_HDR_LEN;
 
         // --- Parse Layer 4 ---
-
         let (port_number, l4_hdr_len) =
             match next_type {
                 PROTO_TYPE_TCP   => {

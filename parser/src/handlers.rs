@@ -29,7 +29,7 @@ async fn upload_file(
     let tmp_filename = format!("web_parser-{}.pcap", uuid);
     let tmp_path = std::env::temp_dir().join(tmp_filename);
 
-    println!("[cache saved] {}", tmp_path.display());
+    // println!("[cache saved] {}", tmp_path.display());
 
     // 파일을 디스크에 쓴다 (비동기)
     if let Err(e) =
@@ -89,7 +89,6 @@ pub async fn handle_parse_summary(
         let orig_filename = field.file_name().map(|s| s.to_string());
         let name = orig_filename.unwrap();
 
-        println!("Original filename: {}", name);
         /* 캐쉬에 등록 */
         let result = upload_file( &cache, &name, field,);
 
@@ -100,7 +99,6 @@ pub async fn handle_parse_summary(
             }
         };
 
-        println!("Temporary file created");
         // 임시 파일 경로 생성
         let cache_read = cache.read().await; // std::sync::RwLock
 
@@ -219,7 +217,7 @@ cleanup_cache(cache: &Cache, ttl: Duration)
 
     for uuid in expired {
         if let Some(info) = cache_guard.remove(&uuid) {
-            println!("Remove file");
+            // println!("Remove file");
             let _ = fs::remove_file(&info.path).await;
         }
     }
@@ -300,8 +298,6 @@ handle_cleanup(
             }
         }
     }
-
-    println!("Removed Count: {}", removed_count);
 
     (
         StatusCode::OK,

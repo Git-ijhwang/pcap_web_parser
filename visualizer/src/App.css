@@ -70,7 +70,7 @@
 
 /* Title Collapse part */
 .collapse-wrapper {
-  overflow: hidden;
+  /* overflow: hidden; */
   transition: 
     max-height 0.3s ease,
     opacity 0.2s ease,
@@ -99,7 +99,7 @@
 /* Filter Collapse part */
 .filter-wrapper {
   margin-top: 20px !important;
-  overflow: hidden;
+  /* overflow: hidden; */
   transition: 
     max-height 0.3s ease,
     opacity 0.2s ease,
@@ -131,8 +131,9 @@
 /* Carousel */
 .viewport {
   width: 100%;
-  overflow: hidden;
+  /* overflow: hidden; */
   position: relative;
+  clip-path: inset(0 0 0 0);
 }
 
 .slider {

@@ -170,8 +170,6 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
             e
         }).unwrap();
 
-        println!("Message Type: {}", hdr.msg_type);
-
         let msg_type = hdr.msg_type;
         let seq = hdr.seq;
         let teid = match hdr.teid {
@@ -248,7 +246,6 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 //Third Node
                 //[mme]  [sgw] <- [pgw]
                 if third_node.status == 1 {
-                    // println!("Third node check");
                     if is_match_node(&third_node, &tuple) &&
                        is_match_node(&resp_node, &tuple) {
 
@@ -269,7 +266,6 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 //Second Node
                 //[mme] <- [sgw]  [pgw]
                 else if init_node.status == 1 {
-                    // println!("Init Node check");
                     if is_match_node(&resp_node, &tuple) &&
                        is_match_node(&init_node, &tuple) {
 
@@ -672,7 +668,6 @@ async fn extract_bearer_ctx(ies: Vec<GtpIe>)
         };
         bearer.ebi = ebi;
 
-        println!("Bearer EBI: {}", ebi);
         let ret = find_ie_fteid(&bearer_ctx.clone());
         let fteid = match ret {
             Ok(v) => v,
@@ -999,8 +994,6 @@ make_data( flow_packets: Vec<OwnedPacket>)
         let mut offset: usize = 0;
         let mut cf = CallFlow::new();
 
-        println!("#{}packet making parse data", pkt.idx);
-
         cf.id = pkt.idx as usize;
 
         offset += MIN_ETH_HDR_LEN;
@@ -1016,8 +1009,6 @@ make_data( flow_packets: Vec<OwnedPacket>)
 
         cf.message.push_str(&message);
 
-        println!("Message: {}", cf.message);
-
         let ret = extract_bearer_ctx(pkt.ies.clone()).await;
         cf.bearer = match ret {
             Ok(v) => {
@@ -1028,7 +1019,6 @@ make_data( flow_packets: Vec<OwnedPacket>)
                 None
             }
         };
-        println!("Bearer length: {}", cf.bearer.iter().len());
 
         let ret = find_ie_ebi(&pkt.ies.clone());
         cf.ebi = match ret {
@@ -1102,10 +1092,10 @@ make_call_flow (path: &PathBuf, id: usize)
     };
 
     //7. Make Call Flow raw data
-    let call_flow = make_data( packets).await;
+    // let call_flow = make_data( packets).await;
 
     //8. Only for Mock Test
-    // let call_flow = Ok(make_mock_callflow().await);
+    let call_flow = Ok(make_mock_callflow().await);
     // println!("callflow {:?}", call_flow);
 
     return call_flow;

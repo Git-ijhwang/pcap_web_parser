@@ -342,9 +342,9 @@ pub async fn make_mock_callflow()
                         FTeidValue { 
                             v4: true,
                             v6: false,
-                            iface_type: 0, //S1-U eNB
-                            teid: 245u32,
-                            ipv4: Some("10.10.2.72".into()),
+                            iface_type: 4, //S5/S8 SGW
+                            teid: 155u32,
+                            ipv4: Some("10.10.1.71".into()),
                             ipv6: None,
                         },
                         FTeidValue { 
@@ -363,9 +363,9 @@ pub async fn make_mock_callflow()
                         FTeidValue { 
                             v4: true,
                             v6: false,
-                            iface_type: 0, //S1-U eNB
-                            teid: 246u32,
-                            ipv4: Some("10.10.2.72".into()),
+                            iface_type: 4, //S5/S8 SGW
+                            teid: 156u32,
+                            ipv4: Some("10.10.1.71".into()),
                             ipv6: None,
                         },
                         FTeidValue { 
@@ -384,9 +384,9 @@ pub async fn make_mock_callflow()
                         FTeidValue { 
                             v4: true,
                             v6: false,
-                            iface_type: 0, //S1-U eNB
-                            teid: 247u32,
-                            ipv4: Some("10.10.2.72".into()),
+                            iface_type: 4, //S5S8 SGW
+                            teid: 157u32,
+                            ipv4: Some("10.10.1.71".into()),
                             ipv6: None,
                         },
                         FTeidValue { 
