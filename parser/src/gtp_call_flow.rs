@@ -1092,11 +1092,12 @@ make_call_flow (path: &PathBuf, id: usize)
     };
 
     //7. Make Call Flow raw data
-    // let call_flow = make_data( packets).await;
+#[cfg(not(feature = "mock"))]
+    let call_flow = make_data( packets).await;
 
     //8. Only for Mock Test
+#[cfg(feature = "mock")]
     let call_flow = Ok(make_mock_callflow().await);
-    // println!("callflow {:?}", call_flow);
 
     return call_flow;
 }

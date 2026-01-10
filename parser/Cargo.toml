@@ -18,3 +18,7 @@ pcap = "2.3.0"
 anyhow = "1"
 
 # pcap_parser = { path = "../parser" }
+
+[features]
+default = []
+mock = []
