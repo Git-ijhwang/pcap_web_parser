@@ -423,7 +423,7 @@ function CallFlowGraph({ data, step }) {
   const headerHeight = 100;
   const padding = 120;
   // 데이터 길이에 따라 동적으로 높이 계산
-  const messageAreaHeight = data.length * rowHeight;
+  const messageAreaHeight = data.length * (rowHeight);
   const height = headerHeight + (messageAreaHeight ) + 200;
 
   // 2. 노드(IP) 추출 및 X 좌표 계산
@@ -439,7 +439,7 @@ function CallFlowGraph({ data, step }) {
   const currentNodeState = bearerHistory[step - 1] || {};
 
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} >
+    <svg width="100%" height={height+500} viewBox={`0 0 ${width} ${height}`} >
       {/* 1. 노드 수직선 및 헤더 */}
       {nodes.map(node => (
         <g key={node}>
@@ -457,19 +457,17 @@ function CallFlowGraph({ data, step }) {
 
         return (
           <g key={pkt.id}>
+
+            {/* Horizontal Line */}
             <line
-              x1={sourceX}
-              // x1={nodeX[pkt.src_addr]}
-              y1={y}
-              x2={targetX> sourceX ? targetX - 2 : targetX + 2}
-              // x2={nodeX[pkt.dst_addr]}
-              y2={y}
-              
+              x1={sourceX} y1={y} // Start Point
+              x2={targetX> sourceX ? targetX - 2 : targetX + 2} y2={y} //End Point
               stroke="black"
               strokeWidth={1}
               markerEnd="url(#arrowhead)"
             />
 
+            {/* Message Name */}
             <text
               x={(sourceX + targetX) / 2}
               y={y - 8}
@@ -504,7 +502,7 @@ function CallFlowGraph({ data, step }) {
           <LBIBox 
             key={`${nodeIp}-${lbiObj.lbi}`}
             x={x - 110}
-            y={height - 220 + (lbiIdx * 100)} // LBI가 여러개일 경우 아래로 나열
+            y={height - 220 + (lbiIdx * 190)} // LBI가 여러개일 경우 아래로 나열
             lbiObj={lbiObj}
             nodeAddr={nodeIp}
           />

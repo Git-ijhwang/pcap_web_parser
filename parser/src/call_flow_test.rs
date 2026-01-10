@@ -20,7 +20,7 @@ pub async fn make_mock_callflow()
         bearer: Some(vec![ Bearer {
             ebi: 5,
             fteid_list:None,
-            }])
+        }])
     });
 
     v.push(CallFlow {
@@ -103,6 +103,7 @@ pub async fn make_mock_callflow()
             }])
         }]),
     });
+
     v.push(CallFlow {
         id: 6,
         timestamp: String::new(),
@@ -403,13 +404,126 @@ pub async fn make_mock_callflow()
         ),
     });
 
+    /* ============================== */
+    /* ============================== */
+    v.push(CallFlow {
+        id: 21,
+        timestamp: String::new(),
+        src_addr: "10.10.2.72".into(), // UE / MME
+        dst_addr: "10.10.1.71".into(), // SGW
+        message: "Create Session Request".into(),
+        ebi: None,
+        bearer: Some(vec![ Bearer {
+            ebi: 7,
+            fteid_list:None,
+        }])
+    });
+
+    v.push(CallFlow {
+        id: 22,
+        timestamp: String::new(),
+        src_addr: "10.10.1.71".into(),
+        dst_addr: "10.10.3.73".into(),
+        message: "Create Session Request".into(),
+        ebi: None,
+        bearer: Some(vec![ Bearer {
+            ebi: 7,
+            fteid_list: Some(vec![FTeidValue { 
+                v4: true,
+                v6: false,
+                iface_type: 4, //S1-U eNB
+                teid: 1123u32,
+                ipv4: Some("10.10.1.71".into()),
+                ipv6: None,
+            }])
+        }]),
+    });
+
+    v.push(CallFlow {
+        id: 23,
+        timestamp: String::new(),
+        src_addr: "10.10.3.73".into(),
+        dst_addr: "10.10.1.71".into(),
+        message: "Create Session Response".into(),
+        ebi: None,
+        bearer: Some(vec![Bearer {
+            ebi: 7,
+            fteid_list: Some(vec![FTeidValue { 
+                v4: true,
+                v6: false,
+                iface_type: 5, //S1-U eNB
+                teid: 3321u32,
+                ipv4: Some("10.10.3.73".into()),
+                ipv6: None,
+            }])
+        }]),
+    });
+
+    v.push(CallFlow {
+        id: 24,
+        timestamp: String::new(),
+        src_addr: "10.10.1.71".into(),
+        dst_addr: "10.10.2.72".into(),
+        message: "Create Session Response".into(),
+        ebi: None,
+        bearer: Some(vec![Bearer {
+            ebi: 7,
+            fteid_list: Some(vec![FTeidValue { 
+                v4: true,
+                v6: false,
+                iface_type: 1, //S1-U eNB
+                teid: 1132u32,
+                ipv4: Some("10.10.1.71".into()),
+                ipv6: None,
+            }])
+        }]),
+    });
+    v.push(CallFlow {
+        id: 25,
+        timestamp: String::new(),
+        src_addr: "10.10.2.72".into(),
+        dst_addr: "10.10.1.71".into(),
+        message: "Modify Bearer Request".into(),
+        ebi: None,
+        bearer: Some(vec![Bearer {
+            ebi: 7,
+            fteid_list: Some(vec![FTeidValue { 
+                v4: true,
+                v6: false,
+                iface_type: 0, //S1-U eNB
+                teid: 2213u32,
+                ipv4: Some("10.10.2.72".into()),
+                ipv6: None,
+            }])
+        }]),
+    });
+
+    v.push(CallFlow {
+        id: 26,
+        timestamp: String::new(),
+        src_addr: "10.10.1.71".into(),
+        dst_addr: "10.10.2.72".into(),
+        message: "Modify Bearer Response".into(),
+        ebi: None,
+        bearer: Some(vec![Bearer {
+            ebi: 7,
+            fteid_list: Some(vec![FTeidValue { 
+                v4: true,
+                v6: false,
+                iface_type: 1, //S1-U SGW
+                teid: 1132u32,
+                ipv4: Some("10.10.1.71".into()),
+                ipv6: None,
+            }])
+        }]),
+    });
 
     // ---- Delete Bearer
     //====================
     //LBI: 5   EBI 9, 11 (10 will be removed)
     //====================
     v.push(CallFlow {
-        id: 11,
+        id: 31,
         timestamp: String::new(),
         src_addr: "10.10.3.73".into(),
         dst_addr: "10.10.1.71".into(),
@@ -419,7 +533,7 @@ pub async fn make_mock_callflow()
     });
 
     v.push(CallFlow {
-        id: 12,
+        id: 32,
         timestamp: String::new(),
         src_addr: "10.10.1.71".into(),
         dst_addr: "10.10.2.72".into(),
@@ -430,7 +544,7 @@ pub async fn make_mock_callflow()
     });
 
     v.push(CallFlow {
-        id: 13,
+        id: 33,
         timestamp: String::new(),
         src_addr: "10.10.2.72".into(),
         dst_addr: "10.10.1.71".into(),
@@ -444,7 +558,7 @@ pub async fn make_mock_callflow()
         ])
     });
     v.push(CallFlow {
-        id: 14,
+        id: 34,
         timestamp: String::new(),
         src_addr: "10.10.1.71".into(),
         dst_addr: "10.10.3.73".into(),
@@ -460,7 +574,7 @@ pub async fn make_mock_callflow()
 
     // ---- Delete Session
     v.push(CallFlow {
-        id: 15,
+        id: 35,
         timestamp: String::new(),
         src_addr: "10.10.2.72".into(),
         dst_addr: "10.10.1.71".into(),
@@ -470,7 +584,7 @@ pub async fn make_mock_callflow()
     });
 
     v.push(CallFlow {
-        id: 16,
+        id: 36,
         timestamp: String::new(),
         src_addr: "10.10.1.71".into(),
         dst_addr: "10.10.3.73".into(),
@@ -480,7 +594,7 @@ pub async fn make_mock_callflow()
     });
 
     v.push(CallFlow {
-        id: 17,
+        id: 37,
         timestamp: String::new(),
         src_addr: "10.10.3.73".into(),
         dst_addr: "10.10.1.71".into(),
@@ -490,7 +604,7 @@ pub async fn make_mock_callflow()
     });
 
     v.push(CallFlow {
-        id: 18,
+        id: 38,
         timestamp: String::new(),
         src_addr: "10.10.1.71".into(),
         dst_addr: "10.10.2.72".into(),
@@ -503,78 +617,8 @@ pub async fn make_mock_callflow()
     // LBI 7 : EBI 7, 8, 9
     // ======================
 
-    // v.push(CallFlow {
-    //     id: 20,
-    //     timestamp: String::new(),
-    //     src_addr: "10.10.2.80".into(),
-    //     dst_addr: "10.10.1.71".into(),
-    //     message: "Create Session Request".into(),
-    //     ebi: None,
-    //     bearer: None,
-    // });
 
-    // v.push(CallFlow {
-    //     id: 21,
-    //     timestamp: String::new(),
-    //     src_addr: "10.10.1.71".into(),
-    //     dst_addr: "10.10.3.73".into(),
-    //     message: "Create Session Request".into(),
-    //     ebi: None,
-    //     bearer: Some(Bearer {
-    //         ebi: 7,
-    //         fteid_list: vec![FTeidValue { 
-    //             v4: true,
-    //             v6: false,
-    //             iface_type: 0, //S1-U eNB
-    //             teid: 0u32,
-    //             ipv4: Some("10.10.1.71".into()),
-    //             ipv6: None,
-    //         }]
-    //     }),
-    // });
 
-    // // ---- Modify Bearer (EBI 8, 9 추가)
-    // v.push(CallFlow {
-    //     id: 22,
-    //     timestamp: String::new(),
-    //     src_addr: "10.10.2.80".into(),
-    //     dst_addr: "10.10.1.71".into(),
-    //     message: "Modify Bearer Request".into(),
-    //     ebi: None,
-    //     bearer: Some(Bearer {
-    //         ebi: 7,
-    //         fteid_list: vec![FTeidValue { 
-    //             v4: true,
-    //             v6: false,
-    //             iface_type: 0, //S1-U eNB
-    //             teid: 0u32,
-    //             ipv4: Some("10.10.2.80".into()),
-    //             ipv6: None,
-    //         }]
-    //     }),
-    // });
-
-    // v.push(CallFlow {
-    //     id: 23,
-    //     timestamp: String::new(),
-    //     src_addr: "10.10.1.71".into(),
-    //     dst_addr: "10.10.2.80".into(),
-    //     message: "Modify Bearer Response".into(),
-    //     ebi: None,
-    //     bearer: Some(Bearer {
-    //         ebi: 7,
-    //         fteid_list: vec![FTeidValue { 
-    //             v4: true,
-    //             v6: false,
-    //             iface_type: 0, //S1-U eNB
-    //             teid: 0u32,
-    //             ipv4: Some("10.10.1.71".into()),
-    //             ipv6: None,
-    //         }]
-    //     }),
-    // });
-
-    // // ---- Delete Session
     // v.push(CallFlow {
     //     id: 24,
     //     timestamp: String::new(),
