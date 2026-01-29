@@ -439,7 +439,7 @@ function CallFlowGraph({ data, step }) {
   const currentNodeState = bearerHistory[step - 1] || {};
 
   return (
-    <svg width="100%" height={height+500} viewBox={`0 0 ${width} ${height}`} >
+    <svg width="100%" height={height+100} viewBox={`0 0 ${width} ${height+100}`} >
       {/* 1. 노드 수직선 및 헤더 */}
       {nodes.map(node => (
         <g key={node}>
