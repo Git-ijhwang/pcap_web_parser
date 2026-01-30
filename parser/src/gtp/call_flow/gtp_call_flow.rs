@@ -1,8 +1,9 @@
 use std::net::Ipv4Addr;
 use std::vec;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::path::PathBuf;
 use pcap::Capture;
+use std::collections::HashMap;
 
 use crate::ip::{ipv4::*, port::*};
 use crate::l4::udp::*;
@@ -35,7 +36,11 @@ pub struct CallFlow{
     pub message: String,
     pub ebi: Option<u8>,
     pub bearer: Option<Vec<Bearer>>,
+
+    // Key: Node IP (e.g., "10.10.1.71")
+    pub snapshot: HashMap<String, NodeState>,
 }
+
 impl CallFlow{
     pub fn new() -> Self {
         CallFlow {
@@ -46,10 +51,51 @@ impl CallFlow{
             message: String::new(),
             ebi: None,
             bearer: None,
+
+            snapshot: HashMap::new(),
         }
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct NodeState {
+    pub ip: String,
+    pub role: String,
+    // LBI를 키로 하여 해당 세션에 속한 EBI 리스트를 관리
+    pub sessions: HashMap<u8, Vec<EbiDetail>>,
+}
+
+impl NodeState {
+    pub fn new(ip: &str) -> Self {
+        NodeState {
+            ip: ip.to_string(),
+            role: String::new(),
+            sessions: HashMap::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EbiDetail {
+    pub ebi: u8,
+    pub active: bool,
+    pub pending: bool,
+    pub delete_pending: bool,
+    pub tunnels: TunnelInfo,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TunnelInfo {
+    pub s1u_enb: Option<TunnelEndpoint>,
+    pub s1u_sgw: Option<TunnelEndpoint>,
+    pub s5s8_sgw: Option<TunnelEndpoint>,
+    pub s5s8_pgw: Option<TunnelEndpoint>,
+}
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TunnelEndpoint {
+    pub teid: u32,
+    pub ip: String,
+}
 
 #[derive(Serialize, Debug, Clone)]
 pub struct Ip5Tuple {
@@ -984,11 +1030,13 @@ is_match_node( node: &NodeInfo, tuple: &Ip5Tuple )
     false
 }
 
+
 async fn
 make_data( flow_packets: Vec<OwnedPacket>)
 -> Result<Vec<CallFlow>, String>
 {
     let mut call_flow= Vec::new();
+    let mut global_state: HashMap<String, NodeState> = HashMap::new();
 
     for pkt in flow_packets {
         let mut offset: usize = 0;
@@ -1003,7 +1051,7 @@ make_data( flow_packets: Vec<OwnedPacket>)
         cf.src_addr.push_str(&src_addr.to_string());
         cf.dst_addr.push_str(&dst_addr.to_string());
 
-        offset += IP_HDR_LEN+UDP_HDR_LEN;
+        offset += IP_HDR_LEN + UDP_HDR_LEN;
 
         let (_, message) = get_msg_type_from_gtpc (&pkt.data[offset..]).map_err(|e| format!("Error: {:?}", e))?;
 
