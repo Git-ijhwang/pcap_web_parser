@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+use super::gtp_call_flow::*;
 
-fn update_global_state(
+pub fn
+update_global_state(
     state: &mut HashMap<String, NodeState>,
     src: &str,
     dst: &str,
@@ -29,7 +32,7 @@ fn update_global_state(
                         update_bearer_detail(target, b, *ip, msg);
                     } else {
                         // 새로운 Bearer 추가
-                        session.push(BearerDetail::from_bearer(b, *ip, msg));
+                        session.push(EbiDetail::from_bearer(b, *ip, msg));
                     }
                     
                     // 3. 역할 판별 (RELAY/CORE/ACCESS)
@@ -38,4 +41,41 @@ fn update_global_state(
             }
         }
     }
+}
+
+
+fn
+update_bearer_detail(target: &mut EbiDetail, b: &Bearer, ip: &str, msg: &str)
+{
+    update_ebi(target, b, ip, msg);
+    if let Some(ref fteids) = b.fteid_list {
+        for f in fteids {
+            let tunnel_ip = f.ipv4.as_deref().unwrap_or("");
+            if tunnel_ip == ip {
+                target.is_local = true;
+            }
+        }
+    }
+}
+
+fn
+identify_role(ebi_list: &mut Vec<EbiDetail>, _node_ip: &str) -> String
+{
+    let mut has_s1u: bool = false;
+    let mut has_s5s8: bool = false;
+
+    for detail in ebi_list {
+        if detail.tunnels.s1u_enb.is_some() || detail.tunnels.s1u_sgw.is_some() {
+            has_s1u = true;
+        }
+        if detail.tunnels.s5s8_sgw.is_some() || detail.tunnels.s5s8_pgw.is_some() {
+            has_s5s8 = true;
+        }
+    }
+
+    if has_s1u && has_s5s8 { "RELAY".to_string() }
+    else if has_s1u { "Core".to_string() }
+    else if has_s5s8 { "Access".to_string() } 
+    else { "Unknown".to_string() }
+
 }

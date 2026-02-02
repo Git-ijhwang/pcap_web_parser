@@ -10,7 +10,8 @@ use crate::l4::udp::*;
 use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
 use crate::types::*;
 use crate::parse_pcap::*;
-use crate::call_flow_test::*;
+
+use super::gtp_context::*;
 
 
 #[derive(Serialize, Debug)]
@@ -75,16 +76,79 @@ impl NodeState {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct EbiDetail {
     pub ebi: u8,
     pub active: bool,
     pub pending: bool,
+    pub is_local: bool,
     pub delete_pending: bool,
     pub tunnels: TunnelInfo,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+impl EbiDetail {
+    pub fn from_bearer(incoming: &Bearer, node_ip: &str, msg: &str) -> Self {
+        let mut detail = EbiDetail {
+            ebi: incoming.ebi,
+            ..Default::default()
+        };
+
+        update_ebi(&mut detail, incoming, node_ip, msg);
+        detail
+    }
+}
+
+pub fn
+update_ebi(detail: &mut EbiDetail, incoming: &Bearer, node_ip: &str, msg: &str) {
+     if let Some(fteid_list) = &incoming.fteid_list {
+
+        for bearer in fteid_list {
+            match bearer.iface_type {
+                0 => {
+                    detail.tunnels.s1u_enb = Some( TunnelEndpoint {
+                        teid: bearer.teid,
+                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
+                    });
+                },
+                1 => {
+                    detail.tunnels.s1u_sgw = Some( TunnelEndpoint {
+                        teid: bearer.teid,
+                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
+                    });
+                },
+                4 => {
+                    detail.tunnels.s5s8_sgw = Some( TunnelEndpoint {
+                        teid: bearer.teid,
+                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
+                    });
+                },
+                5 => {
+                    detail.tunnels.s5s8_pgw = Some( TunnelEndpoint {
+                        teid: bearer.teid,
+                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
+                    });
+                },
+                _ => {
+                    println!("Unknown Interface type")
+                }
+            }
+        }
+
+        if msg.contains("Delete") {
+            detail.delete_pending = true;
+        }
+        else if msg.contains("Request") {
+            detail.pending = true;
+        }
+        else if msg.contains("Response") {
+            detail.pending = false;
+            detail.active = true;
+        }
+
+     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TunnelInfo {
     pub s1u_enb: Option<TunnelEndpoint>,
     pub s1u_sgw: Option<TunnelEndpoint>,
@@ -1076,6 +1140,16 @@ make_data( flow_packets: Vec<OwnedPacket>)
                 None
             }
         };
+
+        update_global_state(&mut global_state,
+            &src_addr.to_string(),
+            &dst_addr.to_string(),
+            &message,
+            cf.ebi,
+            &cf.bearer
+        );
+
+        cf.snapshot = global_state.clone();
 
         call_flow.push(cf);
     }

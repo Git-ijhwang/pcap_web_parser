@@ -422,9 +422,10 @@ function CallFlowGraph({ data, step }) {
   const rowHeight = 50;
   const headerHeight = 100;
   const padding = 120;
+
   // 데이터 길이에 따라 동적으로 높이 계산
   const messageAreaHeight = data.length * (rowHeight);
-  const height = headerHeight + (messageAreaHeight ) + 200;
+  const height = headerHeight + (messageAreaHeight ) + 200; //하단 박스 공간 확보
 
   // 2. 노드(IP) 추출 및 X 좌표 계산
   const nodes = [...new Set(data.flatMap(p => [p.src_addr, p.dst_addr]))];
@@ -494,17 +495,21 @@ function CallFlowGraph({ data, step }) {
       </defs>
 
       {/* 3. Bearer 정보 (최종 Step의 상태만 노드 하단에 렌더링) */}
-      {Object.entries(currentNodeState).map(([nodeIp, lbiMap]) => {
+      {/* {Object.entries(currentNodeState).map(([nodeIp, lbiMap]) => { */}
+      {Object.entries(currentNodeState).map(([nodeIp, nodeState]) => {
         const x = nodeX[nodeIp];
         if (!x) return null;
         
-        return Object.values(lbiMap).map((lbiObj, lbiIdx) => (
+        // return Object.values(lbiMap).map((lbiObj, lbiIdx) => (
+        return Object.entries(nodeState.sessions).map(([lbi, ebiList], lbiIdx) => (
+
           <LBIBox 
-            key={`${nodeIp}-${lbiObj.lbi}`}
+            key={`${nodeIp}-${lbi}`}
             x={x - 110}
             y={height - 220 + (lbiIdx * 190)} // LBI가 여러개일 경우 아래로 나열
-            lbiObj={lbiObj}
-            nodeAddr={nodeIp}
+            lbi={lbi}
+            ebiList={ebiList}
+            nodeState={nodeState}
           />
         ));
       })}

@@ -167,9 +167,11 @@ SGWBearerBox({ x, y, lbiObj, ebiList, ebiHeight, headerHeight })
 }
 
 function
-LBIBox({ x, y, lbiObj, nodeAddr }) {
+// LBIBox({ x, y, lbiObj, nodeAddr }) {
+LBIBox({ x, y, lbi, lbiList, nodeState }) {
 
-  let nodeRole = identifyNodeRole(lbiObj, nodeAddr);
+  // let nodeRole = identifyNodeRole(lbiObj, nodeAddr);
+  let nodeRole = nodeState.role;
   const ebiList = lbiObj.ebiList || [];
   const isRelay = nodeRole === "RELAY";
   const isPending = lbiObj.pending === true;
