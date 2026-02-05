@@ -1,41 +1,5 @@
 import React,{ useMemo }  from "react";
 
-const NODE_ROLES = {
-  ACCESS: "eNB",//"ACCESS", // eNB, gNB
-  RELAY: "SGW", //"RELAY",   // SGW, UPF
-  CORE: "PGW",//"CORE"      // PGW, SMF
-};
-
-function
-identifyNodeRole(lbiObj, nodeIp)
-{
-  // lbiObj가 단일 세션 객체이므로 바로 ebiList를 순회
-  const ebiList = lbiObj.ebiList || [];
-  
-  let hasS1U = false;
-  let hasS5S8 = false;
-
-  ebiList.forEach(ebiItem => {
-    const t = ebiItem.tunnels;
-    if (!t) return;
-
-    const isS1U_SGW = t.s1u_sgw?.ip === nodeIp;
-    const isS5S8_SGW = t.s5s8_sgw?.ip === nodeIp;
-    
-    if (isS1U_SGW || (t.s1u_sgw && !nodeIp)) hasS1U = true;
-    if (isS5S8_SGW || (t.s5s8_sgw && !nodeIp)) hasS5S8 = true;
-    
-    if (nodeIp) {
-        if (t.s5s8_pgw?.ip === nodeIp) { hasS5S8 = true; hasS1U = false; }
-        if (t.s1u_enb?.ip === nodeIp) { hasS1U = true; hasS5S8 = false; }
-    }
-  });
-
-  if (hasS1U && hasS5S8) return "RELAY";
-  if (hasS5S8) return "CORE";
-  return "ACCESS";
-}
-
 function
 EBIBox({ x, y, width, height, ebiObj, nodeRole, ifaceType })
 {
