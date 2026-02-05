@@ -14,6 +14,7 @@ update_global_state(
     state.entry(src.to_string()).or_insert_with(|| NodeState::new(src));
     state.entry(dst.to_string()).or_insert_with(|| NodeState::new(dst));
 
+    println!("{} -> {} ##{}",src.to_string(), dst.to_string(), msg);
     // 2. 메시지 타입에 따른 Bearer 상태 업데이트 로직
     if let Some(bearer_list) = bearers {
         for b in bearer_list {
@@ -29,14 +30,19 @@ update_global_state(
                     if let Some(target) =
                         session.iter_mut().find(|e| e.ebi == ebi) {
                         // 터널 및 상태 업데이트 로직 (is_local 체크 등)
-                        update_bearer_detail(target, b, *ip, msg);
+                        if *ip == src {
+                            update_bearer_detail(target, b, Some(*ip), msg);
+                        }
+                        else {
+                            update_bearer_detail(target, b, None, msg);
+                        }
                     } else {
                         // 새로운 Bearer 추가
                         session.push(EbiDetail::from_bearer(b, *ip, msg));
                     }
                     
                     // 3. 역할 판별 (RELAY/CORE/ACCESS)
-                    node.role = identify_role(session, *ip);
+                    node.role = identify_role(session );
                 }
             }
         }
@@ -45,37 +51,47 @@ update_global_state(
 
 
 fn
-update_bearer_detail(target: &mut EbiDetail, b: &Bearer, ip: &str, msg: &str)
+update_bearer_detail(target: &mut EbiDetail, b: &Bearer, ip: Option<&str>, msg: &str)
 {
     update_ebi(target, b, ip, msg);
+
     if let Some(ref fteids) = b.fteid_list {
+
         for f in fteids {
             let tunnel_ip = f.ipv4.as_deref().unwrap_or("");
-            if tunnel_ip == ip {
-                target.is_local = true;
+
+            if let  Some(ip)= ip {
+                if tunnel_ip == ip {
+                    target.is_local = true;
+                }
             }
         }
     }
 }
 
 fn
-identify_role(ebi_list: &mut Vec<EbiDetail>, _node_ip: &str) -> String
+identify_role(ebi_list: &mut Vec<EbiDetail>) -> String
 {
     let mut has_s1u: bool = false;
     let mut has_s5s8: bool = false;
+    let mut local: bool = false;
 
     for detail in ebi_list {
-        if detail.tunnels.s1u_enb.is_some() || detail.tunnels.s1u_sgw.is_some() {
+        if detail.tunnels.s1u_enb.is_some() ||
+            detail.tunnels.s1u_sgw.is_some() {
             has_s1u = true;
+            println!("HAS S1U");
         }
-        if detail.tunnels.s5s8_sgw.is_some() || detail.tunnels.s5s8_pgw.is_some() {
-            has_s5s8 = true;
+        if detail.is_local {
+            if detail.tunnels.s5s8_sgw.is_some() || detail.tunnels.s5s8_pgw.is_some() {
+                has_s5s8 = true;
+                println!("HAS S5S8");
+            }
         }
     }
 
-    if has_s1u && has_s5s8 { "RELAY".to_string() }
-    else if has_s1u { "Core".to_string() }
-    else if has_s5s8 { "Access".to_string() } 
+    if has_s1u && has_s5s8 { return "RELAY".to_string(); }
+    if has_s1u && !has_s5s8 { return "Access".to_string(); }
+    if !has_s1u && has_s5s8 { return "Core".to_string(); }
     else { "Unknown".to_string() }
-
 }

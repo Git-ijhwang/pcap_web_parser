@@ -93,59 +93,61 @@ impl EbiDetail {
             ..Default::default()
         };
 
-        update_ebi(&mut detail, incoming, node_ip, msg);
+        update_ebi(&mut detail, incoming, Some(node_ip), msg);
         detail
     }
 }
 
 pub fn
-update_ebi(detail: &mut EbiDetail, incoming: &Bearer, node_ip: &str, msg: &str) {
-     if let Some(fteid_list) = &incoming.fteid_list {
+update_ebi(detail: &mut EbiDetail, incoming: &Bearer, node_ip: Option<&str>, msg: &str) {
+	let is_request = msg.contains("Request");
+    let is_response = msg.contains("Response");
 
+    if let Some(fteid_list) = &incoming.fteid_list {
         for bearer in fteid_list {
-            match bearer.iface_type {
-                0 => {
-                    detail.tunnels.s1u_enb = Some( TunnelEndpoint {
-                        teid: bearer.teid,
-                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
-                    });
-                },
-                1 => {
-                    detail.tunnels.s1u_sgw = Some( TunnelEndpoint {
-                        teid: bearer.teid,
-                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
-                    });
-                },
-                4 => {
-                    detail.tunnels.s5s8_sgw = Some( TunnelEndpoint {
-                        teid: bearer.teid,
-                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
-                    });
-                },
-                5 => {
-                    detail.tunnels.s5s8_pgw = Some( TunnelEndpoint {
-                        teid: bearer.teid,
-                        ip: bearer.ipv4.clone().unwrap_or_else(||"0.0.0.0".to_string()),
-                    });
-                },
-                _ => {
-                    println!("Unknown Interface type")
+			let tunnel_ip = bearer.ipv4.as_deref().unwrap_or("0.0.0.0");
+            let endpoint = Some(TunnelEndpoint {
+                teid: bearer.teid,
+                ip: tunnel_ip.to_string(),
+            });
+            println!("BEARER IP: {}", tunnel_ip);
+            if let Some(node_ip) = node_ip {
+                println!("Node IP: {}", node_ip);
+            }
+
+            // 핵심 로직: 
+            // 1. Request일 때는 메시지 안에 발신자(src)의 정보만 들어있음.
+            // 2. Response일 때는 메시지 안에 수신자(dst/응답자)의 정보만 들어있음.
+            // 따라서, 현재 업데이트 중인 노드의 IP와 터널 IP가 일치할 때만 업데이트 하거나,
+            // 혹은 상대방 노드 입장에서 "상대 정보"로 저장해야 함.
+            
+            let should_update = match node_ip {
+                Some(current_ip) => current_ip == tunnel_ip, // 내 정보 업데이트
+                None => false, // 수신자 노드 입장에서 상대 정보 저장 (기존 로직 유지 시)
+            };
+
+            if should_update {
+                match bearer.iface_type {
+                    0 => detail.tunnels.s1u_enb = endpoint,
+                    1 => detail.tunnels.s1u_sgw = endpoint,
+                    4 => detail.tunnels.s5s8_sgw = endpoint,
+                    5 => detail.tunnels.s5s8_pgw = endpoint,
+                    _ => println!("Unknown Interface type"),
                 }
             }
         }
+	}
 
-        if msg.contains("Delete") {
-            detail.delete_pending = true;
-        }
-        else if msg.contains("Request") {
-            detail.pending = true;
-        }
-        else if msg.contains("Response") {
-            detail.pending = false;
-            detail.active = true;
-        }
-
-     }
+    if msg.contains("Delete") {
+        detail.delete_pending = true;
+    }
+    else if is_request {
+        detail.pending = true;
+    }
+    else if is_response {
+        detail.pending = false;
+        detail.active = true;
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -1149,7 +1151,9 @@ make_data( flow_packets: Vec<OwnedPacket>)
             &cf.bearer
         );
 
+
         cf.snapshot = global_state.clone();
+        println!("===>{:?}", cf.snapshot);
 
         call_flow.push(cf);
     }

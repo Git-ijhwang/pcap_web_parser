@@ -2,7 +2,8 @@ import React,{ useMemo }  from "react";
 import LBIBox from "./BearerView"
 
 
-export function useBearerState(callFlows, nodeState) {
+export function
+useBearerState(callFlows, nodeState) {
   return useMemo(() => {
     let state = {};
     const history = [];
@@ -436,16 +437,24 @@ function CallFlowGraph({ data, step }) {
   });
 
   const visibleFlows = data.slice(0, step);
-  const bearerHistory = useBearerState(data); // 전체 히스토리 미리 계산
-  const currentNodeState = bearerHistory[step - 1] || {};
+  // const bearerHistory = useBearerState(data); // 전체 히스토리 미리 계산
+  const currentPacket = data && step > 0 ? data[step - 1] : null;
+  // const currentNodeState = bearerHistory[step - 1] || {};
+  const currentNodeState = currentPacket?.snapshot || {};
+
+  console.log(data)
+  console.log(currentNodeState)
 
   return (
-    <svg width="100%" height={height+500} viewBox={`0 0 ${width} ${height}`} >
+    <svg width="100%" height={height+20} viewBox={`0 0 ${width} ${height}`} >
       {/* 1. 노드 수직선 및 헤더 */}
       {nodes.map(node => (
         <g key={node}>
-          <line x1={nodeX[node]} y1={70} x2={nodeX[node]} y2={height - 200} stroke="#aaa" />
-          <text x={nodeX[node]} y={50} textAnchor="middle" fontWeight="bold">{node}</text>
+          <line x1={nodeX[node]} y1={70}
+                x2={nodeX[node]} y2={height - 200}
+                stroke="#aaa" />
+          <text x={nodeX[node]} y={50}
+            textAnchor="middle" fontWeight="bold">IP: {node}</text>
         </g>
       ))}
 
@@ -464,7 +473,7 @@ function CallFlowGraph({ data, step }) {
               x1={sourceX} y1={y} // Start Point
               x2={targetX> sourceX ? targetX - 2 : targetX + 2} y2={y} //End Point
               stroke="black"
-              strokeWidth={1}
+              strokeWidth={1.2}
               markerEnd="url(#arrowhead)"
             />
 
@@ -500,18 +509,25 @@ function CallFlowGraph({ data, step }) {
         const x = nodeX[nodeIp];
         if (!x) return null;
         
-        // return Object.values(lbiMap).map((lbiObj, lbiIdx) => (
-        return Object.entries(nodeState.sessions).map(([lbi, ebiList], lbiIdx) => (
+        const sessions = nodeState.sessions || {};
 
-          <LBIBox 
-            key={`${nodeIp}-${lbi}`}
-            x={x - 110}
-            y={height - 220 + (lbiIdx * 190)} // LBI가 여러개일 경우 아래로 나열
-            lbi={lbi}
-            ebiList={ebiList}
-            nodeState={nodeState}
-          />
-        ));
+        // return Object.values(lbiMap).map((lbiObj, lbiIdx) => (
+        return Object.entries(sessions).
+          map(([lbi, ebiList], lbiIdx) => {
+            const safeEbiList = Array.isArray(ebiList) ? ebiList : [];
+
+            console.log("State Map:", currentNodeState);
+            return (
+              <LBIBox 
+                key={`${nodeIp}-${lbi}`}
+                x={x - 110}
+                y={height - 220 + (lbiIdx * 190)} // LBI가 여러개일 경우 아래로 나열
+                lbi={lbi}
+                ebiList={safeEbiList}
+                nodeState={nodeState}
+              />
+            );
+        });
       })}
     </svg>
   );
