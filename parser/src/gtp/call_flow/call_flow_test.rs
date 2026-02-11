@@ -2,6 +2,7 @@ use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
 use super::gtp_call_flow::*;
 use std::collections::HashMap;
 
+#[cfg(feature = "mock")]
 pub async fn make_mock_callflow()
 -> Vec<CallFlow>
 {

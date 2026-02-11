@@ -98,6 +98,7 @@ function CallFlowGraph({ data, step }) {
           map(([lbi, ebiList], lbiIdx) => {
             const safeEbiList = Array.isArray(ebiList) ? ebiList : [];
 
+            console.log("EbiList:", safeEbiList);
             console.log("State Map:", currentNodeState);
             return (
               <LBIBox 

@@ -10,11 +10,13 @@ use crate::l4::udp::*;
 use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
 use crate::types::*;
 use crate::parse_pcap::*;
+use super::gtp_context::{new_update_global_state};
 
-use super::gtp_context::*;
+#[cfg(feature = "mock")]
+use super::call_flow_test::*;
 
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Bearer{
     pub ebi: u8,
     pub fteid_list: Option<Vec<FTeidValue>>,
@@ -28,7 +30,7 @@ impl Bearer {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct CallFlow{
     pub id: usize,
     pub timestamp: String,
@@ -87,33 +89,39 @@ pub struct EbiDetail {
 }
 
 impl EbiDetail {
-    pub fn from_bearer(incoming: &Bearer, node_ip: &str, msg: &str) -> Self {
+    pub fn create_bearer(bearers: &Bearer, msg: &str, ip: &str) -> Self {
         let mut detail = EbiDetail {
-            ebi: incoming.ebi,
+            ebi: bearers.ebi,
             ..Default::default()
         };
 
-        update_ebi(&mut detail, incoming, Some(node_ip), msg);
+        update_ebi(&mut detail, bearers, msg, ip);
+
         detail
     }
 }
 
 pub fn
-update_ebi(detail: &mut EbiDetail, incoming: &Bearer, node_ip: Option<&str>, msg: &str) {
-	let is_request = msg.contains("Request");
-    let is_response = msg.contains("Response");
+update_ebi(
+    detail: &mut EbiDetail, bearers: &Bearer, msg: &str, node_ip: &str)
+{
 
-    if let Some(fteid_list) = &incoming.fteid_list {
+    if let Some(fteid_list) = &bearers.fteid_list {
         for bearer in fteid_list {
 			let tunnel_ip = bearer.ipv4.as_deref().unwrap_or("0.0.0.0");
+
+            if tunnel_ip != node_ip {
+                continue; 
+            }
+
             let endpoint = Some(TunnelEndpoint {
                 teid: bearer.teid,
                 ip: tunnel_ip.to_string(),
             });
-            println!("BEARER IP: {}", tunnel_ip);
-            if let Some(node_ip) = node_ip {
-                println!("Node IP: {}", node_ip);
-            }
+            // println!("BEARER IP: {}", tunnel_ip);
+            // if let Some(node_ip) = node_ip {
+                // println!("Node IP: {}", node_ip);
+            // }
 
             // 핵심 로직: 
             // 1. Request일 때는 메시지 안에 발신자(src)의 정보만 들어있음.
@@ -121,12 +129,12 @@ update_ebi(detail: &mut EbiDetail, incoming: &Bearer, node_ip: Option<&str>, msg
             // 따라서, 현재 업데이트 중인 노드의 IP와 터널 IP가 일치할 때만 업데이트 하거나,
             // 혹은 상대방 노드 입장에서 "상대 정보"로 저장해야 함.
             
-            let should_update = match node_ip {
-                Some(current_ip) => current_ip == tunnel_ip, // 내 정보 업데이트
-                None => false, // 수신자 노드 입장에서 상대 정보 저장 (기존 로직 유지 시)
-            };
+            // let should_update = match node_ip {
+            //     Some(current_ip) => current_ip == tunnel_ip, // 내 정보 업데이트
+            //     None => false, // 수신자 노드 입장에서 상대 정보 저장 (기존 로직 유지 시)
+            // };
 
-            if should_update {
+            // if should_update {
                 match bearer.iface_type {
                     0 => detail.tunnels.s1u_enb = endpoint,
                     1 => detail.tunnels.s1u_sgw = endpoint,
@@ -134,19 +142,32 @@ update_ebi(detail: &mut EbiDetail, incoming: &Bearer, node_ip: Option<&str>, msg
                     5 => detail.tunnels.s5s8_pgw = endpoint,
                     _ => println!("Unknown Interface type"),
                 }
-            }
+            // }
         }
 	}
 
+    println!("Message : {}", msg);
+
+}
+
+pub fn
+identify_role( detail: &mut EbiDetail, msg: &str)
+{
+	let is_request = msg.contains("Request");
+    let is_response = msg.contains("Response");
+
     if msg.contains("Delete") {
         detail.delete_pending = true;
+        println!("====> DELETE Pending Contained");
     }
     else if is_request {
         detail.pending = true;
+        println!("=====> Pending Contained");
     }
     else if is_response {
         detail.pending = false;
         detail.active = true;
+        println!("====> Active");
     }
 }
 
@@ -1102,7 +1123,6 @@ make_data( flow_packets: Vec<OwnedPacket>)
 -> Result<Vec<CallFlow>, String>
 {
     let mut call_flow= Vec::new();
-    let mut global_state: HashMap<String, NodeState> = HashMap::new();
 
     for pkt in flow_packets {
         let mut offset: usize = 0;
@@ -1143,24 +1163,27 @@ make_data( flow_packets: Vec<OwnedPacket>)
             }
         };
 
-        update_global_state(&mut global_state,
-            &src_addr.to_string(),
-            &dst_addr.to_string(),
-            &message,
-            cf.ebi,
-            &cf.bearer
-        );
-
-
-        cf.snapshot = global_state.clone();
-        println!("===>{:?}", cf.snapshot);
-
         call_flow.push(cf);
     }
 
     return Ok(call_flow);
 }
 
+
+async fn
+make_snapshot(mut call_flows: Vec<CallFlow>) -> Vec<CallFlow>
+{
+    let mut state: HashMap<String, NodeState> = HashMap::new();
+
+    for cf in call_flows.iter_mut() {
+        // 기존에 정의한 state 업데이트 로직 호출
+        new_update_global_state(cf , &mut state);
+        
+        // 해당 시점의 상태를 스냅샷으로 저장
+        cf.snapshot = state.clone();
+    }
+    call_flows
+}
 
 pub async fn
 make_call_flow (path: &PathBuf, id: usize)
@@ -1219,11 +1242,13 @@ make_call_flow (path: &PathBuf, id: usize)
 
     //7. Make Call Flow raw data
 #[cfg(not(feature = "mock"))]
-    let call_flow = make_data( packets).await;
+    let mut call_flow = make_data( packets).await?;
 
     //8. Only for Mock Test
 #[cfg(feature = "mock")]
-    let call_flow = Ok(make_mock_callflow().await);
+    let mut call_flow = make_mock_callflow().await;
 
-    return call_flow;
-}
+
+    let callflow_snapshot = make_snapshot(call_flow).await;
+
+    return Ok(callfl

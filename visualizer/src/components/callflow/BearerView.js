@@ -5,11 +5,13 @@ EBIBox({ x, y, width, height, ebiObj, nodeRole, ifaceType })
 {
   const tunnels = ebiObj.tunnels || {};
   const isPending = ebiObj.pending === true;
-  const isDelPending = ebiObj.deletePending === true;
+  const isDelPending = ebiObj.delete_pending === true;
 
   let localInfo = null;
   let label = ifaceType;
   let color = "#228be6"
+
+  console.log("ebiObj: ", ebiObj);
   // let displayIp = "-";
 
   // if (ifaceType === "S1U") {
@@ -30,6 +32,7 @@ EBIBox({ x, y, width, height, ebiObj, nodeRole, ifaceType })
     // Core(PGW)면 pgw 정보를, Relay(SGW)면 sgw 정보를 보여줌
     localInfo = nodeRole === "Core" ? tunnels.s5s8_pgw : tunnels.s5s8_sgw;
   }
+
   console.log("label: ", label)
   console.log("localInfo: ", localInfo)
 
@@ -141,10 +144,10 @@ EBIBox({ x, y, width, height, ebiObj, nodeRole, ifaceType })
 function
 SGWBearerBox({ x, y, lbi, ebiList, ebiHeight, headerHeight, nodeRole })
 {
-  console.log("EBILIST LEN:", ebiList.length);
   const relayWidth = 400; // SGW는 좌우 분할을 위해 더 넓게
   const sideWidth = (relayWidth / 2) - 15;
   const relayHeight = headerHeight + (ebiList?.length||0) * (ebiHeight + 10) + 10;
+  const isPending = ebiList.pending === true;
 
   return (
     <g>
@@ -155,13 +158,18 @@ SGWBearerBox({ x, y, lbi, ebiList, ebiHeight, headerHeight, nodeRole })
         width={relayWidth}
         height={relayHeight+20}
         rx={8} ry={8}
-        fill="#f8f9fa"
+        // fill="#f8f9fa"
+        fill={isPending ? "#fff9db" : "#f1f3f5"}
         stroke="#228be6"
         strokeWidth="1.5"
       />
 
-      <text x={x} y={y + 18} textAnchor="middle" fontSize={13} fontWeight="bold" fill="#1971c2">
-          LBI:{lbi}
+      <text x={x} y={y + 18}
+        textAnchor="middle"
+        fill="#1971c2"
+        fontSize={13} fontWeight="bold"
+        >
+          LBI : {lbi}
       </text>
 
 
@@ -202,9 +210,8 @@ function
 LBIBox({ x, y, lbi, ebiList, nodeState }) {
 
   // let nodeRole = identifyNodeRole(lbiObj, nodeAddr);
-  const nodeRole = nodeState?.role || "Unknown";
+  const nodeRole = nodeState?.role;
   // let nodeRole = nodeState.role;
-  console.log("Role: ", nodeRole);
   // const ebiList = lbiObj.ebiList || [];
   const isRelay = nodeRole === "RELAY";
   const isPending = ebiList.some(ebi => ebi.pending)
@@ -219,18 +226,15 @@ LBIBox({ x, y, lbi, ebiList, nodeState }) {
     headerHeight + ebiList.length * (ebiHeight + 10) + padding;
     // headerHeight + ebiList.length * (ebiHeight + 6) + padding;
 
-  console.log("isRelay: ", isRelay);
   return (
     <g>
       {isRelay ? (
         <SGWBearerBox 
           x={x +(standardWidth/2) } y={y} 
-          // lbiObj={lbiObj} 
           lbi={lbi}
           ebiList={ebiList} 
           ebiHeight={ebiHeight}
           headerHeight={headerHeight}
-          // nodeAddr={nodeAddr}
           nodeRole={nodeRole}
         />
       ):(
@@ -241,12 +245,13 @@ LBIBox({ x, y, lbi, ebiList, nodeState }) {
             width={standardWidth} height={standardHeight+20}
             rx={8} ry={8}
             fill={isPending ? "#fff9db" : "#f1f3f5"}
-            stroke="#333"
+            // stroke="#333"
+            stroke="#228be6"
           />
 
-          <text
-            x={x+10}
-            y={y + 18} fontSize={13} fontWeight="bold">
+          <text x={x+10} y={y + 18}
+            fill="#1971c2"
+            fontSize={13} fontWeight="bold">
             LBI : {lbi}
           </text>
 
