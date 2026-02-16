@@ -48,10 +48,9 @@ handle_create_session_req_rsp( cf: &CallFlow,
                 else {
                     //update fteid
                     if let Some(target_sess) = session_list.iter_mut().find(|e| e.ebi == b_ebi) {
-                        update_ebi( target_sess, &cf_b, &cf.message, ip);
+                        target_sess.update_ebi(&cf_b, &cf.message, ip);
                     }
                 }
-                node.role = identify_role(session_list);
             }
         }
     }
@@ -81,9 +80,7 @@ handle_create_bearer_request(
     }
 }
 
-fn
-handle_modify_bearer_request(
-    cf: &CallFlow,
+fn handle_modify_bearer_request( cf: &CallFlow,
     state: &mut HashMap<String, NodeState> )
 {
     let cf_bearers = match &cf.bearer {
@@ -91,7 +88,6 @@ handle_modify_bearer_request(
         _ => return,
     };
 
-    let msg = cf.message;
     for ip in [&cf.src_addr, &cf.dst_addr] {
         if let Some(node) = state.get_mut(ip) {
 
@@ -100,35 +96,79 @@ handle_modify_bearer_request(
 
                 for session_list in node.sessions.values_mut() {
                     if let Some(sess) = session_list.iter_mut().find(|e| e.ebi == ebi) {
-                        update_ebi(sess, &cf_b, &cf.message, ip);
-                        identify_role(sess, msg.as_str());
+
+                        sess.update_ebi( &cf_b, &cf.message, ip.as_str());
+                        break;
+
                     }
                 }
             }
-
         }
     }
 }
 
+
+fn handle_modify_bearer_response( cf: &CallFlow,
+    state: &mut HashMap<String, NodeState> )
+{
+    let cf_bearers = match &cf.bearer {
+        Some(b) if !b.is_empty() => b,
+        _ => return,
+    };
+
+    for ip in [&cf.src_addr, &cf.dst_addr] {
+        if let Some(node) = state.get_mut(ip) {
+            // let session_list = node.sessions.entry(lbi);
+
+            for cf_b in cf_bearers {
+                let target_ebi = cf_b.ebi;
+                for session_list in node.sessions.values_mut() {
+                    if let Some(sess) = session_list.iter_mut().find(|e| e.ebi == target_ebi) {
+                        sess.update_ebi( &cf_b, &cf.message, ip.as_str());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 pub fn
-new_update_global_state(
-    cf: &CallFlow,
+new_update_global_state( cf: &CallFlow,
     state: &mut HashMap<String, NodeState> )
 {
     let msg = &cf.message;
 
-    // 2. 메시지 타입별 분기 처리 (JS의 if-else if 구조와 동일)
-    if msg.contains("Create Session Request") {
-        handle_create_session_req_rsp(cf, state);
-    } else if msg.contains("Create Session Response") {
-        handle_create_session_req_rsp(cf, state);
-    } else if msg.contains("Create Bearer Request") {
-        handle_create_bearer_request(cf, state);
-    // } else if msg.contains("Create Bearer Response") {
-    //     handle_create_bearer_response(cf, state);
-    } else if msg.contains("Modify Bearer Request") {
-        handle_modify_bearer_request(cf, state);
+    match cf.message.as_str() {
+        "Create Session Request"    => handle_create_session_req_rsp(cf, state),
+        "Create Session Response"   => handle_create_session_req_rsp(cf, state),
+        "Create Bearer Request"     => handle_create_bearer_request(cf, state),
+        // "Create Bearer Response"     => handle_create_bearer_response(cf, state),
+        "Modify Bearer Request"     => handle_modify_bearer_request(cf, state),
+        "Modify Bearer Response"    => handle_modify_bearer_response(cf, state),
+        
+        // "Delete Bearer Request"    => handle_delete_bearer_request(cf, state),
+        // "Delete Bearer Response"    => handle_delete_bearer_response(cf, state),
+        // "Delete Session Request"    => handle_delete_session_request(cf, state),
+        // "Delete Session Response"    => handle_delete_session_response(cf, state),
+        _ => println!("Unknown Message"),
     }
+    // 2. 메시지 타입별 분기 처리 (JS의 if-else if 구조와 동일)
+    // if msg.contains("Create Session Request") {
+    //     handle_create_session_req_rsp(cf, state);
+    // } else if msg.contains("Create Session Response") {
+    //     handle_create_session_req_rsp(cf, state);
+    // } else if msg.contains("") {
+    //     handle_create_bearer_request(cf, state);
+    // } else if msg.contains("Create Bearer Response") {
+    // //     handle_create_bearer_response(cf, state);
+    //     println!("handle_create_bearer_response");
+    // } else if msg.contains("Modify Bearer Request") {
+    //     handle_modify_bearer_request(cf, state);
+    // } else if msg.contains("Modify Bearer Response") {
+    //     handle_modify_bearer_response(cf, state);
+    // }
 }
 
 // pub fn
@@ -210,26 +250,19 @@ new_update_global_state(
 // }
 
 fn
-identify_role(ebi_list: &mut Vec<EbiDetail>) -> String
+identify_role(ebi_list: &mut Vec<EbiDetail>)
+// -> String
 {
     let mut has_s1u: bool = false;
     let mut has_s5s8: bool = false;
     let mut local: bool = false;
 
-    for detail in ebi_list {
-        if detail.tunnels.s1u_enb.is_some() ||
-            detail.tunnels.s1u_sgw.is_some() {
-            has_s1u = true;
-            println!("HAS S1U");
-        }
-        if detail.is_local {
-            if detail.tunnels.s5s8_sgw.is_some() || detail.tunnels.s5s8_pgw.is_some() {
-                has_s5s8 = true;
-                println!("HAS S5S8");
-            }
-        }
-    }
+    // for detail in ebi_list {
+    //     if detail.tunnels.s1u_enb.is_some() ||
+    //         detail.tunnels.s1u_sgw.i
 
-    if has_s1u && has_s5s8 { return "RELAY".to_string(); }
-    if has_s1u && !has_s5s8 { return "Access".to_string(); }
-    if !has_s1u && has_s5s8 { return "Core
+
+
+
+    
+}

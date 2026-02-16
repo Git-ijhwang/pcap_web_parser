@@ -16,11 +16,13 @@ use super::gtp_context::{new_update_global_state};
 use super::call_flow_test::*;
 
 
+
 #[derive(Serialize, Debug, Clone)]
 pub struct Bearer{
     pub ebi: u8,
     pub fteid_list: Option<Vec<FTeidValue>>,
 }
+
 impl Bearer {
     pub fn new() -> Self {
         Bearer {
@@ -89,20 +91,51 @@ pub struct EbiDetail {
 }
 
 impl EbiDetail {
-    pub fn create_bearer(bearers: &Bearer, msg: &str, ip: &str) -> Self {
+
+    pub fn create_bearer( bearers: &Bearer, msg: &str, ip: &str) -> Self
+    {
         let mut detail = EbiDetail {
             ebi: bearers.ebi,
             ..Default::default()
         };
 
-        update_ebi(&mut detail, bearers, msg, ip);
+        detail.update_ebi(bearers, msg, ip);
 
         detail
     }
+
+    pub fn update_ebi( &mut self, bearers: &Bearer, msg: &str, node_ip: &str)
+    {
+        if let Some(fteid_list) = &bearers.fteid_list {
+            for bearer in fteid_list {
+                let tunnel_ip = bearer.ipv4.as_deref().unwrap_or("0.0.0.0");
+
+                if tunnel_ip != node_ip {
+                    continue; 
+                }
+
+                let endpoint = Some(TunnelEndpoint {
+                    teid: bearer.teid,
+                    ip: tunnel_ip.to_string(),
+                });
+
+                match bearer.iface_type {
+                    0 => self.tunnels.s1u_enb = endpoint,
+                    1 => self.tunnels.s1u_sgw = endpoint,
+                    4 => self.tunnels.s5s8_sgw = endpoint,
+                    5 => self.tunnels.s5s8_pgw = endpoint,
+                    _ => println!("Unknown Interface type"),
+                }
+            }
+        }
+
+        set_roles(self, msg);
+    }
 }
 
+
 pub fn
-update_ebi(
+old_update_ebi(
     detail: &mut EbiDetail, bearers: &Bearer, msg: &str, node_ip: &str)
 {
 
@@ -148,10 +181,12 @@ update_ebi(
 
     println!("Message : {}", msg);
 
+    set_roles(detail, msg);
+
 }
 
 pub fn
-identify_role( detail: &mut EbiDetail, msg: &str)
+set_roles( detail: &mut EbiDetail, msg: &str)
 {
 	let is_request = msg.contains("Request");
     let is_response = msg.contains("Response");
@@ -334,12 +369,12 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
 
                     println!(" [mme] -> [sgw]  [pgw] ");
                     //First Node
-                    init_node_info(&mut init_node, tuple.src_addr, tuple.src_port, msg_type,
+                    init_node_info(&mut init_node, tuple.src_addr, tuple.src_port,// msg_type,
                         seq, 0, &imsi);
                     init_fteid_info(&mut init_node, fteid_teid, 0, 0, 0);
 
                     //Second Node
-                    init_node_info(&mut resp_node, tuple.dst_addr, tuple.dst_port, msg_type,
+                    init_node_info(&mut resp_node, tuple.dst_addr, tuple.dst_port,// msg_type,
                             0, 0, &imsi);
                     init_fteid_info(&mut resp_node, 0, 0, fteid_teid, 0);
 
@@ -355,7 +390,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
 
                         println!(" [mme]  [sgw] -> [pgw] ");
                         //Third Node check
-                        init_node_info(&mut third_node, tuple.dst_addr, tuple.dst_port, msg_type,
+                        init_node_info(&mut third_node, tuple.dst_addr, tuple.dst_port, //msg_type,
                             0, seq, &imsi);
                         init_fteid_info(&mut third_node, 0, 0,
                             0, fteid_teid);
@@ -1009,7 +1044,7 @@ fn init_fteid_info(node: &mut NodeInfo,
 
 fn init_node_info(node: &mut NodeInfo,
     addr: Ipv4Addr, port: u16,
-    msg_type:u8,
+    // msg_type:u8,
     s11_seq:u32, s5s8_seq:u32,
     imsi:&str)
 {
@@ -1251,4 +1286,5 @@ make_call_flow (path: &PathBuf, id: usize)
 
     let callflow_snapshot = make_snapshot(call_flow).await;
 
-    return Ok(callfl
+    return Ok(callflow_snapshot)
+}

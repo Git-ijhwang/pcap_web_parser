@@ -29,12 +29,12 @@ fn format_timestamp(packet: &Packet) -> String
 }
 
 
-fn print_timestamp(idx:usize, packet: &Packet)
-    -> String
-{
-    let ts = format_timestamp(packet);
-    format!( "{}",ts).to_string()
-}
+// fn print_timestamp(idx:usize, packet: &Packet)
+//     -> String
+// {
+//     let ts = format_timestamp(packet);
+//     format!( "{}",ts).to_string()
+// }
 
 
 pub fn parse_ethernet(data: &[u8]) -> usize
@@ -248,7 +248,7 @@ pub async fn simple_parse_pcap(path: &Path)
         // --- Parse TimeStamp ---
         let mut parsed_packet : PacketSummary = PacketSummary::new();
         parsed_packet.id = idx;
-        parsed_packet.ts = print_timestamp(idx, &packet);
+        // parsed_packet.ts = print_timestamp(idx, &packet);
 
         // --- Parse Layer 2 Ethernet ---
         let mut next_type = 0;
