@@ -10,214 +10,11 @@ use crate::l4::udp::*;
 use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
 use crate::types::*;
 use crate::parse_pcap::*;
-use super::gtp_context::{new_update_global_state};
+use super::gtp_context::*;
 
 #[cfg(feature = "mock")]
 use super::call_flow_test::*;
 
-
-
-#[derive(Serialize, Debug, Clone)]
-pub struct Bearer{
-    pub ebi: u8,
-    pub fteid_list: Option<Vec<FTeidValue>>,
-}
-
-impl Bearer {
-    pub fn new() -> Self {
-        Bearer {
-            ebi: 0,
-            fteid_list: None,
-        }
-    }
-}
-
-#[derive(Serialize, Debug, Clone)]
-pub struct CallFlow{
-    pub id: usize,
-    pub timestamp: String,
-    pub src_addr: String,
-    pub dst_addr: String,
-    pub message: String,
-    pub ebi: Option<u8>,
-    pub bearer: Option<Vec<Bearer>>,
-
-    // Key: Node IP (e.g., "10.10.1.71")
-    pub snapshot: HashMap<String, NodeState>,
-}
-
-impl CallFlow{
-    pub fn new() -> Self {
-        CallFlow {
-            id: 0,
-            timestamp: String::new(),
-            src_addr: String::new(),
-            dst_addr: String::new(),
-            message: String::new(),
-            ebi: None,
-            bearer: None,
-
-            snapshot: HashMap::new(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NodeState {
-    pub ip: String,
-    pub role: String,
-    // LBI를 키로 하여 해당 세션에 속한 EBI 리스트를 관리
-    pub sessions: HashMap<u8, Vec<EbiDetail>>,
-}
-
-impl NodeState {
-    pub fn new(ip: &str) -> Self {
-        NodeState {
-            ip: ip.to_string(),
-            role: String::new(),
-            sessions: HashMap::new(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct EbiDetail {
-    pub ebi: u8,
-    pub active: bool,
-    pub pending: bool,
-    pub is_local: bool,
-    pub delete_pending: bool,
-    pub tunnels: TunnelInfo,
-}
-
-impl EbiDetail {
-
-    pub fn create_bearer( bearers: &Bearer, msg: &str, ip: &str) -> Self
-    {
-        let mut detail = EbiDetail {
-            ebi: bearers.ebi,
-            ..Default::default()
-        };
-
-        detail.update_ebi(bearers, msg, ip);
-
-        detail
-    }
-
-    pub fn update_ebi( &mut self, bearers: &Bearer, msg: &str, node_ip: &str)
-    {
-        if let Some(fteid_list) = &bearers.fteid_list {
-            for bearer in fteid_list {
-                let tunnel_ip = bearer.ipv4.as_deref().unwrap_or("0.0.0.0");
-
-                if tunnel_ip != node_ip {
-                    continue; 
-                }
-
-                let endpoint = Some(TunnelEndpoint {
-                    teid: bearer.teid,
-                    ip: tunnel_ip.to_string(),
-                });
-
-                match bearer.iface_type {
-                    0 => self.tunnels.s1u_enb = endpoint,
-                    1 => self.tunnels.s1u_sgw = endpoint,
-                    4 => self.tunnels.s5s8_sgw = endpoint,
-                    5 => self.tunnels.s5s8_pgw = endpoint,
-                    _ => println!("Unknown Interface type"),
-                }
-            }
-        }
-
-        set_roles(self, msg);
-    }
-}
-
-
-pub fn
-old_update_ebi(
-    detail: &mut EbiDetail, bearers: &Bearer, msg: &str, node_ip: &str)
-{
-
-    if let Some(fteid_list) = &bearers.fteid_list {
-        for bearer in fteid_list {
-			let tunnel_ip = bearer.ipv4.as_deref().unwrap_or("0.0.0.0");
-
-            if tunnel_ip != node_ip {
-                continue; 
-            }
-
-            let endpoint = Some(TunnelEndpoint {
-                teid: bearer.teid,
-                ip: tunnel_ip.to_string(),
-            });
-            // println!("BEARER IP: {}", tunnel_ip);
-            // if let Some(node_ip) = node_ip {
-                // println!("Node IP: {}", node_ip);
-            // }
-
-            // 핵심 로직: 
-            // 1. Request일 때는 메시지 안에 발신자(src)의 정보만 들어있음.
-            // 2. Response일 때는 메시지 안에 수신자(dst/응답자)의 정보만 들어있음.
-            // 따라서, 현재 업데이트 중인 노드의 IP와 터널 IP가 일치할 때만 업데이트 하거나,
-            // 혹은 상대방 노드 입장에서 "상대 정보"로 저장해야 함.
-            
-            // let should_update = match node_ip {
-            //     Some(current_ip) => current_ip == tunnel_ip, // 내 정보 업데이트
-            //     None => false, // 수신자 노드 입장에서 상대 정보 저장 (기존 로직 유지 시)
-            // };
-
-            // if should_update {
-                match bearer.iface_type {
-                    0 => detail.tunnels.s1u_enb = endpoint,
-                    1 => detail.tunnels.s1u_sgw = endpoint,
-                    4 => detail.tunnels.s5s8_sgw = endpoint,
-                    5 => detail.tunnels.s5s8_pgw = endpoint,
-                    _ => println!("Unknown Interface type"),
-                }
-            // }
-        }
-	}
-
-    println!("Message : {}", msg);
-
-    set_roles(detail, msg);
-
-}
-
-pub fn
-set_roles( detail: &mut EbiDetail, msg: &str)
-{
-	let is_request = msg.contains("Request");
-    let is_response = msg.contains("Response");
-
-    if msg.contains("Delete") {
-        detail.delete_pending = true;
-        println!("====> DELETE Pending Contained");
-    }
-    else if is_request {
-        detail.pending = true;
-        println!("=====> Pending Contained");
-    }
-    else if is_response {
-        detail.pending = false;
-        detail.active = true;
-        println!("====> Active");
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct TunnelInfo {
-    pub s1u_enb: Option<TunnelEndpoint>,
-    pub s1u_sgw: Option<TunnelEndpoint>,
-    pub s5s8_sgw: Option<TunnelEndpoint>,
-    pub s5s8_pgw: Option<TunnelEndpoint>,
-}
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TunnelEndpoint {
-    pub teid: u32,
-    pub ip: String,
-}
 
 #[derive(Serialize, Debug, Clone)]
 pub struct Ip5Tuple {
@@ -1212,13 +1009,14 @@ make_snapshot(mut call_flows: Vec<CallFlow>) -> Vec<CallFlow>
 
     for cf in call_flows.iter_mut() {
         // 기존에 정의한 state 업데이트 로직 호출
-        new_update_global_state(cf , &mut state);
+        update_global_state(cf , &mut state);
         
         // 해당 시점의 상태를 스냅샷으로 저장
         cf.snapshot = state.clone();
     }
     call_flows
 }
+
 
 pub async fn
 make_call_flow (path: &PathBuf, id: usize)

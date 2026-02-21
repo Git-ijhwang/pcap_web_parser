@@ -104,7 +104,7 @@ function CallFlowGraph({ data, step }) {
               <LBIBox 
                 key={`${nodeIp}-${lbi}`}
                 x={x - 110}
-                y={height - 220 + (lbiIdx * 190)} // LBI가 여러개일 경우 아래로 나열
+                y={height - 220 + (lbiIdx * 210)} // LBI가 여러개일 경우 아래로 나열
                 lbi={lbi}
                 ebiList={safeEbiList}
                 nodeState={nodeState}

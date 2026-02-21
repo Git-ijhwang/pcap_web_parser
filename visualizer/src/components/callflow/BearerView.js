@@ -155,8 +155,7 @@ SGWBearerBox({ x, y, lbi, ebiList, ebiHeight, headerHeight, nodeRole })
       <rect
         x={x - relayWidth / 2}
         y={y}
-        width={relayWidth}
-        height={relayHeight+20}
+        width={relayWidth} height={relayHeight+10}
         rx={8} ry={8}
         // fill="#f8f9fa"
         fill={isPending ? "#fff9db" : "#f1f3f5"}
@@ -242,7 +241,7 @@ LBIBox({ x, y, lbi, ebiList, nodeState }) {
           {/* 배경박스 */}
           <rect
             x={x} y={y} 
-            width={standardWidth} height={standardHeight+20}
+            width={standardWidth} height={standardHeight+10}
             rx={8} ry={8}
             fill={isPending ? "#fff9db" : "#f1f3f5"}
             // stroke="#333"

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import {Modal, Button} from "react-bootstrap";
 import "./App.css";
+import "./Table.css";
 
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Tooltip from "react-bootstrap/Tooltip";
@@ -263,6 +264,8 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
 
       </div>
 
+
+{/*
       <table className="table table-striped table-hover table-bordered mt-3">
         <thead className="table-dark">
           <tr>
@@ -270,8 +273,6 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
             <th>Timestamp</th>
             <th>Source IP</th>
             <th>Destination IP</th>
-            {/* <th>Src Port</th> */}
-            {/* <th>Dst Port</th> */}
             <th>Protocol</th>
             <th>Length</th>
             <th>Description</th>
@@ -289,8 +290,6 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
                 <td>{pkt.ts}</td>
                 <td>{pkt.src_ip}</td>
                 <td>{pkt.dst_ip}</td>
-                {/* <td>{pkt.src_port}</td> */}
-                {/* <td>{pkt.dst_port}</td> */}
                 <td>{pkt.protocol}</td>
                 <td>{pkt.length}</td>
                 <td>{pkt.description}</td>
@@ -317,7 +316,133 @@ function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
           )}
         </tbody>
       </table>
+*/}
 
+<div className="packet-container mt-4">
+  {filteredPackets && filteredPackets.length > 0 ? (
+    filteredPackets.map((pkt) => (
+      <div
+        key={pkt.id}
+        className={`packet-item proto-${pkt.protocol.toLowerCase()}`}
+        onClick={() => fetchPacketDetail(pkt.id)}
+      >
+        {/* 왼쪽: ID & 프로토콜 (수직 정렬로 전문성 강조) */}
+        <div className="packet-side">
+          <span className="id-tag">#{pkt.id}</span>
+          <span className="protocol-badge">{pkt.protocol}</span>
+        </div>
+
+        {/* 중앙: 데이터 흐름 (미니멀한 화살표와 IP) */}
+        <div className="packet-main">
+          <div className="ip-flow">
+            <span className="ip-addr">{pkt.src_ip}</span>
+            <div className="flow-indicator">
+              <div className="flow-line"></div>
+              <i className="bi bi-chevron-right"></i>
+            </div>
+            <span className="ip-addr">{pkt.dst_ip}</span>
+          </div>
+          {/* <div className="packet-desc">
+            {pkt.description}   ({pkt.length} bytes)</div> */}
+        </div>
+
+        <div className="packet-desc">
+          <span className="len-field"> {pkt.length} bytes </span>
+          {/* <span className="divider">|</span> */}
+          <span className="desc-text"> {pkt.description} </span>
+        </div>
+
+        {/* 오른쪽: 메타데이터 & 액션 */}
+        <div className="packet-meta">
+          {/* <div className="meta-info"> */}
+            {/* <span className="ts text-muted">{pkt.ts}</span> */}
+            {/* <span className="len">{pkt.length} bytes</span> */}
+          {/* </div> */}
+          <div className="action-area">
+            {pkt.description.includes("Create Session Request") && onCallFlow && (
+              <button
+                className="btn-flow-trigger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCallFlow(pkt.id);
+                }}
+                title="View Sequence Diagram"
+              >
+                <span className="btn-text">Flow</span>
+                <i className="bi bi-arrow-left-righ btn-icon"></i>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="empty-state">No packets captured in this session.</div>
+  )}
+</div>
+
+{/*
+<div className="packet-list-container mt-3">
+  {filteredPackets && filteredPackets.length > 0 ? (
+    filteredPackets.map((pkt) => (
+      <div
+        key={pkt.id}
+        className="packet-card mb-3 p-3 shadow-sm rounded-3 border-start border-4"
+        onClick={() => fetchPacketDetail(pkt.id)}
+        // 프로토콜별로 테두리 색상 차별화 가능 (예: GTP는 파란색, DNS는 초록색 등)
+        style={{ 
+          cursor: "pointer", 
+          borderColor: pkt.protocol === "GTPv2" ? "#0d6efd" : "#6c757d" 
+        }}
+      >
+        <div className="row align-items-center">
+          <div className="col-md-1 text-center">
+            <span className="badge bg-dark rounded-pill">#{pkt.id}</span>
+            <div className="small text-muted mt-1" style={{ fontSize: '0.75rem' }}>{pkt.ts}</div>
+          </div>
+
+          <div className="col-md-4">
+            <div className="d-flex align-items-center justify-content-around bg-light rounded-2 py-2 border">
+              <div className="text-truncate px-2 fw-bold" title={pkt.src_ip}>{pkt.src_ip}</div>
+              <i className="bi bi-chevron-right text-primary"></i>
+              <div className="text-truncate px-2 fw-bold" title={pkt.dst_ip}>{pkt.dst_ip}</div>
+            </div>
+          </div>
+
+          <div className="col-md-5">
+            <div className="d-flex align-items-center">
+              <span className="badge bg-info text-dark me-2">{pkt.protocol}</span>
+              <span className="text-muted small me-3">{pkt.length} bytes</span>
+              <div className="text-truncate fw-semibold" style={{ maxWidth: '250px' }}>
+                {pkt.description}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-2 text-end">
+            {pkt.description.includes("Create Session") && onCallFlow && (
+              <button
+                className="btn btn-primary btn-sm rounded-pill shadow-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCallFlow(pkt.id);
+                }}
+              >
+                <i className="bi bi-diagram-3 me-1"></i> Flow
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    ))
+  ) : (
+    <div className="text-center p-5 bg-light rounded-3 shadow-inner">
+      <p className="text-muted mb-0">No packets loaded</p>
+    </div>
+  )}
+</div>
+
+*/}
       {/* ✅ Modal은 packets가 존재하고 선택된 패킷이 있을 때만 보여줌 */}
         {selectedPacket && (
         <Modal show={showModal} onHide={handleClose} centered
