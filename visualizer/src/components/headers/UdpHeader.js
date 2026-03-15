@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./ip.css";
 import HexDump from '../hex-dump/HexDump';
+import BitGridHeader from './gtp/BitGridHeader'; // 방금 만든 파일 임포트
 
 
 export default function UdpHeader({ udp }) {
@@ -110,15 +111,16 @@ export default function UdpHeader({ udp }) {
 
           </div>
         ) : (
-          <table className="ip-table ">
+          <table className="bit-grid-table ">
+            <BitGridHeader showOctet={true}/>
             <tbody>
-              <tr>
+              {/* <tr>
                 <th colSpan="33" style={{ textAlign: "center" }}>
                   <b>UDP Header</b>
                 </th>
               </tr>
 
-              {/* Header Row */}
+
               <tr>
                 <th style={{ borderLeft: "" }}>Octet</th>
                 <th colSpan="8">0</th>
@@ -132,7 +134,7 @@ export default function UdpHeader({ udp }) {
                 {[...Array(32)].map((_, i) => (
                   <th key={i}>{i}</th>
                 ))}
-              </tr>
+              </tr> */}
 
               <tr>
                 <th>0</th>

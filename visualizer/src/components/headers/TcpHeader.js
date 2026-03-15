@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./ip.css";
 import HexDump from '../hex-dump/HexDump';
+import BitGridHeader from './gtp/BitGridHeader'; // 방금 만든 파일 임포트
 
 
 export default function TcpHeader({ tcp }) {

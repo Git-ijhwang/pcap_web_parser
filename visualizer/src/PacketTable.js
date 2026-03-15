@@ -1,492 +1,223 @@
-import React, { useState, useRef } from "react";
-import {Modal, Button} from "react-bootstrap";
+import React, { useState, useMemo } from "react";
+import { Modal, Button } from "react-bootstrap";
+import Layer3Header from "./components/headers/Layer3Header";
+import Layer4Header from "./components/headers/Layer4Header";
+import GtpHeader from "./components/headers/gtp/GtpHeader";
 import "./App.css";
 import "./Table.css";
 
-import OverlayTrigger from "react-bootstrap/OverlayTrigger";
-import Tooltip from "react-bootstrap/Tooltip";
-import Layer3Header from "./components/headers/Layer3Header";
-import Layer4Header from "./components/headers/Layer4Header";
-import GtpHeader from "./components/headers/GtpHeader";
+// ----------------------------------------------------------------------
+// 1. 유틸리티 함수 & 커스텀 훅
+// ----------------------------------------------------------------------
+const isValidPort = (port) => {
+  const n = Number(port);
+  return Number.isInteger(n) && n > 0 && n < 65535;
+};
+const isValidIPv4 = (ip) => /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
+const isValidIPv6 = (ip) => ip.includes(":");
 
+/** 필터링 로직 전용 훅 */
+const usePacketFilters = (packets, filters) => {
+  return useMemo(() => {
+    if (!packets) return [];
+    return packets.filter((pkt) => {
+      // TCP Filter
+      if (filters.tcp.enabled) {
+        if (pkt.l4_type !== "TCP") return false;
+        if (filters.tcp.port && isValidPort(filters.tcp.port)) {
+          const n = Number(filters.tcp.port);
+          if (pkt.src_port !== n && pkt.dst_port !== n) return false;
+        }
+      }
+      // UDP Filter
+      if (filters.udp.enabled) {
+        if (pkt.l4_type !== "UDP") return false;
+        if (filters.udp.port && isValidPort(filters.udp.port)) {
+          const n = Number(filters.udp.port);
+          if (pkt.src_port !== n && pkt.dst_port !== n) return false;
+        }
+      }
+      // IPv4 Filter
+      if (filters.ipv4.enabled && isValidIPv4(filters.ipv4.addr)) {
+        if (pkt.src_ip !== filters.ipv4.addr && pkt.dst_ip !== filters.ipv4.addr) return false;
+      }
+      // IPv6 Filter
+      if (filters.ipv6.enabled && isValidIPv6(filters.ipv6.addr)) {
+        if (pkt.src_ip !== filters.ipv6.addr && pkt.dst_ip !== filters.ipv6.addr) return false;
+      }
+      return true;
+    });
+  }, [packets, filters]);
+};
 
-function PacketTable({ packets, fileId, ShowCallFlow, onCallFlow})  {
-  const [loadingFlow, setLoadingFlow] = useState(false);
-  const [flowError, setFlowError] = useState(null);
-  const [callFlow, setCallFlow] = useState(null);
-  const [showCallFlow, setShowCallFlow] = useState(false);
+// ----------------------------------------------------------------------
+// 2. 내부 서브 컴포넌트
+// ----------------------------------------------------------------------
 
+const FilterInputGroup = ({ label, type, config, onChange }) => (
+  <div className="d-flex align-items-center gap-2 mb-2">
+    <input
+      type="checkbox"
+      className="form-check-input"
+      checked={config.enabled}
+      onChange={(e) => onChange(type, "enabled", e.target.checked)}
+    />
+    <span style={{ minWidth: "45px", fontSize: "14px fw-bold" }}>{label}</span>
+    <input
+      type="text"
+      className="form-control form-control-sm"
+      style={{ width: label.includes("IPv") ? "220px" : "120px" }}
+      placeholder={label.includes("IPv") ? (label === "IPv4" ? "10.0.0.1" : "2001:db8::1") : "port"}
+      disabled={!config.enabled}
+      value={config.addr || config.port || ""}
+      onChange={(e) => onChange(type, label.includes("IPv") ? "addr" : "port", e.target.value)}
+    />
+  </div>
+);
+
+const PacketRow = ({ pkt, onSelect, onCallFlow }) => {
+  const isCreateSession = pkt.description?.includes("Create Session Request");
+
+  return (
+    <div
+      className={`packet-item proto-${pkt.protocol.toLowerCase()} d-flex align-items-center p-2 mb-2 border rounded shadow-sm`}
+      onClick={() => onSelect(pkt.id)}
+      style={{ cursor: "pointer" }}
+    >
+      <div className="packet-side d-flex flex-column align-items-center px-3 border-end">
+        <small className="text-muted fw-bold">#{pkt.id}</small>
+        <span className="badge bg-primary text-uppercase" style={{ fontSize: "10px" }}>{pkt.protocol}</span>
+      </div>
+
+      <div className="packet-main flex-grow-1 px-3">
+        <div className="d-flex align-items-center gap-3 justify-content-center mb-1">
+          <span className="fw-bold font-monospace">{pkt.src_ip}</span>
+          <i className="bi bi-chevron-right text-primary"></i>
+          <span className="fw-bold font-monospace">{pkt.dst_ip}</span>
+        </div>
+        <div className="d-flex justify-content-center gap-2 small border-top pt-1">
+          <span className="text-muted fw-bold">{pkt.length} bytes</span>
+          <span className="text-secondary">|</span>
+          <span className="text-dark truncate-text">{pkt.description}</span>
+        </div>
+      </div>
+
+      <div className="packet-action px-2">
+        {isCreateSession && (
+          <button
+            className="btn btn-sm btn-outline-info d-flex align-items-center gap-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCallFlow(pkt.id);
+            }}
+            title="View Sequence Diagram"
+          >
+            <span style={{ fontSize: "12px" }}>Flow</span>
+            <i className="bi bi-arrow-left-right"></i>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------
+// 3. 메인 컴포넌트
+// ----------------------------------------------------------------------
+
+function PacketTable({ packets, fileId, onCallFlow }) {
   const [selectedPacket, setSelectedPacket] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  // const [filterCollapsed, setFilterCollapsed] = useState(false);
-  const [modalSections, setModalSections] = useState({
-    l3: false,
-    l4: false,
-    app: false
-  });
-
   const [filters, setFilters] = useState({
-    tcp:   { enabled: false, port: "" },
-    udp:   { enabled: false, port: "" },
-    ipv4:  { enabled: false, addr: "" },
-    ipv6:  { enabled: false, addr: "" },
+    tcp: { enabled: false, port: "" },
+    udp: { enabled: false, port: "" },
+    ipv4: { enabled: false, addr: "" },
+    ipv6: { enabled: false, addr: "" },
   });
 
-  const [selected, setSelected] = useState([]);
+  const filteredPackets = usePacketFilters(packets, filters);
 
   const handleClose = () => {
     setShowModal(false);
     setSelectedPacket(null);
   };
 
+  const handleFilterChange = (proto, field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [proto]: { ...prev[proto], [field]: value },
+    }));
+  };
+
   const fetchPacketDetail = async (id) => {
-    if (!fileId) {
-      alert("No file selected!");
-      return;
-    }
-
+    if (!fileId) return alert("No file selected!");
     try {
-      const res = await fetch(
-        `/api/packet_detail?file_id=${fileId}&id=${encodeURIComponent(id)}`
-      );
-
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(`Server ${res.status}: ${txt}`);
-      }
-
+      const res = await fetch(`/api/packet_detail?file_id=${fileId}&id=${encodeURIComponent(id)}`);
+      if (!res.ok) throw new Error(`Server Error: ${res.status}`);
       const data = await res.json();
       setSelectedPacket(data);
       setShowModal(true);
-    }
-    catch (err) {
+    } catch (err) {
       console.error(err);
       alert("Failed to fetch packet detail");
     }
   };
 
-
-  function isValidPort(port) {
-    const n = Number(port);
-    if ( Number.isInteger(n) && n > 0 && n < 65535 ) {
-      return true;
-    }
-    return false;
-  }
-
-  function isValidIPv4(ip) {
-    return /^(\d{1,3}\.){3}\d{1,3}$/.test(ip);
-  }
-
-  function isValidIPv6(ip) {
-    return ip.includes(":");
-  }
-
-  const filteredPackets = packets?.filter(pkt => {
-
-    if (filters.tcp.enabled) {
-      if (pkt.l4_type !== "TCP") return false;
-      if (filters.tcp.port && isValidPort(filters.tcp.port)) {
-        const n = Number(filters.tcp.port);
-        if (pkt.src_port !== n && pkt.dst_port !== n) return false;
-      }
-    }
-
-    if (filters.udp.enabled) {
-      if (pkt.l4_type !== "UDP") return false;
-      if (filters.udp.port && isValidPort(filters.udp.port)) {
-        const n = Number(filters.udp.port);
-        if (pkt.src_port !== n && pkt.dst_port !== n) return false;
-      }
-    }
-    if (filters.ipv4.enabled) {
-      if (isValidIPv4(filters.ipv4.addr)) {
-        if ( pkt.src_ip !== filters.ipv4.addr &&
-          pkt.dst_ip !== filters.ipv4.addr)
-          return false;
-      }
-    }
-    if (filters.ipv6.enabled) {
-      if (isValidIPv6(filters.ipv6.addr)) {
-        if ( pkt.src_ip !== filters.ipv6.addr &&
-          pkt.dst_ip !== filters.ipv6.addr)
-          return false;
-      }
-    }
-
-    return true;
-
-  });
-
   return (
-    <div className="container mt-4">
-
-      {/* {!showCallFlow && (
-        <button type="button"
-            className= "btn btn-sm btn-outline-secondary position-absolute collaps-btn"
-            onClick={() => setFilterCollapsed(c => !c)}
-            aria-label="toggle collapse"
-            >
-          <i className={`bi ${filterCollapsed ? "bi-chevron-down" : "bi-chevron-up"}`} />
-        </button>
-      )} */}
-
-      <div className={`d-flex card gap-2 p-2 filter-wrapper `} >
-
-        <h5>Packet Filters</h5>
-
-        <div className={`d-flex gap-2 pkt-filter-box
-        `}>
-        {/* ${filterCollapsed ? "filterCollapsed" : ""} */}
-
-          {/* Layer-3 */}
-          <div className="l3-filter  card  gap-2 flex-fill" >
-            {/* IPv4 */}
-            <div className="d-flex align-items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filters.ipv4.enabled}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    ipv4: { ...f.ipv4, enabled: e.target.checked }
-                  }))
-                }
-              />
-              <span>IPv4</span>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                style={{ width: "200px" }}
-                placeholder="10.0.0.1"
-                disabled={!filters.ipv4.enabled}
-                value={filters.ipv4.addr}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    ipv4: { ...f.ipv4, addr: e.target.value }
-                  }))
-                }
-              />
+    <div className="container-fluid mt-4 px-4">
+      {/* Filter Section */}
+      <div className="card shadow-sm border-0 mb-4 bg-light">
+        <div className="card-body">
+          <h6 className="fw-bold text-uppercase text-muted mb-3">Packet Filters</h6>
+          <div className="row">
+            <div className="col-md-6 border-end">
+              <FilterInputGroup label="IPv4" type="ipv4" config={filters.ipv4} onChange={handleFilterChange} />
+              <FilterInputGroup label="IPv6" type="ipv6" config={filters.ipv6} onChange={handleFilterChange} />
             </div>
-
-            {/* IPv6 */}
-            <div className="d-flex align-items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filters.ipv6.enabled}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    ipv6: { ...f.ipv6, enabled: e.target.checked }
-                  }))
-                }
-              />
-              <span>IPv6</span>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                style={{ width: "260px" }}
-                placeholder="2001:db8::1"
-                disabled={!filters.ipv6.enabled}
-                value={filters.ipv6.addr}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    ipv6: { ...f.ipv6, addr: e.target.value }
-                  }))
-                }
-              />
-            </div>
-          </div>
-
-          {/* Layer-4 */}
-          <div className="l4-filter  card  gap-2 flex-fill" >
-            {/* TCP */}
-            <div className="d-flex align-items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filters.tcp.enabled}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    tcp: { ...f.tcp, enabled: e.target.checked }
-                  }))
-                }
-              />
-              <span>TCP</span>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                style={{ width: "120px" }}
-                placeholder="port"
-                disabled={!filters.tcp.enabled}
-                value={filters.tcp.port}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    tcp: { ...f.tcp, port: e.target.value }
-                  }))
-                }
-              />
-            </div>
-
-            {/* UDP */}
-            <div className="d-flex align-items-center gap-2">
-              <input
-                type="checkbox"
-                checked={filters.udp.enabled}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    udp: { ...f.udp, enabled: e.target.checked }
-                  }))
-                }
-              />
-              <span>UDP</span>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                style={{ width: "120px" }}
-                placeholder="port"
-                disabled={!filters.udp.enabled}
-                value={filters.udp.port}
-                onChange={e =>
-                  setFilters(f => ({
-                    ...f,
-                    udp: { ...f.udp, port: e.target.value }
-                  }))
-                }
-              />
+            <div className="col-md-6">
+              <FilterInputGroup label="TCP" type="tcp" config={filters.tcp} onChange={handleFilterChange} />
+              <FilterInputGroup label="UDP" type="udp" config={filters.udp} onChange={handleFilterChange} />
             </div>
           </div>
         </div>
-
       </div>
 
+      {/* Packet List */}
+      <div className="packet-container" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+        {filteredPackets.length > 0 ? (
+          filteredPackets.map((pkt) => (
+            <PacketRow key={pkt.id} pkt={pkt} onSelect={fetchPacketDetail} onCallFlow={onCallFlow} />
+          ))
+        ) : (
+          <div className="text-center p-5 bg-white border rounded shadow-sm text-muted">
+            <i className="bi bi-search fs-2 mb-2 d-block"></i>
+            No packets matched your filters.
+          </div>
+        )}
+      </div>
 
-{/*
-      <table className="table table-striped table-hover table-bordered mt-3">
-        <thead className="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Timestamp</th>
-            <th>Source IP</th>
-            <th>Destination IP</th>
-            <th>Protocol</th>
-            <th>Length</th>
-            <th>Description</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredPackets || filteredPackets.length > 0 ? (
-            filteredPackets.map((pkt) => (
-              <tr key={pkt.id}
-                onClick={() => fetchPacketDetail(pkt.id) }
-                style={{ cursor: "pointer" }}>
-
-                <td>{pkt.id}</td>
-                <td>{pkt.ts}</td>
-                <td>{pkt.src_ip}</td>
-                <td>{pkt.dst_ip}</td>
-                <td>{pkt.protocol}</td>
-                <td>{pkt.length}</td>
-                <td>{pkt.description}</td>
-                <td>
-                  {pkt.description === "Create Session Request [32]" && onCallFlow && (
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCallFlow(pkt.id);
-                      }} >
-                      <i className="bi bi-diagram-3"></i>
-                    </button>
-                  ) }
-                </td>
-              </tr>
-            ))
-          ):(
-            <tr>
-              <td colSpan="8" className="text-center text-muted">
-                No packets loaded
-              </td>
-            </tr>
+      {/* Detail Modal */}
+      <Modal show={showModal} onHide={handleClose} centered size="lg" dialogClassName="my-wide-modal">
+        <Modal.Header closeButton className="bg-light">
+          <Modal.Title className="fs-6 fw-bold">
+            Packet Details - #{selectedPacket?.id}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ backgroundColor: "#f8f9fa" }}>
+          {selectedPacket && (
+            <div className="detail-view font-monospace" style={{ fontSize: "13px" }}>
+              {selectedPacket.packet.l3.map((l3, idx) => (
+                <Layer3Header key={idx} l3={l3} idx={idx} />
+              ))}
+              <Layer4Header l4={selectedPacket.packet.l4} />
+              {selectedPacket.packet.app?.GTP && <GtpHeader gtp={selectedPacket.packet.app.GTP} />}
+            </div>
           )}
-        </tbody>
-      </table>
-*/}
-
-<div className="packet-container mt-4">
-  {filteredPackets && filteredPackets.length > 0 ? (
-    filteredPackets.map((pkt) => (
-      <div
-        key={pkt.id}
-        className={`packet-item proto-${pkt.protocol.toLowerCase()}`}
-        onClick={() => fetchPacketDetail(pkt.id)}
-      >
-        {/* 왼쪽: ID & 프로토콜 (수직 정렬로 전문성 강조) */}
-        <div className="packet-side">
-          <span className="id-tag">#{pkt.id}</span>
-          <span className="protocol-badge">{pkt.protocol}</span>
-        </div>
-
-        {/* 중앙: 데이터 흐름 (미니멀한 화살표와 IP) */}
-        <div className="packet-main">
-          <div className="ip-flow">
-            <span className="ip-addr">{pkt.src_ip}</span>
-            <div className="flow-indicator">
-              <div className="flow-line"></div>
-              <i className="bi bi-chevron-right"></i>
-            </div>
-            <span className="ip-addr">{pkt.dst_ip}</span>
-          </div>
-          {/* <div className="packet-desc">
-            {pkt.description}   ({pkt.length} bytes)</div> */}
-        </div>
-
-        <div className="packet-desc">
-          <span className="len-field"> {pkt.length} bytes </span>
-          {/* <span className="divider">|</span> */}
-          <span className="desc-text"> {pkt.description} </span>
-        </div>
-
-        {/* 오른쪽: 메타데이터 & 액션 */}
-        <div className="packet-meta">
-          {/* <div className="meta-info"> */}
-            {/* <span className="ts text-muted">{pkt.ts}</span> */}
-            {/* <span className="len">{pkt.length} bytes</span> */}
-          {/* </div> */}
-          <div className="action-area">
-            {pkt.description.includes("Create Session Request") && onCallFlow && (
-              <button
-                className="btn-flow-trigger"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCallFlow(pkt.id);
-                }}
-                title="View Sequence Diagram"
-              >
-                <span className="btn-text">Flow</span>
-                <i className="bi bi-arrow-left-righ btn-icon"></i>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    ))
-  ) : (
-    <div className="empty-state">No packets captured in this session.</div>
-  )}
-</div>
-
-{/*
-<div className="packet-list-container mt-3">
-  {filteredPackets && filteredPackets.length > 0 ? (
-    filteredPackets.map((pkt) => (
-      <div
-        key={pkt.id}
-        className="packet-card mb-3 p-3 shadow-sm rounded-3 border-start border-4"
-        onClick={() => fetchPacketDetail(pkt.id)}
-        // 프로토콜별로 테두리 색상 차별화 가능 (예: GTP는 파란색, DNS는 초록색 등)
-        style={{ 
-          cursor: "pointer", 
-          borderColor: pkt.protocol === "GTPv2" ? "#0d6efd" : "#6c757d" 
-        }}
-      >
-        <div className="row align-items-center">
-          <div className="col-md-1 text-center">
-            <span className="badge bg-dark rounded-pill">#{pkt.id}</span>
-            <div className="small text-muted mt-1" style={{ fontSize: '0.75rem' }}>{pkt.ts}</div>
-          </div>
-
-          <div className="col-md-4">
-            <div className="d-flex align-items-center justify-content-around bg-light rounded-2 py-2 border">
-              <div className="text-truncate px-2 fw-bold" title={pkt.src_ip}>{pkt.src_ip}</div>
-              <i className="bi bi-chevron-right text-primary"></i>
-              <div className="text-truncate px-2 fw-bold" title={pkt.dst_ip}>{pkt.dst_ip}</div>
-            </div>
-          </div>
-
-          <div className="col-md-5">
-            <div className="d-flex align-items-center">
-              <span className="badge bg-info text-dark me-2">{pkt.protocol}</span>
-              <span className="text-muted small me-3">{pkt.length} bytes</span>
-              <div className="text-truncate fw-semibold" style={{ maxWidth: '250px' }}>
-                {pkt.description}
-              </div>
-            </div>
-          </div>
-
-          <div className="col-md-2 text-end">
-            {pkt.description.includes("Create Session") && onCallFlow && (
-              <button
-                className="btn btn-primary btn-sm rounded-pill shadow-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCallFlow(pkt.id);
-                }}
-              >
-                <i className="bi bi-diagram-3 me-1"></i> Flow
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    ))
-  ) : (
-    <div className="text-center p-5 bg-light rounded-3 shadow-inner">
-      <p className="text-muted mb-0">No packets loaded</p>
-    </div>
-  )}
-</div>
-
-*/}
-      {/* ✅ Modal은 packets가 존재하고 선택된 패킷이 있을 때만 보여줌 */}
-        {selectedPacket && (
-        <Modal show={showModal} onHide={handleClose} centered
-          dialogClassName="my-wide-modal"
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Packet Details</Modal.Title>
-          </Modal.Header>
-
-          <Modal.Body>
-            {selectedPacket && (
-              <div style={{ fontFamily: "monospace", fontSize: "14px" }}>
-
-                {/* Packet ID */}
-                <div className="mb-3">
-                  <h5 style={{ borderBottom: "1px solid #ccc", paddingBottom: "4px" }}>
-                    Packet #{selectedPacket.id}
-                  </h5>
-                </div>
-
-                {/* IP Section */}
-                {selectedPacket.packet.l3.map((l3, idx) => (
-                  <Layer3Header key={idx} l3={l3} idx={idx} />
-                )) }
-
-                {/* L4 Section */}
-                <Layer4Header l4={selectedPacket.packet.l4}/>
-
-                {/* Application Layer (GTP) */}
-                {selectedPacket?.packet?.app?.GTP && (
-                  <GtpHeader gtp={selectedPacket.packet.app.GTP} />
-                )}
-              </div>
-            )}
-          </Modal.Body>
-
-          <Modal.Footer>
-            <Button variant="secondary" onClick={handleClose}>
-              Close
-            </Button>
-          </Modal.Footer>
-
-        </Modal>
-      )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" size="sm" onClick={handleClose}>Close</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

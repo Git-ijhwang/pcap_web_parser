@@ -1,0 +1,111 @@
+:root {
+  --ip-header-bg: #f4f7fb;
+  --ip-accent: #2c5cc5;
+  --border-color: #c0c9d9;
+  --field-bg: #ffffff;
+  --field-highlight: #e8f0fe;
+  --text-main: #333;
+  --text-muted: #666;
+  --monospace: 'Roboto Mono', 'Source Code Pro', monospace;
+}
+
+.protocol-card {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header Styling */
+.protocol-card__header {
+  background-color: var(--ip-header-bg);
+  border-bottom: 1px solid var(--border-color);
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.protocol-badge {
+  background: var(--ip-accent);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.protocol-title { color: var(--ip-accent); font-size: 14px; }
+.depth-tag { font-size: 12px; color: var(--text-muted); font-weight: normal; }
+
+/* View Selector Switch */
+.view-selector { display: flex; align-items: center; font-size: 12px; font-weight: 600; }
+.view-label {
+    color: #ccc;
+    transition: color 0.2s;
+    margin-right: 5px;
+}
+
+.view-label.active { color: var(--ip-accent); }
+
+/* Body Content */
+.protocol-card__body { padding: 12px; background-color: #fff; }
+
+/* Raw View Layout */
+.raw-view-container { display: flex; gap: 20px; align-items: flex-start; }
+.summary-table-wrapper { flex: 0 0 320px; }
+
+.table-summary {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.table-summary th, .table-summary td {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+}
+.table-summary th { background: #f8f9fa; color: var(--text-muted); text-align: left; width: 40%; }
+.table-summary tr.highlight td { font-weight: bold; color: var(--ip-accent); }
+
+/* Bit Grid Table (Decoded View) */
+.bit-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: var(--monospace);
+}
+
+.bit-grid-table th, .bit-grid-table td {
+  border: 1px solid var(--border-color);
+  text-align: center;
+  font-size: 12px;
+  padding: 6px 2px;
+}
+
+.octet-indices th { background: #e2e8f0; color: #475569; font-weight: bold; }
+.bit-indices th { 
+  background: #f1f5f9; 
+  font-size: 10px; 
+  color: #64748b;
+  height: 24px;
+}
+.bit-indices th span { display: block; margin-top: -4px; }
+
+.field {
+  background: var(--field-bg);
+  transition: background 0.2s;
+  cursor: default;
+}
+.field:hover { background: var(--field-highlight); }
+.field.highlight-field { background: #fffbeb; font-weight: 600; }
+.address-field { font-weight: bold; letter-spacing: 0.5px; }
+
+.hexdump-wrapper {
+  flex: 1;
+  background: #272822;
+  border-radius: 4px;
+  padding: 10px;
+  color: #f8f8f2;
+}
