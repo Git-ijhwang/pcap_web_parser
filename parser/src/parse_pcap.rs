@@ -192,6 +192,7 @@ parse_single_packet(path: &PathBuf, id: usize)
     let mut cap = Capture::from_file(path)
         .map_err(|e| format!("Failed to open pcap file {}: {}", path.to_string_lossy(), e))?;
 
+    let linktype = cap.get_datalink();
     let mut idx: usize = 1;
     let mut parsed_packet = PacketDetail::new();
 
@@ -208,12 +209,30 @@ parse_single_packet(path: &PathBuf, id: usize)
     };
 
     // --- Parse Layer 2 Ethernet ---
+    /*
     let mut next_type = if packet.data.len() >= MIN_ETH_HDR_LEN {
         parse_ethernet(&packet.data)
     } else {
         return Err("Layer 2 parsing faile".to_string());
     };
-    offset += MIN_ETH_HDR_LEN;
+    */
+    let (mut next_type, l2_len) = match linktype {
+        Linktype(1) => {(
+            parse_ethernet(&packet.data),
+            MIN_ETH_HDR_LEN
+        )}
+        Linktype(276) => {(
+            parse_sll2(&packet.data), 20
+        )}
+        _ => {
+            // idx += 1;
+            // continue;
+            return Err("Layer 2 parsing faile".to_string());
+        }
+    };
+
+    // offset += MIN_ETH_HDR_LEN;
+    offset += l2_len;
 
     // --- Parse Layer 3 (IPv4, IPinIP or IPv6) ---
     loop {
