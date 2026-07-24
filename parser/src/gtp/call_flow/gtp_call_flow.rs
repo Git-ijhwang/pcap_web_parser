@@ -164,7 +164,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 //[mme] -> [sgw]  [pgw]
                 if init_node.status == 0 {
 
-                    println!(" [mme] -> [sgw]  [pgw] ");
+                    // println!(" [mme] -> [sgw]  [pgw] ");
                     //First Node
                     init_node_info(&mut init_node, tuple.src_addr, tuple.src_port,// msg_type,
                         seq, 0, &imsi);
@@ -185,7 +185,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if resp_node.addr == tuple.src_addr &&
                        tuple.dst_addr != init_node.addr {
 
-                        println!(" [mme]  [sgw] -> [pgw] ");
+                        // println!(" [mme]  [sgw] -> [pgw] ");
                         //Third Node check
                         init_node_info(&mut third_node, tuple.dst_addr, tuple.dst_port, //msg_type,
                             0, seq, &imsi);
@@ -217,7 +217,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                         if is_s5s8_seq_match(&resp_node, seq) { //if sequence numaber is match what respond node is expecting.
                             if is_s5s8_teid_match(&resp_node, teid) {
 
-                                println!(" [mme]  [sgw] <- [pgw] ");
+                                // println!(" [mme]  [sgw] <- [pgw] ");
                                 update_node_info(&mut third_node, 0, seq,
                                     0, fteid_teid, 0, 0);
                                 update_node_info(&mut resp_node, 0, 0,
@@ -237,7 +237,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                         if is_s11_seq_match(&init_node, seq) &&
                            is_s11_teid_match(&init_node, teid) {
 
-                            println!(" [mme] <- [sgw]  [pgw] ");
+                            // println!(" [mme] <- [sgw]  [pgw] ");
                             update_node_info(&mut resp_node, seq, 0,
                                 fteid_teid, 0,
                                 0, 0);
@@ -264,7 +264,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 if check_node(&init_node, tuple.src_addr, tuple.src_port) {
                     //Intiator Node check
                     if is_s11_teid_match(&resp_node, teid) {
-                        println!(" [mme] -> [sgw or spgw] ");
+                        // println!(" [mme] -> [sgw or spgw] ");
                         update_node_info(&mut init_node, seq, 0,
                             0, 0, 0, 0);
                         filtered_packets.push(pkt);
@@ -278,7 +278,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if third_node.status > 0 &&
                        check_node(&third_node, tuple.dst_addr, tuple.dst_port) {
                         if is_s5s8_teid_match(&third_node, teid) {
-                            println!(" [mme]  [sgw] -> [pgw] ");
+                            // println!(" [mme]  [sgw] -> [pgw] ");
                             update_node_info(&mut resp_node, 0, seq,
                             0, 0, 0, 0);
                             filtered_packets.push(pkt);
@@ -289,7 +289,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     // [mme] <- [sgw]  [pgw]
                     if check_node(&init_node, tuple.dst_addr, tuple.dst_port) {
                         if is_s11_teid_match(&init_node, teid) {
-                            println!(" [mme] <- [sgw]  [pgw] ");
+                            // println!(" [mme] <- [sgw]  [pgw] ");
                             update_node_info(&mut resp_node, seq, 0,
                                 0, 0, 0, 0);
                             filtered_packets.push(pkt);
@@ -300,7 +300,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme]    [sgw] <- [pgw]
                 else if third_node.status > 0 && check_node(&third_node, tuple.src_addr, tuple.src_port) {
                     if is_s5s8_teid_match(&resp_node, teid) {
-                        println!(" [mme]    [sgw] <- [pgw] ");
+                        // println!(" [mme]    [sgw] <- [pgw] ");
                         //Third Node check
                         update_node_info(&mut third_node, 0, seq,
                             0, 0, 0, 0);
@@ -319,7 +319,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme] <- [sgw or spgw]
                 if check_node(&init_node, tuple.dst_addr, tuple.dst_port) {
                     if is_s11_seq_match(&init_node, seq){
-                        println!(" [mme] <- [sgw or spgw]");
+                        // println!(" [mme] <- [sgw or spgw]");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -330,7 +330,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     // [mme]  [sgw] <- [pgw]
                     if third_node.status > 0 && check_node(&third_node, tuple.src_addr, tuple.src_port) {
                         if is_s5s8_seq_match(&resp_node, seq) {
-                            println!(" [mme]  [sgw] <- [pgw]");
+                            // println!(" [mme]  [sgw] <- [pgw]");
                             filtered_packets.push(pkt);
                             continue;
                         }
@@ -339,7 +339,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme] -> [sgw or s/pgw]
                 else if check_node(&init_node, tuple.src_addr, tuple.src_port) {
                     if is_s11_seq_match(&resp_node, seq) {
-                        println!(" [mme] -> [sgw or s/pgw]");
+                        // println!(" [mme] -> [sgw or s/pgw]");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -420,7 +420,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if is_s11_seq_match(&resp_node, seq) &&
                        is_s11_teid_match(&resp_node, teid) {
 
-                        println!(" [mme] -> [sgw]  [pgw] ");
+                        // println!(" [mme] -> [sgw]  [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -430,7 +430,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if is_s5s8_seq_match(&third_node, seq) &&
                        is_s5s8_teid_match(&third_node, teid) {
 
-                        println!(" [mme]  [sgw] -> [pgw] ");
+                        // println!(" [mme]  [sgw] -> [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -445,7 +445,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 if check_node(&init_node, tuple.src_addr, tuple.src_port) {
                     if is_s11_teid_match(&resp_node, teid) {
 
-                        println!(" [mme] -> [sgw or spgw] ");
+                        // println!(" [mme] -> [sgw or spgw] ");
                         update_node_info(&mut init_node, seq, 0, 0, 0, 0, 0);
 
                         filtered_packets.push(pkt);
@@ -455,7 +455,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 //[mme]  [sgw] -> [pgw]
                 else if check_node(&resp_node, tuple.src_addr, tuple.src_port) {
                     if is_s5s8_teid_match(&third_node, teid) {
-                        println!(" [mme]  [sgw] -> [pgw] ");
+                        // println!(" [mme]  [sgw] -> [pgw] ");
                         update_node_info(&mut resp_node, 0, seq, 0, 0, 0, 0);
 
                         filtered_packets.push(pkt);
@@ -476,7 +476,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if is_s5s8_teid_match(&resp_node, teid) &&
                        is_s5s8_seq_match(&resp_node, seq) {
 
-                        println!(" [mme]  [sgw] <- [pgw] ");
+                        // println!(" [mme]  [sgw] <- [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -487,7 +487,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
 
                     if is_s11_teid_match(&init_node, teid) &&
                        is_s11_seq_match(&init_node, seq) {
-                        println!(" [mme] <- [sgw]  [pgw] ");
+                        // println!(" [mme] <- [sgw]  [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
