@@ -36,11 +36,11 @@ The parser reads raw packet data and produces structured JSON output, which can 
 
 ## 📦 How to Build
 ### Rust backend
-- cd pcap_web_parser
+- cd parser
 - cargo build
 - cargo run
 
 ### Frontend
-- cd pcap-web-frontend
+- cd visualizer
 - npm install
 - npm start
