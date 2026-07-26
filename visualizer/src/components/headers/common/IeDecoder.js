@@ -1,4 +1,4 @@
-import "./GtpTable.css";
+import "../gtp/GtpTable.css";
 
 function ComponentRenderer({ comp })
 {

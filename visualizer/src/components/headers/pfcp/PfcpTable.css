@@ -1,0 +1,28 @@
+.pfcp-table {
+  border-collapse: collapse;
+  border: 2px solid #333;
+}
+.value-row td:last-child {
+  border-right: none; /* 테이블 전체 외곽선과 겹치지 않게 하거나 굵게 조절 */
+}
+
+.value-row td {
+  height: 35px;
+  vertical-align: middle;
+  padding: 0 8px;
+  /* 모든 셀의 오른쪽에 선을 그려서 분리감을 줍니다 */
+  border-right: 1px solid #ddd !important; 
+  border-bottom: 1px solid #eee;
+}
+
+/* Spare 셀 전용 스타일 (글자 없이 배경만) */
+.spare-cell {
+  background-color: #15f5f5; /* 약간 더 어두운 회색으로 비어있음을 표현 */
+  /* 글자가 없어도 높이를 유지하도록 설정 */
+  border-left: 2px solid #333;
+  min-height: 35px;
+}
+
+.continuation-cell {
+  border-right: 2px solid #333;
+}

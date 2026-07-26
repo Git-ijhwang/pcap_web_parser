@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import IeDecoder from "../common/IeDecoder";
 
-function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
+function PfcpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
 {
   const bgColor=[ "#F5BABB", "#f8dfd7ff", "#245050ff" ];
   const [expanded, setExpanded] = useState({});
@@ -32,10 +32,9 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
             <tbody>
 
               {!isOpen && (
-                <tr style={{
-                          cursor: "pointer",
-                          userSelect: "none",
-                          background: isOpen? (bgColor[level] || "#010101"): "#a9e9b7ff",
+                <tr style={{ cursor: "pointer",
+                            userSelect: "none",
+                            background: isOpen? (bgColor[level] || "#010101"): "#a9e9b7ff",
                         }}
                   onClick={() => toggle(idx)}
                 >
@@ -55,7 +54,6 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
                           backgroundColor:bgColor[level]||"#010101", }}
                     onClick={() => toggle(idx)}
                 >
-
                   <th style={{ fontSize: "14px", backgroundColor:bgColor[level]||"#010101" }} >
                     {isOpen ? "▼" : "▶"} Type 
                   </th>
@@ -82,20 +80,9 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
                   </tr>
                 )}
 
-
-                {isGrouped && (
-                  <tr >
-                    <td className="ie-group" colSpan="2"
-                      style={{ paddingLeft: "10px", paddingRight: "10px", background:"#a4b1fa" }}>
-                      <b>Grouped IE Contents</b>
-                      <GtpIeSimpleTable ies={subIes} level={level + 1}
-                                          onHoverRaw={onHoverRaw} />
-                    </td>
-                  </tr>
-                )}
-
                 </>
               )}
+
             </tbody>
           </table>
         </div>
@@ -107,7 +94,7 @@ function GtpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
 }
 
 
-function GtpIeViewer({ ies, onHoverRaw = () => {} }) {
+function PfcpIeViewer({ ies, onHoverRaw = () => {} }) {
   return (   // <- 최종 return
     <div>
       {ies.map((ie, idx) => {
@@ -120,11 +107,15 @@ function GtpIeViewer({ ies, onHoverRaw = () => {} }) {
             onMouseEnter={() => onHoverRaw(ie.raw)}
             onMouseLeave={() => onHoverRaw(null)}
           >
-            <GtpIeSimpleTable ies={[ie]} level={0} onHoverRaw={onHoverRaw} />
+
+            <PfcpIeSimpleTable ies={[ie]} level={0} onHoverRaw={onHoverRaw} />
+
           </div>
         );
+
       })}
+
     </div>
   );
 }
-export default GtpIeViewer;
+export default PfcpIeViewer;

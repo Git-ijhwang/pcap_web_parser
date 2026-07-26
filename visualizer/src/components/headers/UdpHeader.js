@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import "./ip.css";
+import "./UdpHeader.css";
 import HexDump from '../hex-dump/HexDump';
-import BitGridHeader from './gtp/BitGridHeader'; // 방금 만든 파일 임포트
+import BitGridHeader from './common/BitGridHeader'; // 방금 만든 파일 임포트
 
 
 export default function UdpHeader({ udp }) {
@@ -11,8 +11,13 @@ export default function UdpHeader({ udp }) {
 
   return (
     <div className="card mb-3">
-      <div className="card-header udp-header d-flex justify-content-between align-items-center">
-        <strong>Layer 4 (Transport)</strong>
+      <div className="card-header udp-card-header d-flex
+      justify-content-between
+      align-items-center">
+        <div className="d-flex align-items-center">
+          <span className="protocol-badge">L4</span>
+          <strong className="protocol-title">UDP Header</strong>
+        </div>
         <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
 
           <label className="form-check-label me-5" htmlFor="gtpSwitch">
@@ -70,20 +75,6 @@ export default function UdpHeader({ udp }) {
                     </td>
                   </tr>
 
-                  {udp.payload ? (
-                    <>
-                      <tr>
-                        <th>Payload</th>
-                        <td>
-                          {udp.payload && udp.payload.length > 5 
-                            ? udp.payload.slice(0, 5) + "..." 
-                            : udp.payload}
-                        </td>
-                      </tr>
-                    </>
-                  ) : (
-                    <></>
-                  )}
 
                 </tbody>
               </table>
@@ -97,21 +88,12 @@ export default function UdpHeader({ udp }) {
                 <HexDump raw={udp.raw} /> 
               </div>
 
-              <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
-                {udp.payload ? (
-                  <>
-                    <div style={{ fontWeight: "bold", marginBottom: "5px" }}>Payload ( {udp.payload.length} bytes )</div>
-                    <HexDump raw={udp.payload} /> 
-                  </>
-                ) : (
-                  <></>
-                )}
-              </div>
+
             </div>
 
           </div>
         ) : (
-          <table className="bit-grid-table ">
+          <table className="bit-grid-table udp-table">
             <BitGridHeader showOctet={true}/>
             <tbody>
               {/* <tr>
@@ -137,13 +119,13 @@ export default function UdpHeader({ udp }) {
               </tr> */}
 
               <tr>
-                <th>0</th>
+                <th colSpan="2">0</th>
                 <td colSpan="16"><i>Source Port:</i> {udp.str_src_port} [{udp.src_port}] </td>
                 <td colSpan="16"><i>Destination Port:</i> {udp.str_dst_port} [{udp.dst_port}] </td>
               </tr>
 
               <tr>
-                <th>32</th>
+                <th colSpan="2">32</th>
                 <td colSpan="16"><i>Length:</i> {udp.length}</td>
                 <td colSpan="16"><i>Checksum:0x</i>
                   {/* {udp.checksum} */}
@@ -154,7 +136,7 @@ export default function UdpHeader({ udp }) {
               {udp.payload ? (
                 <>
                   <tr>
-                    <th>128</th>
+                    <th colSpan="2">64</th>
                     <td colSpan="32"><i>Payload..</i> 
                     </td>
                   </tr>

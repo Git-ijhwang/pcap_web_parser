@@ -1,7 +1,7 @@
 import React from 'react';
 
 
-function GtpHexDump({ raw }) {
+function HexDump({ raw }) {
   if (!raw || raw.length === 0) return <div>No raw data</div>;
 
   const toHex = (n) => n.toString(16).padStart(2, "0").toUpperCase();
@@ -52,4 +52,4 @@ function GtpHexDump({ raw }) {
   );
 }
 
-export default GtpHexDump;
+export default HexDump;

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import HexDump from '../hex-dump/HexDump';
-import BitGridHeader from './gtp/BitGridHeader'; // 방금 만든 파일 임포트
+import BitGridHeader from './common/BitGridHeader'; // 방금 만든 파일 임포트
 import "./IpHeader.css";
 
 // 헬퍼 함수: 16진수 변환 및 포맷팅
@@ -48,12 +48,14 @@ const IpHeader = ({ ip, depth }) => {
 
       <div className="protocol-card__body">
         {isRaw ? (
-          <div className="raw-view-container">
-            <div className="summary-table-wrapper">
+          <div className="raw-view-container" style={{ display: "flex", gap: "15px" }} >
+            <div style={{ flex: "0 0 600px"}} className="summary-table-wrapper">
               <table className="table-summary">
+
                 <thead>
-                  <tr><th colSpan="2">Header Fields Summary</th></tr>
+                  <tr><th colSpan="2">IP Header Fields Summary</th></tr>
                 </thead>
+
                 <tbody>
                   <tr><th>Version / IHL</th><td>{ip.version} / {ip.ihl}</td></tr>
                   <tr><th>DSCP / ECN</th><td>{ip.dscp} / {ip.ecn}</td></tr>
@@ -63,8 +65,8 @@ const IpHeader = ({ ip, depth }) => {
                   <tr><th>Fragment Offset</th><td>{ip.fragment_offset}</td></tr>
                   <tr><th>TTL / Protocol</th><td>{ip.ttl} / {ip.next} ({ip.protocol})</td></tr>
                   <tr><th>Checksum</th><td>{toHex(ip.checksum)}</td></tr>
-                  <tr className="highlight"><th>Source</th><td>{ip.src_addr}</td></tr>
-                  <tr className="highlight"><th>Destination</th><td>{ip.dst_addr}</td></tr>
+                  <tr><th>Source</th><td>{ip.src_addr}</td></tr>
+                  <tr><th>Destination</th><td>{ip.dst_addr}</td></tr>
                 </tbody>
               </table>
             </div>
@@ -74,7 +76,7 @@ const IpHeader = ({ ip, depth }) => {
           </div>
         ) : (
           <div className="decoded-view-container">
-            <table className="bit-grid-table">
+            <table className="bit-grid-table ip-table">
               <BitGridHeader showOctet={true}/>
               {/* <thead>
                 <tr className="octet-indices">
@@ -93,7 +95,7 @@ const IpHeader = ({ ip, depth }) => {
               </thead> */}
               <tbody>
                 <tr>
-                  <th>0</th>
+                  <th colSpan="2">0</th>
                   <td colSpan="4" className="field">Ver: {ip.version}</td>
                   <td colSpan="4" className="field">IHL: {ip.ihl}</td>
                   <td colSpan="6" className="field">DSCP: {ip.dscp}</td>
@@ -101,23 +103,23 @@ const IpHeader = ({ ip, depth }) => {
                   <td colSpan="16" className="field highlight-field">Total Length: {ip.total_length}</td>
                 </tr>
                 <tr>
-                  <th>4</th>
+                  <th colSpan="2">4</th>
                   <td colSpan="16" className="field">Identification: {toHex(ip.id)}</td>
                   <td colSpan="3" className="field">Flags: {ip.flags}</td>
                   <td colSpan="13" className="field">Frag Offset: {ip.fragment_offset}</td>
                 </tr>
                 <tr>
-                  <th>8</th>
+                  <th colSpan="2">8</th>
                   <td colSpan="8" className="field">TTL: {ip.ttl}</td>
                   <td colSpan="8" className="field">Protocol: {ip.protocol}</td>
                   <td colSpan="16" className="field">Checksum: {toHex(ip.checksum)}</td>
                 </tr>
                 <tr>
-                  <th>12</th>
+                  <th colSpan="2">12</th>
                   <td colSpan="32" className="field address-field">Source Address: {ip.src_addr}</td>
                 </tr>
                 <tr>
-                  <th>16</th>
+                  <th colSpan="2">16</th>
                   <td colSpan="32" className="field address-field">Destination Address: {ip.dst_addr}</td>
                 </tr>
               </tbody>

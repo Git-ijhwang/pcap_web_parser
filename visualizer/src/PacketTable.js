@@ -3,6 +3,7 @@ import { Modal, Button } from "react-bootstrap";
 import Layer3Header from "./components/headers/Layer3Header";
 import Layer4Header from "./components/headers/Layer4Header";
 import GtpHeader from "./components/headers/gtp/GtpHeader";
+import PfcpHeader from "./components/headers/pfcp/PfcpHeader";
 import "./App.css";
 import "./Table.css";
 
@@ -210,7 +211,15 @@ function PacketTable({ packets, fileId, onCallFlow }) {
                 <Layer3Header key={idx} l3={l3} idx={idx} />
               ))}
               <Layer4Header l4={selectedPacket.packet.l4} />
-              {selectedPacket.packet.app?.GTP && <GtpHeader gtp={selectedPacket.packet.app.GTP} />}
+              {/* {selectedPacket.packet.app?.GTP && <GtpHeader gtp={selectedPacket.packet.app.GTP} />} */}
+
+              {selectedPacket.packet.app?.GTP && (
+                  <GtpHeader gtp={selectedPacket.packet.app.GTP} />
+              )}
+
+              {selectedPacket.packet.app?.PFCP && (
+                  <PfcpHeader pfcp={selectedPacket.packet.app.PFCP} />
+              )}
             </div>
           )}
         </Modal.Body>

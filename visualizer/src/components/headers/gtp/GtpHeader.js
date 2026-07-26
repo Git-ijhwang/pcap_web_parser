@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import BitGridHeader from './BitGridHeader';
-import GtpHexDump from './GtpHexDump';
+import BitGridHeader from '../common/BitGridHeader';
+import HexDump from '../common/HexDump';
 import GtpIeViewer from './GtpIeViewer';
 import GtpIeTable from './GtpIeTable';
 import "./GtpViewer.css";
@@ -405,7 +405,7 @@ export default function GtpHeader({ gtp }) {
                   borderRadius: "10px",
                   padding: "8px"
                 }} >
-                <GtpHexDump raw={gtp.raw} />
+                <HexDump raw={gtp.raw} />
               </div>
 
               {/* Hovered IE HexDump */}
@@ -422,7 +422,7 @@ export default function GtpHeader({ gtp }) {
                   padding: "8px"
                 }}
               >
-                {hoveredRaw ? <GtpHexDump raw={hoveredRaw} /> : <div style={{ color: "#888" }}>Hover an IE to see raw data</div>}
+                {hoveredRaw ? <HexDump raw={hoveredRaw} /> : <div style={{ color: "#888" }}>Hover an IE to see raw data</div>}
               </div>
             </div>
           </div>

@@ -11,7 +11,7 @@ export default function IcmpHeader({ icmp }) {
   return (
     <div className="card mb-3">
 
-      <div className="card-header udp-header d-flex justify-content-between align-items-center">
+      <div className="card-header icmp-header d-flex justify-content-between align-items-center">
         <strong>Layer 4 (Transport)</strong>
         <div className="form-check form-switch d-inline-flex align-items-center ms-3" style={{ fontSize: "14px" }} >
 

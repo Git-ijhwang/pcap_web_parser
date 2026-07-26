@@ -51,7 +51,7 @@
 .view-label.active { color: var(--ip-accent); }
 
 /* Body Content */
-.protocol-card__body { padding: 12px; background-color: #fff; }
+.protocol-card__body { padding: 12px; background-color: #ffffff; }
 
 /* Raw View Layout */
 .raw-view-container { display: flex; gap: 20px; align-items: flex-start; }
