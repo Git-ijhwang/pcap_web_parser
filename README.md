@@ -48,7 +48,7 @@ The parser reads raw packet data and produces structured JSON output, which can 
 
 ---
 
-### ✔ 7. Frontend (React)
+### Frontend (React)
 - Displays parsed structures
 - Hex dump viewer
 - Collapsible protocol sections
