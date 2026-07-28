@@ -1,7 +1,8 @@
-# Packet Parsing System (IPv4 / UDP / TCP / ICMP / GTPv2-C)
+# Protocol Parsing System (IPv4 / UDP / TCP / ICMP / GTPv2-C)
 
 This project is a packet parsing engine implemented in Rust.  
 It supports parsing multiple network protocol layers including:
+
 ## ScreenShot
 
 <img width="1140" height="530" alt="image" src="https://github.com/user-attachments/assets/dc9e2c33-5307-491c-b3a8-cc96a4081702" />
@@ -13,13 +14,13 @@ It supports parsing multiple network protocol layers including:
 ---
 
 ## 🚀 Features
-- **IPv4**
-- **UDP**
-- **TCP**
+- **Layer 3(IPv4 & IPv6)**
 - **ICMP**
-- **GTPv1-U / GTPv2-C (partially)**
-- **GTPv2-C Information Elements (IE)**
+- **Layer 4(UDP & TCP)**
+- **GTPv2-C Basic Header and Information Elements (IE)**
 - **BearerTFT & Packet Filter Parsing**
+- **GTPv2 Bearer status Visualizer for each GTP Nodes**
+- **PFCP**
 - Hex dump rendering and frontend visualization (React)
 
 The parser reads raw packet data and produces structured JSON output, which can be visualized in a frontend.
