@@ -1,0 +1,15 @@
+.udp-card-header{
+  background-color:  #f4f7fb;
+}
+.udp-card-body
+{
+    /* background-color: #dedede; */
+    background-color: #ffffff;
+}
+
+.udp-table tbody th {
+  background: #dce5f6;
+}
+.udp-table td {
+  background: #ffffff;
+}

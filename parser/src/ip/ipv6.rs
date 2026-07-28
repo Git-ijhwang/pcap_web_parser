@@ -24,8 +24,6 @@ fn parse_ipv6_ext(mut next_hdr: usize, packet: &[u8]) {
             return;
         }
 
-        println!("{} {}", ext_hdr_type, hdr_total);
-
         offset += hdr_total;
 
         next_hdr = packet[offset] as usize; // 다음 헤더 값 업데이트

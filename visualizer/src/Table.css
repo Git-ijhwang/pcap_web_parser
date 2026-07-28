@@ -1,0 +1,224 @@
+/* 컨테이너 스타일 */
+.packet-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* 개별 카드 (핵심 입체 디자인) */
+.packet-item {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05); /* 테두리를 조금 더 연하게 */
+  /* border-left: 4px solid #dee2e6;  */
+  background: #ffffff;
+  transition: all 0.3s ease;
+}
+.proto-gtp2-c {
+    background: rgba(182, 51, 242, 0.06);
+    /* border-left-color: #b633f2; */
+}
+.proto-udp {
+    background: rgba(252, 133, 74, 0.06);
+  /* border-left-color: #fc854a; */
+}
+.proto-tcp {
+    background: rgba(56, 248, 165, 0.08);
+  /* border-left-color: #2cc283; */
+}
+
+/* ICMP (Red/Pink) - 진단 및 오류 알림 */
+.proto-icmp {
+  background: rgba(255, 107, 107, 0.06);
+  /* border-left-color: #ff6b6b; */
+}
+
+/* PFCP (Yellow/Gold) - 인프라 및 접점 제어 */
+.proto-pfcp {
+  background: rgba(255, 212, 59, 0.08);
+  border-left-color: #fcc419;
+}
+
+/* Unknown/Default */
+.proto-unknown {
+  background: #f8f9fa;
+  border-left-color: #adb5bd;
+}
+
+/* 마우스 호버 시 입체 효과 */
+.packet-item:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+  border-color: rgba(13, 110, 253, 0.2);
+}
+
+/* 왼쪽 사이드 섹션 */
+.packet-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 80px;
+  border-right: 2px solid #eee;
+  margin-right: 20px;
+}
+.id-tag {
+  font-size: 0.75rem;
+  color: #adb5bd;
+  font-weight: 700;
+}
+.protocol-badge {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+/* 중앙 메인 섹션 */
+.packet-main {
+  /* flex-grow: 2; */
+  flex: 0 0 auto;
+  width: 280px;
+}
+.ip-flow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 22px;
+  margin-bottom: 4px;
+  width: 300px;
+  /* border-right: 2px solid #eee; */
+  /* padding-right: 12px; */
+}
+.ip-addr {
+  font-family: 'JetBrains Mono', monospace; /* 고정폭 글꼴로 숫자 가독성 향상 */
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #212529;
+}
+.flow-indicator {
+  display: flex;
+  align-items: center;
+  flex-grow: 0.1;
+  /* flex: 0 0 auto; */
+  color: #e34c01;
+}
+.flow-line {
+  height: 2px;
+  background: #8a8a89;
+  flex-grow: 1;
+  border-radius: 2px;
+}
+
+.packet-desc {
+  font-size: 1rem;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+}
+  /* text-overflow: ellipsis;
+  /* min-width: 200px; */
+
+.len-field {
+  flex: 0 0 65px;      /* 65px로 고정하여 | 위치를 일치시킴 */
+  /* font-family: 'JetBrains Mono', 'Consolas', monospace; 숫자 정렬을 위해 고정폭 필수 */
+  font-size: 0.85rem;
+  color: #888;         /* 설명보다 살짝 연한 색상으로 비중 조절 */
+
+  border-left: 2px solid #dee2e6;
+
+  padding-left: 20px;
+  padding-right: 20px;
+
+  text-align: left;
+  width: 150px;
+}
+
+/* 2. 구분선 스타일: 가늘고 흐리게 처리하여 눈에 너무 띄지 않게 */
+.desc-text {
+    flex: 1;
+  font-size: 0.92rem;
+  color: #495057;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+
+  border-left: 2px solid #dee2e6; /* 기본 왼쪽 테두리 */
+  padding-left: 20px;
+  padding-right: 40px;
+}
+
+/* 오른쪽 메타 데이터 */
+.packet-meta {
+  padding-left: 100px;
+  text-align: right;
+  min-width: 120px;
+}
+.packet-meta .action-area {
+    width: auto;
+    min-width: 100px;
+}
+.packet-meta .action-area button{
+    width: 80%;
+}
+
+.meta-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+.len {
+  font-weight: 700;
+  color: #495057;
+}
+
+/* 플로우 버튼 (평상시 숨김 -> 호버 시 나타남) */
+.btn-flow-trigger {
+  background: #e7f1ff;
+  border: none;
+  color: #0d6efd;
+
+  /* width: 32px;
+  height: 32px; */
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.packet-item:hover .btn-flow-trigger {
+  opacity: 1;
+}
+.btn-flow-trigger .btn-icon {
+  display: none;
+  font-size: 1.1rem; /* 아이콘 크기 약간 키움 */
+}
+.btn-flow-trigger:hover {
+  background: #0d6efd;
+  color: #fff;
+  padding: 8px;
+  border-radius: 20px;
+  width: 36px; /* 아이콘 상태일 때의 고정 크기 */
+  height: 36px;
+}
+/* 버튼 호버 시: 텍스트는 숨기고 */
+.btn-flow-trigger:hover .btn-text {
+  display: none;
+}
+
+/* 버튼 호버 시: 아이콘을 보여줌 */
+.btn-flow-trigger:hover .btn-icon {
+  display: inline-block;
+}

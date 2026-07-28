@@ -16,6 +16,7 @@ use crate::*;
 use crate::parse_pcap::*;
 use crate::types::{Cache, FileInfo, PacketQuery};
 use crate::file_manage::*;
+use crate::gtp::call_flow::gtp_call_flow::*;
 
 async fn upload_file(
     cache: &Cache,
@@ -29,7 +30,6 @@ async fn upload_file(
     let tmp_filename = format!("web_parser-{}.pcap", uuid);
     let tmp_path = std::env::temp_dir().join(tmp_filename);
 
-    // println!("[cache saved] {}", tmp_path.display());
 
     // 파일을 디스크에 쓴다 (비동기)
     if let Err(e) =
@@ -217,7 +217,6 @@ cleanup_cache(cache: &Cache, ttl: Duration)
 
     for uuid in expired {
         if let Some(info) = cache_guard.remove(&uuid) {
-            // println!("Remove file");
             let _ = fs::remove_file(&info.path).await;
         }
     }

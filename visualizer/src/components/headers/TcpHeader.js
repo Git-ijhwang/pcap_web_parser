@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./ip.css";
 import HexDump from '../hex-dump/HexDump';
+import BitGridHeader from './common/BitGridHeader'; // 방금 만든 파일 임포트
 
 
 export default function TcpHeader({ tcp }) {
@@ -109,20 +110,6 @@ export default function TcpHeader({ tcp }) {
                       <td>{tcp.urgent}</td>
                     </tr>
 
-                  {tcp.payload ? (
-                    <>
-                      <tr>
-                        <th>Payload</th>
-                        <td>
-                          {tcp.payload && tcp.payload.length > 5 
-                            ? tcp.payload.slice(0, 5) + "..." 
-                            : tcp.payload}
-                        </td>
-                      </tr>
-                    </>
-                  ) : (
-                    <></>
-                  )}
 
                   </tbody>
                 </table>
@@ -140,17 +127,6 @@ export default function TcpHeader({ tcp }) {
                   <div style={{ fontWeight: "bold", marginBottom: "5px" }}>TCP Header</div>
                   <HexDump raw={tcp.raw} /> 
                 </div>
-
-                {tcp.payload ? (
-                  <>
-                    <div style={{ flex: "1 1 auto", overflowX: "auto" }}>
-                      <div style={{ fontWeight: "bold", marginBottom: "5px" }}>Payload ( {tcp.payload.length} bytes )</div>
-                      <HexDump raw={tcp.payload} /> 
-                    </div>
-                  </>
-                ) : (
-                  <> </>
-                )}
 
               </div>
 
@@ -182,25 +158,25 @@ export default function TcpHeader({ tcp }) {
                 </tr>
 
                 <tr>
-                  <th>0</th>
+                  <th colSpan="2">0</th>
                   <td colSpan="16"><i>Source Port: </i> {tcp.src_port}</td>
                   <td colSpan="16"><i>Destination Port: </i> {tcp.dst_port}</td>
                 </tr>
 
                 <tr>
-                  <th>32</th>
+                  <th colSpan="2">32</th>
                   <td colSpan="32"><i>Sequence Number: </i>
                   {tcp.seq}
                   </td>
                 </tr>
 
                 <tr>
-                  <th>32</th>
+                  <th colSpan="2">64</th>
                   <td colSpan="32"><i>Acknowledge Number: </i>{tcp.ack}</td>
                 </tr>
 
                 <tr>
-                  <th>64</th>
+                  <th colSpan="2">96</th>
                   <td colSpan="4"><i>Header Size:</i> {tcp.header_sz}</td>
                   <td colSpan="4"><i>Reserved</i></td>
                   <td colSpan="8"><i></i>{" "}
@@ -221,7 +197,7 @@ export default function TcpHeader({ tcp }) {
                 </tr>
 
                 <tr>
-                  <th>96</th>
+                  <th colSpan="2">128</th>
                   <td colSpan="16"><i>Checksum:</i> 
                     {/* {tcp.ack} */}
                     0x{tcp.ack != null ? tcp.checksum.toString(16)

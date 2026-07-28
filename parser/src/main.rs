@@ -19,10 +19,10 @@ mod ip;
 mod types;
 mod l4;
 mod pfcp;
-mod gtp_call_flow;
-mod call_flow_test;
+// mod gtp_call_flow;
+// mod call_flow_test;
 
-use gtp_call_flow::*;
+// use gtp_call_flow::*;
 use types::Cache;
 use handlers::*;
 use file_manage::*;

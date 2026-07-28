@@ -1,54 +1,19 @@
 use std::net::Ipv4Addr;
 use std::vec;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::path::PathBuf;
 use pcap::Capture;
+use std::collections::HashMap;
 
 use crate::ip::{ipv4::*, port::*};
 use crate::l4::udp::*;
 use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
 use crate::types::*;
 use crate::parse_pcap::*;
-use crate::call_flow_test::*;
+use super::gtp_context::*;
 
-
-#[derive(Serialize, Debug)]
-pub struct Bearer{
-    pub ebi: u8,
-    pub fteid_list: Option<Vec<FTeidValue>>,
-}
-impl Bearer {
-    pub fn new() -> Self {
-        Bearer {
-            ebi: 0,
-            fteid_list: None,
-        }
-    }
-}
-
-#[derive(Serialize, Debug)]
-pub struct CallFlow{
-    pub id: usize,
-    pub timestamp: String,
-    pub src_addr: String,
-    pub dst_addr: String,
-    pub message: String,
-    pub ebi: Option<u8>,
-    pub bearer: Option<Vec<Bearer>>,
-}
-impl CallFlow{
-    pub fn new() -> Self {
-        CallFlow {
-            id: 0,
-            timestamp: String::new(),
-            src_addr: String::new(),
-            dst_addr: String::new(),
-            message: String::new(),
-            ebi: None,
-            bearer: None,
-        }
-    }
-}
+#[cfg(feature = "mock")]
+use super::call_flow_test::*;
 
 
 #[derive(Serialize, Debug, Clone)]
@@ -199,14 +164,14 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 //[mme] -> [sgw]  [pgw]
                 if init_node.status == 0 {
 
-                    println!(" [mme] -> [sgw]  [pgw] ");
+                    // println!(" [mme] -> [sgw]  [pgw] ");
                     //First Node
-                    init_node_info(&mut init_node, tuple.src_addr, tuple.src_port, msg_type,
+                    init_node_info(&mut init_node, tuple.src_addr, tuple.src_port,// msg_type,
                         seq, 0, &imsi);
                     init_fteid_info(&mut init_node, fteid_teid, 0, 0, 0);
 
                     //Second Node
-                    init_node_info(&mut resp_node, tuple.dst_addr, tuple.dst_port, msg_type,
+                    init_node_info(&mut resp_node, tuple.dst_addr, tuple.dst_port,// msg_type,
                             0, 0, &imsi);
                     init_fteid_info(&mut resp_node, 0, 0, fteid_teid, 0);
 
@@ -220,9 +185,9 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if resp_node.addr == tuple.src_addr &&
                        tuple.dst_addr != init_node.addr {
 
-                        println!(" [mme]  [sgw] -> [pgw] ");
+                        // println!(" [mme]  [sgw] -> [pgw] ");
                         //Third Node check
-                        init_node_info(&mut third_node, tuple.dst_addr, tuple.dst_port, msg_type,
+                        init_node_info(&mut third_node, tuple.dst_addr, tuple.dst_port, //msg_type,
                             0, seq, &imsi);
                         init_fteid_info(&mut third_node, 0, 0,
                             0, fteid_teid);
@@ -252,7 +217,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                         if is_s5s8_seq_match(&resp_node, seq) { //if sequence numaber is match what respond node is expecting.
                             if is_s5s8_teid_match(&resp_node, teid) {
 
-                                println!(" [mme]  [sgw] <- [pgw] ");
+                                // println!(" [mme]  [sgw] <- [pgw] ");
                                 update_node_info(&mut third_node, 0, seq,
                                     0, fteid_teid, 0, 0);
                                 update_node_info(&mut resp_node, 0, 0,
@@ -272,7 +237,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                         if is_s11_seq_match(&init_node, seq) &&
                            is_s11_teid_match(&init_node, teid) {
 
-                            println!(" [mme] <- [sgw]  [pgw] ");
+                            // println!(" [mme] <- [sgw]  [pgw] ");
                             update_node_info(&mut resp_node, seq, 0,
                                 fteid_teid, 0,
                                 0, 0);
@@ -299,7 +264,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 if check_node(&init_node, tuple.src_addr, tuple.src_port) {
                     //Intiator Node check
                     if is_s11_teid_match(&resp_node, teid) {
-                        println!(" [mme] -> [sgw or spgw] ");
+                        // println!(" [mme] -> [sgw or spgw] ");
                         update_node_info(&mut init_node, seq, 0,
                             0, 0, 0, 0);
                         filtered_packets.push(pkt);
@@ -313,7 +278,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if third_node.status > 0 &&
                        check_node(&third_node, tuple.dst_addr, tuple.dst_port) {
                         if is_s5s8_teid_match(&third_node, teid) {
-                            println!(" [mme]  [sgw] -> [pgw] ");
+                            // println!(" [mme]  [sgw] -> [pgw] ");
                             update_node_info(&mut resp_node, 0, seq,
                             0, 0, 0, 0);
                             filtered_packets.push(pkt);
@@ -324,7 +289,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     // [mme] <- [sgw]  [pgw]
                     if check_node(&init_node, tuple.dst_addr, tuple.dst_port) {
                         if is_s11_teid_match(&init_node, teid) {
-                            println!(" [mme] <- [sgw]  [pgw] ");
+                            // println!(" [mme] <- [sgw]  [pgw] ");
                             update_node_info(&mut resp_node, seq, 0,
                                 0, 0, 0, 0);
                             filtered_packets.push(pkt);
@@ -335,7 +300,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme]    [sgw] <- [pgw]
                 else if third_node.status > 0 && check_node(&third_node, tuple.src_addr, tuple.src_port) {
                     if is_s5s8_teid_match(&resp_node, teid) {
-                        println!(" [mme]    [sgw] <- [pgw] ");
+                        // println!(" [mme]    [sgw] <- [pgw] ");
                         //Third Node check
                         update_node_info(&mut third_node, 0, seq,
                             0, 0, 0, 0);
@@ -354,7 +319,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme] <- [sgw or spgw]
                 if check_node(&init_node, tuple.dst_addr, tuple.dst_port) {
                     if is_s11_seq_match(&init_node, seq){
-                        println!(" [mme] <- [sgw or spgw]");
+                        // println!(" [mme] <- [sgw or spgw]");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -365,7 +330,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     // [mme]  [sgw] <- [pgw]
                     if third_node.status > 0 && check_node(&third_node, tuple.src_addr, tuple.src_port) {
                         if is_s5s8_seq_match(&resp_node, seq) {
-                            println!(" [mme]  [sgw] <- [pgw]");
+                            // println!(" [mme]  [sgw] <- [pgw]");
                             filtered_packets.push(pkt);
                             continue;
                         }
@@ -374,7 +339,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 // [mme] -> [sgw or s/pgw]
                 else if check_node(&init_node, tuple.src_addr, tuple.src_port) {
                     if is_s11_seq_match(&resp_node, seq) {
-                        println!(" [mme] -> [sgw or s/pgw]");
+                        // println!(" [mme] -> [sgw or s/pgw]");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -455,7 +420,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if is_s11_seq_match(&resp_node, seq) &&
                        is_s11_teid_match(&resp_node, teid) {
 
-                        println!(" [mme] -> [sgw]  [pgw] ");
+                        // println!(" [mme] -> [sgw]  [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -465,7 +430,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if is_s5s8_seq_match(&third_node, seq) &&
                        is_s5s8_teid_match(&third_node, teid) {
 
-                        println!(" [mme]  [sgw] -> [pgw] ");
+                        // println!(" [mme]  [sgw] -> [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -480,7 +445,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 if check_node(&init_node, tuple.src_addr, tuple.src_port) {
                     if is_s11_teid_match(&resp_node, teid) {
 
-                        println!(" [mme] -> [sgw or spgw] ");
+                        // println!(" [mme] -> [sgw or spgw] ");
                         update_node_info(&mut init_node, seq, 0, 0, 0, 0, 0);
 
                         filtered_packets.push(pkt);
@@ -490,7 +455,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                 //[mme]  [sgw] -> [pgw]
                 else if check_node(&resp_node, tuple.src_addr, tuple.src_port) {
                     if is_s5s8_teid_match(&third_node, teid) {
-                        println!(" [mme]  [sgw] -> [pgw] ");
+                        // println!(" [mme]  [sgw] -> [pgw] ");
                         update_node_info(&mut resp_node, 0, seq, 0, 0, 0, 0);
 
                         filtered_packets.push(pkt);
@@ -511,7 +476,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
                     if is_s5s8_teid_match(&resp_node, teid) &&
                        is_s5s8_seq_match(&resp_node, seq) {
 
-                        println!(" [mme]  [sgw] <- [pgw] ");
+                        // println!(" [mme]  [sgw] <- [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -522,7 +487,7 @@ senario_analysis(target:TargetInfo, vec_packets: Vec<OwnedPacket>, nodes: &mut V
 
                     if is_s11_teid_match(&init_node, teid) &&
                        is_s11_seq_match(&init_node, seq) {
-                        println!(" [mme] <- [sgw]  [pgw] ");
+                        // println!(" [mme] <- [sgw]  [pgw] ");
                         filtered_packets.push(pkt);
                         continue;
                     }
@@ -876,7 +841,7 @@ fn init_fteid_info(node: &mut NodeInfo,
 
 fn init_node_info(node: &mut NodeInfo,
     addr: Ipv4Addr, port: u16,
-    msg_type:u8,
+    // msg_type:u8,
     s11_seq:u32, s5s8_seq:u32,
     imsi:&str)
 {
@@ -984,6 +949,7 @@ is_match_node( node: &NodeInfo, tuple: &Ip5Tuple )
     false
 }
 
+
 async fn
 make_data( flow_packets: Vec<OwnedPacket>)
 -> Result<Vec<CallFlow>, String>
@@ -1003,7 +969,7 @@ make_data( flow_packets: Vec<OwnedPacket>)
         cf.src_addr.push_str(&src_addr.to_string());
         cf.dst_addr.push_str(&dst_addr.to_string());
 
-        offset += IP_HDR_LEN+UDP_HDR_LEN;
+        offset += IP_HDR_LEN + UDP_HDR_LEN;
 
         let (_, message) = get_msg_type_from_gtpc (&pkt.data[offset..]).map_err(|e| format!("Error: {:?}", e))?;
 
@@ -1033,6 +999,22 @@ make_data( flow_packets: Vec<OwnedPacket>)
     }
 
     return Ok(call_flow);
+}
+
+
+async fn
+make_snapshot(mut call_flows: Vec<CallFlow>) -> Vec<CallFlow>
+{
+    let mut state: HashMap<String, NodeState> = HashMap::new();
+
+    for cf in call_flows.iter_mut() {
+        // 기존에 정의한 state 업데이트 로직 호출
+        update_global_state(cf , &mut state);
+        
+        // 해당 시점의 상태를 스냅샷으로 저장
+        cf.snapshot = state.clone();
+    }
+    call_flows
 }
 
 
@@ -1093,11 +1075,14 @@ make_call_flow (path: &PathBuf, id: usize)
 
     //7. Make Call Flow raw data
 #[cfg(not(feature = "mock"))]
-    let call_flow = make_data( packets).await;
+    let mut call_flow = make_data( packets).await?;
 
     //8. Only for Mock Test
 #[cfg(feature = "mock")]
-    let call_flow = Ok(make_mock_callflow().await);
+    let mut call_flow = make_mock_callflow().await;
 
-    return call_flow;
+
+    let callflow_snapshot = make_snapshot(call_flow).await;
+
+    return Ok(callflow_snapshot)
 }

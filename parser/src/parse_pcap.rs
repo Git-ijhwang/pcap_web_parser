@@ -8,6 +8,7 @@ use crate::l4::{tcp::*, udp::*, icmp::*};
 use crate::gtp::{gtp::*, gtp_ie::*};
 use crate::pfcp::{pfcp::*, pfcp_ie::*};
 use crate::types::*;
+use pcap::Linktype;
 
 const NEXT_HDR_IPV4: usize = 0x0800;
 const NEXT_HDR_IPV6: usize = 0x86dd;
@@ -29,12 +30,12 @@ fn format_timestamp(packet: &Packet) -> String
 }
 
 
-fn print_timestamp(idx:usize, packet: &Packet)
-    -> String
-{
-    let ts = format_timestamp(packet);
-    format!( "{}",ts).to_string()
-}
+// fn print_timestamp(idx:usize, packet: &Packet)
+//     -> String
+// {
+//     let ts = format_timestamp(packet);
+//     format!( "{}",ts).to_string()
+// }
 
 
 pub fn parse_ethernet(data: &[u8]) -> usize
@@ -57,6 +58,24 @@ pub fn parse_ethernet(data: &[u8]) -> usize
     let next_type = u16::from_be_bytes([data[offset], data[offset+1]]) as usize;
 
     next_type
+}
+
+pub fn parse_sll2(data: &[u8]) -> usize
+{
+    if data.len() < 20 {
+        return 0;
+    }
+
+    let protocol = u16::from_be_bytes([
+        data[0],
+        data[1]
+    ]);
+
+    match protocol {
+        0x0800 => NEXT_HDR_IPV4,
+        0x86DD => NEXT_HDR_IPV6,
+        _ => 0,
+    }
 }
 
 
@@ -173,6 +192,7 @@ parse_single_packet(path: &PathBuf, id: usize)
     let mut cap = Capture::from_file(path)
         .map_err(|e| format!("Failed to open pcap file {}: {}", path.to_string_lossy(), e))?;
 
+    let linktype = cap.get_datalink();
     let mut idx: usize = 1;
     let mut parsed_packet = PacketDetail::new();
 
@@ -189,12 +209,30 @@ parse_single_packet(path: &PathBuf, id: usize)
     };
 
     // --- Parse Layer 2 Ethernet ---
+    /*
     let mut next_type = if packet.data.len() >= MIN_ETH_HDR_LEN {
         parse_ethernet(&packet.data)
     } else {
         return Err("Layer 2 parsing faile".to_string());
     };
-    offset += MIN_ETH_HDR_LEN;
+    */
+    let (mut next_type, l2_len) = match linktype {
+        Linktype(1) => {(
+            parse_ethernet(&packet.data),
+            MIN_ETH_HDR_LEN
+        )}
+        Linktype(276) => {(
+            parse_sll2(&packet.data), 20
+        )}
+        _ => {
+            // idx += 1;
+            // continue;
+            return Err("Layer 2 parsing faile".to_string());
+        }
+    };
+
+    // offset += MIN_ETH_HDR_LEN;
+    offset += l2_len;
 
     // --- Parse Layer 3 (IPv4, IPinIP or IPv6) ---
     loop {
@@ -237,6 +275,7 @@ pub async fn simple_parse_pcap(path: &Path)
         }
     };
 
+    let linktype = cap.get_datalink();
     let mut idx: usize = 1;
     let mut packets: Vec<PacketSummary> = Vec::new();
 
@@ -248,21 +287,35 @@ pub async fn simple_parse_pcap(path: &Path)
         // --- Parse TimeStamp ---
         let mut parsed_packet : PacketSummary = PacketSummary::new();
         parsed_packet.id = idx;
-        parsed_packet.ts = print_timestamp(idx, &packet);
+        // parsed_packet.ts = print_timestamp(idx, &packet);
 
         // --- Parse Layer 2 Ethernet ---
-        let mut next_type = 0;
-        if packet.data.len() >= MIN_ETH_HDR_LEN {
+        // let mut next_type = 0;
+        // if packet.data.len() >= MIN_ETH_HDR_LEN {
             //get next protocol from Ethernet
-            next_type = parse_ethernet(&packet.data);
-        }
+            // next_type = parse_ethernet(&packet.data);
+        // }
+        let (next_type, l2_len) = match linktype {
+            Linktype(1) => {(
+                parse_ethernet(&packet.data),
+                MIN_ETH_HDR_LEN
+            )}
+            Linktype(276) => {(
+                parse_sll2(&packet.data), 20
+            )}
+            _ => {
+                idx += 1;
+                continue;
+            }
+        };
 
-        if next_type != NEXT_HDR_IPV4 && next_type != NEXT_HDR_IPV6 {
-            idx += 1;
-            continue;
-        }
+        // if next_type != NEXT_HDR_IPV4 && next_type != NEXT_HDR_IPV6 {
+        //     idx += 1;
+        //     continue;
+        // }
 
-        hdr_len += MIN_ETH_HDR_LEN;
+        // hdr_len += MIN_ETH_HDR_LEN;
+        hdr_len += l2_len;
 
         // --- Parse Layer 3 ---
         let next_type= match next_type {
@@ -338,7 +391,7 @@ pub async fn simple_parse_pcap(path: &Path)
             },
 
             L4_PORT_PFCP => {
-                parsed_packet.protocol = "PCFP".to_string();
+                parsed_packet.protocol = "PFCP".to_string();
                 let _ = parse_pfcp( &packet.data[hdr_len..],
                 &mut parsed_packet);
             },

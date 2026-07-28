@@ -1,6 +1,9 @@
 use crate::gtp::{gtp::*, gtp_ie::*, gtpv2_types::*};
-use crate::gtp_call_flow::*;
+use super::gtp_call_flow::*;
+use super::gtp_context::*;
+use std::collections::HashMap;
 
+#[cfg(feature = "mock")]
 pub async fn make_mock_callflow()
 -> Vec<CallFlow>
 {
@@ -20,7 +23,8 @@ pub async fn make_mock_callflow()
         bearer: Some(vec![ Bearer {
             ebi: 5,
             fteid_list:None,
-        }])
+        }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -41,6 +45,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -49,18 +54,21 @@ pub async fn make_mock_callflow()
         src_addr: "10.10.3.73".into(),
         dst_addr: "10.10.1.71".into(),
         message: "Create Session Response".into(),
-        ebi: None,
+        ebi: Some(5),
         bearer: Some(vec![Bearer {
             ebi: 5,
-            fteid_list: Some(vec![FTeidValue { 
-                v4: true,
-                v6: false,
-                iface_type: 5, //S5S8 PGW
-                teid: 321u32,
-                ipv4: Some("10.10.3.73".into()),
-                ipv6: None,
-            }])
+            fteid_list: Some(vec![
+                FTeidValue { 
+                    v4: true,
+                    v6: false,
+                    iface_type: 5, //S5S8 PGW
+                    teid: 321u32,
+                    ipv4: Some("10.10.3.73".into()),
+                    ipv6: None,
+                }
+            ])
         }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -69,18 +77,29 @@ pub async fn make_mock_callflow()
         src_addr: "10.10.1.71".into(),
         dst_addr: "10.10.2.72".into(),
         message: "Create Session Response".into(),
-        ebi: None,
+        ebi: Some(5),
         bearer: Some(vec![Bearer {
             ebi: 5,
-            fteid_list: Some(vec![FTeidValue { 
-                v4: true,
-                v6: false,
-                iface_type: 1, //S1-U Sgw
-                teid: 132u32,
-                ipv4: Some("10.10.1.71".into()),
-                ipv6: None,
-            }])
+            fteid_list: Some(vec![
+                FTeidValue { 
+                    v4: true,
+                    v6: false,
+                    iface_type: 1, //S1-U Sgw
+                    teid: 132u32,
+                    ipv4: Some("10.10.1.71".into()),
+                    ipv6: None,
+                },
+                FTeidValue { 
+                    v4: true,
+                    v6: false,
+                    iface_type: 5, //S5S8 PGW
+                    teid: 321u32,
+                    ipv4: Some("10.10.3.73".into()),
+                    ipv6: None,
+                }
+            ])
         }]),
+        snapshot: HashMap::new(),
     });
 
     // ---- Modify Bearer (EBI 6 추가)
@@ -102,6 +121,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -122,6 +142,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
 
     // ---- Create Bearer
@@ -177,6 +198,7 @@ pub async fn make_mock_callflow()
                 ])
             },
         ]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -250,6 +272,7 @@ pub async fn make_mock_callflow()
             },
             ]
         ),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -326,6 +349,7 @@ pub async fn make_mock_callflow()
                 }
             ]
         ),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -402,6 +426,7 @@ pub async fn make_mock_callflow()
                 }
             ]
         ),
+        snapshot: HashMap::new(),
     });
 
     /* ============================== */
@@ -416,7 +441,8 @@ pub async fn make_mock_callflow()
         bearer: Some(vec![ Bearer {
             ebi: 7,
             fteid_list:None,
-        }])
+        }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -437,6 +463,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -445,7 +472,7 @@ pub async fn make_mock_callflow()
         src_addr: "10.10.3.73".into(),
         dst_addr: "10.10.1.71".into(),
         message: "Create Session Response".into(),
-        ebi: None,
+        ebi: Some(7),
         bearer: Some(vec![Bearer {
             ebi: 7,
             fteid_list: Some(vec![FTeidValue { 
@@ -457,6 +484,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -465,7 +493,7 @@ pub async fn make_mock_callflow()
         src_addr: "10.10.1.71".into(),
         dst_addr: "10.10.2.72".into(),
         message: "Create Session Response".into(),
-        ebi: None,
+        ebi: Some(7),
         bearer: Some(vec![Bearer {
             ebi: 7,
             fteid_list: Some(vec![FTeidValue { 
@@ -477,6 +505,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
     v.push(CallFlow {
         id: 25,
@@ -496,6 +525,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -516,6 +546,7 @@ pub async fn make_mock_callflow()
                 ipv6: None,
             }])
         }]),
+        snapshot: HashMap::new(),
     });
 
     // ---- Delete Bearer
@@ -530,6 +561,7 @@ pub async fn make_mock_callflow()
         message: "Delete Bearer Request".into(),
         ebi: Some(10),
         bearer: None,
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -540,6 +572,7 @@ pub async fn make_mock_callflow()
         message: "Delete Bearer Request".into(),
         ebi: Some(10),
         bearer: None,
+        snapshot: HashMap::new(),
       
     });
 
@@ -555,7 +588,8 @@ pub async fn make_mock_callflow()
                 ebi: 10,
                 fteid_list: None,
             }
-        ])
+        ]),
+        snapshot: HashMap::new(),
     });
     v.push(CallFlow {
         id: 34,
@@ -569,7 +603,8 @@ pub async fn make_mock_callflow()
                 ebi: 10,
                 fteid_list: None,
             }
-        ])
+        ]),
+        snapshot: HashMap::new(),
     });
 
     // ---- Delete Session
@@ -579,8 +614,9 @@ pub async fn make_mock_callflow()
         src_addr: "10.10.2.72".into(),
         dst_addr: "10.10.1.71".into(),
         message: "Delete Session Request".into(),
-        ebi: None,
+        ebi: some(7),
         bearer: None,
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -589,8 +625,9 @@ pub async fn make_mock_callflow()
         src_addr: "10.10.1.71".into(),
         dst_addr: "10.10.3.73".into(),
         message: "Delete Session Request".into(),
-        ebi: None,
+        ebi: some(7),
         bearer: None,
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -601,6 +638,7 @@ pub async fn make_mock_callflow()
         message: "Delete Session Response".into(),
         ebi: None,
         bearer: None,
+        snapshot: HashMap::new(),
     });
 
     v.push(CallFlow {
@@ -611,6 +649,7 @@ pub async fn make_mock_callflow()
         message: "Delete Session Response".into(),
         ebi: None,
         bearer: None,
+        snapshot: HashMap::new(),
     });
 
     // ======================

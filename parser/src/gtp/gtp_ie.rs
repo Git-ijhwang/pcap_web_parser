@@ -1016,9 +1016,11 @@ fn parse_ie(input: &[u8])
 
     let raw = input[..total_len].to_vec();
 
+
     let (mut input, _) = be_u32(input)?;
 
     let (type_str, is_group) = GTPV2_IE_TYPES.get(ie_type as usize).map(|(s, g)| (s.to_string(), *g)).unwrap_or_else(|| ("Out of bound".to_string(), false));
+
 
     let mut gtp_ie = GtpIe {
         ie_type,
