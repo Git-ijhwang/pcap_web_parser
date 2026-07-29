@@ -296,7 +296,7 @@ export default function GtpHeader({ gtp }) {
       <div className="card-header gtp-header d-flex justify-content-between align-items-center">
         <div className="d-flex align-items-center">
           <span className="protocol-badge">L7</span>
-        <strong>GTPv2-C</strong>
+        <strong className="protocol-title">GTPv2-C</strong>
         </div>
 
         <div className="form-check form-switch d-inline-flex align-items-center ms-3"
