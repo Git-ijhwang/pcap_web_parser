@@ -72,9 +72,6 @@
 }
 
 /* IE의 마지막 줄에 하단 굵은 선 적용 */
-.ie-last-row {
-  border-bottom: 2px solid #333 !important;
-}
 
 /* 2. Value 행의 높이를 일정하게 고정 */
 .value-row {

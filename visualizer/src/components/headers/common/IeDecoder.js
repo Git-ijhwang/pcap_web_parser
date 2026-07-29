@@ -17,29 +17,29 @@ function ComponentRenderer({ comp })
     case "Ipv4Addr":
       return (
         <div>
-          <div>  <strong> IPv4 Addr: </strong>
+          <div>   IPv4 Addr: 
           {data.addr}</div>
-          <div>  <strong>Mask: </strong>{data.mask}</div>
+          <div>  Mask: {data.mask}</div>
         </div>
       );
 
     case "Ipv6Addr":
       return (
         <div>
-          <div>  <strong>IPv6 Addr: </strong>{data.addr}</div>
-          <div> <strong> Mask: </strong>{data.mask}</div>
+          <div>  IPv6 Addr: {data.addr}</div>
+          <div>  Mask: {data.mask}</div>
         </div>
       );
 
     case "Protocol":
-      return <div>  <strong>Protocol: </strong>{data.proto}</div>;
+      return <div>  Protocol: {data.proto}</div>;
 
     case "SinglePort":
-      return <div>  <strong>Port: </strong>{data.port}</div>;
+      return <div>  Port: {data.port}</div>;
 
     case "PortRange":
       return (
-        <div>  <strong>Port Range: </strong>{data.start} - {data.end}
+        <div>  Port Range: {data.start} - {data.end}
         </div>
       );
 
@@ -120,9 +120,9 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   /* 만약 데이터가 딱 한 줄인데 4바이트가 안 되는 경우 */
                   <>
                     <td colSpan={lastRowBytes * 8}
-                      className="text-center font-mono font-bold text-blue-700 bg-white field">
-                        <div><strong>UL: </strong>{data.ul}</div>
-                        <div><strong>DL: </strong>{data.dl}</div>
+                      className="text-center font-mono font-bold text-blue-700 field">
+                        <div>UL: {data.ul}</div>
+                        <div>DL: {data.dl}</div>
                     </td>
                     <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center field">
                       Spare
@@ -130,12 +130,12 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   </>
                 ) : (
                   /* 일반적인 첫 번째 줄 (전체 너비 사용) */
-                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white field">
+                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700  field">
                     {typeof data === 'object' ?(
                     // JSON.stringify(data)
                     <>
-                      <div><strong>UL: </strong>{data.ul}</div>
-                      <div><strong>DL: </strong>{data.dl}</div>
+                      <div>UL: {data.ul}</div>
+                      <div>DL: {data.dl}</div>
                     </>
                     )
                     : data}
@@ -180,7 +180,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                 /* 만약 데이터가 딱 한 줄인데 4바이트가 안 되는 경우 */
                 <>
                   <td colSpan={lastRowBytes * 8}
-                    className="text-center font-mono font-bold text-blue-700 bg-white field">
+                    className="text-center font-mono font-bold text-blue-700  field">
                     {JSON.stringify(data)}
                   </td>
                   <td colSpan={(4 - lastRowBytes) * 8} className=" text-gray-900 italic text-[9px] text-center field">
@@ -188,7 +188,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                 </>
               ) : (
                 /* 일반적인 첫 번째 줄 (전체 너비 사용) */
-                <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white field">
+                <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700  field">
                   {typeof data === 'object' ? JSON.stringify(data) : data}
                 </td>
               )
@@ -250,7 +250,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   /* 만약 데이터가 딱 한 줄인데 4바이트가 안 되는 경우 */
                   <>
                     <td colSpan={lastRowBytes * 8}
-                      className="text-center font-mono font-bold text-blue-700 bg-white field">
+                      className="text-center font-mono font-bold text-blue-700  field">
                       {/* {JSON.stringify(data)} */}
                         <div>QCI: {data.qci}</div>
                         <div>Max UL: {data.max_ul?  data.max_ul : "-" }</div>
@@ -264,7 +264,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   </>
                 ) : (
                   /* 일반적인 첫 번째 줄 (전체 너비 사용) */
-                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white field">
+                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700  field">
                     {typeof data === 'object' ?(
                     // JSON.stringify(data)
                     <>
@@ -305,10 +305,10 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
         <div className="tft-wrapper text-left p-2"
             style={{ lineHeight: '1.4' }}>
           <div className="mb-1 border-b border-blue-100 pb-1">
-            <strong className="text-blue-800">TFT Op: </strong>
+            className="text-blue-800">TFT Op: 
             {data.str_tft_op_code} [{data.tft_op_code}]
             <span className="mx-2 text-gray-300">|</span>
-            <strong>Filters: </strong> {data.num_filter}
+            Filters:  {data.num_filter}
           </div>
 
           <div className="pf-scroll-area"
@@ -321,7 +321,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                 >
 
                 <div className="font-bold text-blue-600">
-                  <strong> Packet Filter ID#{pfIdx + 1} </strong> ({pf.pf_dir})
+                   Packet Filter ID#{pfIdx + 1}  ({pf.pf_dir})
                 </div>
 
                 <ul className="ml-2 list-none text-[10px]"
@@ -356,7 +356,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
               <>
                 <td 
                   colSpan={isLast && lastRowBytes < 4 ? lastRowBytes * 8 : 32} 
-                  className="bg-white align-top"
+                  className=" align-top field"
                   style={{ height: 'auto' }} // 데이터가 많으면 첫 줄만 늘어남
                 >
                   {renderTftDetails()}
@@ -370,7 +370,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
               <>
                 <td 
                   colSpan={isLast && lastRowBytes < 4 ? lastRowBytes * 8 : 32} 
-                  className="text-center text-[10px] text-gray-400  italic"
+                  className="text-center text-[10px] text-gray-400  italic field"
                 >
                   Continuation
                 </td>
@@ -492,17 +492,17 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
       return (
         <>
           <tr>
-            <td colSpan="32">
+            <td colSpan="32" className="field">
               <div>
                 {/* <div>TEID: 0x{data.teid(16)}</div> */}
-                <strong>TEID:</strong> 0x{data?.teid?.toString(16).padStart(8, '0').toUpperCase()}
+                TEID: 0x{data?.teid?.toString(16).padStart(8, '0').toUpperCase()}
                 {data.v4 &&
-                  <div><strong>IPv4 Address: </strong>{data.ipv4}</div>
+                  <div>IPv4 Address: {data.ipv4}</div>
                 }
                 {data.v6 &&
-                  <div><strong>IPv6 Address:</strong> {data.ipv6}</div>
+                  <div>IPv6 Address: {data.ipv6}</div>
                 }
-                <div><strong>Interface Type:</strong> {data.iface_type}</div>
+                <div>Interface Type: {data.iface_type}</div>
               </div>
             </td>
           </tr>
@@ -524,17 +524,14 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
       return(
         <>
           <tr>
-            <td colSpan="32" className="
-            text-center text-gray-300 italic continuation-cell
-             field">
+            <td colSpan="32" className="text-center text-gray-300 italic continuation-cell field">
               {typeof data === 'object' ? JSON.stringify(data) : data}
             </td>
           </tr>
 
           {Array.from({ length: numrow -2 }).map((_, index) => (
             <tr key={index}>
-              <td colSpan="32"
-                  className="text-center text-gray-300 italic continuation-cell field">
+              <td colSpan="32" className="text-center text-gray-300 italic continuation-cell field">
                 Continuation
               </td>
             </tr>

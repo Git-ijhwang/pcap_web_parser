@@ -5,6 +5,7 @@
   gap: 6px;
   max-width: 1000px;
   margin: auto;
+  padding: 12px 16px;
 }
 
 /* 개별 카드 (핵심 입체 디자인) */
@@ -52,7 +53,7 @@
 
 /* 마우스 호버 시 입체 효과 */
 .packet-item:hover {
-  transform: translateY(-3px) scale(1.01);
+  transform: translateY(-3px) scale(1.02);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
   border-color: rgba(13, 110, 253, 0.2);
 }

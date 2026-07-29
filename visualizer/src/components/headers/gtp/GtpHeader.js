@@ -294,7 +294,10 @@ export default function GtpHeader({ gtp }) {
   return (
     <div className="card mb-3">
       <div className="card-header gtp-header d-flex justify-content-between align-items-center">
+        <div className="d-flex align-items-center">
+          <span className="protocol-badge">L7</span>
         <strong>Application Layer</strong>
+        </div>
 
         <div className="form-check form-switch d-inline-flex align-items-center ms-3"
           style={{ fontSize: "14px" }} >
@@ -430,7 +433,8 @@ export default function GtpHeader({ gtp }) {
         ) : (
 
           <div>
-            <table className="gtp-table ">
+            {/* <table className="gtp-table "> */}
+            <table className="bit-grid-table ">
 
               <BitGridHeader showOctet={true}/>
 
@@ -439,21 +443,21 @@ export default function GtpHeader({ gtp }) {
                   <th rowSpan="3" colSpan="2" className="vertical gtp-header">
                     GTP Header
                   </th>
-                  <td colSpan="3"><i>Version:</i> {gtp.version}</td>
-                  <td colSpan="1"><i>P:</i>
+                  <td colSpan="3" className="field"><i>Version:</i> {gtp.version}</td>
+                  <td colSpan="1" className="field"><i>P:</i>
                     {gtp.p_flag ? "1" : "0"}
                   </td>
-                  <td colSpan="1"><i>T:</i> {gtp.t_flag ? "1" : "0"}</td>
-                  <td colSpan="1"><i>MP:</i> {gtp.mp_flag ? "1" : "0"}</td>
-                  <td colSpan="2"><i>Reserved</i> </td>
+                  <td colSpan="1" className="field"><i>T:</i> {gtp.t_flag ? "1" : "0"}</td>
+                  <td colSpan="1" className="field"><i>MP:</i> {gtp.mp_flag ? "1" : "0"}</td>
+                  <td colSpan="2" className="field"><i>Reserved</i> </td>
 
-                  <td colSpan="8"><i>Message Type:</i>{gtp.msg_type_str} [{gtp.msg_type}] </td>
-                  <td colSpan="16"><i>Message Length:</i>{gtp.msg_len} </td>
+                  <td colSpan="8" className="field"><i>Message Type:</i>{gtp.msg_type_str} [{gtp.msg_type}] </td>
+                  <td colSpan="16" className="field"><i>Message Length:</i>{gtp.msg_len} </td>
                 </tr>
 
                 <tr>
                   { gtp.t_flag ? (
-                    <td colSpan="32"><i>TEID:0x</i>
+                    <td colSpan="32" className="field"><i>TEID:0x</i>
                       {gtp.teid != null ? gtp.teid.toString(16)
                       // .toUpperCase()
                       .padStart(8, "0") : "-"}
@@ -461,14 +465,14 @@ export default function GtpHeader({ gtp }) {
                     </td>
                   ) : (
                     <>
-                      <td colSpan="24"><i>Sequence Number:0x</i>
+                      <td colSpan="24" className="field"><i>Sequence Number:0x</i>
                         {gtp.seq != null ? gtp.seq.toString(16).padStart(8, "0")
                         // .toUpperCase()
                         : "-"}
                         {/* {gtp.seq} */}
                       </td>
                       {/* <td colSpan="8"><i>Sequence Number</i> </td> */}
-                      <td colSpan="8"><i>Spare</i> </td>
+                      <td colSpan="8" className="field"><i>Spare</i> </td>
                     </>
                   )}
                 </tr>
@@ -476,11 +480,11 @@ export default function GtpHeader({ gtp }) {
                 <tr>
                   { gtp.t_flag ? (
                     <>
-                    <td colSpan="24"><i>Sequence Number:0x</i>
+                    <td colSpan="24" className="field"><i>Sequence Number:0x</i>
                         {gtp.seq != null ? gtp.seq.toString(16)
                           .padStart(6, "0") : "-"}
                     </td>
-                    <td colSpan="8"><i>Spare</i> </td>
+                    <td colSpan="8" className="field"><i>Spare</i> </td>
                     </>
                   ):(<></>)}
                 </tr>

@@ -27,6 +27,13 @@ function GtpIeTable({ ies, level = 0 })
         })
         lenRowSpan = remain + sublen + 1;
       }
+      let group_class = "";
+      if (level ===0){
+        group_class = "grouped_ie"
+      }
+      else {
+        group_class = "sub_ies"
+      }
 
       return (
         <>
@@ -36,30 +43,34 @@ function GtpIeTable({ ies, level = 0 })
 
             <th rowSpan={lenRowSpan}
               colSpan={Math.max(1,  group)}
-              className={`vertical ${class_name}`}
+              className={`vertical ${class_name} ${group_class}`}
             >
               <b> {ie.type_str} </b>
             </th>
 
             {group === 1 && level === 0 && (
-              <th className={`vertical ${class_name}`}>
+              <th className={`vertical ${class_name} ${group_class}`}>
                 {/* Sub Ies */}
               </th>
             )}
 
-            <td colSpan="8" style={{ textAlign:"center"}} className="ie_header">
+            <td colSpan="8" style={{ textAlign:"center"}} 
+                  className={`${level === 0 ? "ie_header":"sub_ies"} field`}>
               Type: {ie.type_str} [{ie.ie_type}]
             </td>
                   
-            <td colSpan="16" style={{ textAlign: "center" }} className="ie_header">
+            <td colSpan="16" style={{ textAlign: "center" }} 
+                  className={`${level === 0 ? "ie_header":"sub_ies"} field`}>
               Length: {ie.length}
             </td>
 
-            <td colSpan="4"style={{ textAlign: "center" }} className="ie_header">
+            <td colSpan="4"style={{ textAlign: "center" }} 
+                  className={`${level === 0 ? "ie_header":"sub_ies"} field`}>
               Spare
             </td>
 
-            <td colSpan="4" style={{ textAlign: "center" }} className="ie_header">
+            <td colSpan="4" style={{ textAlign: "center" }} 
+                  className={`${level === 0 ? "ie_header":"sub_ies"} field`}>
               Instance: {ie.instance}
             </td>
           </tr>
