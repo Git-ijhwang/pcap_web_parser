@@ -70,7 +70,8 @@ export default function PfcpHeader({ pfcp }) {
           </div>
         ):(
           <div>
-            <table className="pfcp-table ">
+            {/* <table className="pfcp-table "> */}
+            <table className="bit-grid-table ">
 
               <BitGridHeader showOctet={true}/>
 
@@ -85,26 +86,26 @@ export default function PfcpHeader({ pfcp }) {
                     PFCP Header
                   </th>
                 )}
-                  <td colSpan="3"><i>Version:</i> {pfcp.version}</td>
-                  <td colSpan="2"><i>Spare</i> </td>
-                  <td colSpan="1"><i>FO:</i> {pfcp.fo_flag ? "1" : "0"}</td>
-                  <td colSpan="1"><i>MP:</i> {pfcp.mp_flag ? "1" : "0"}</td>
-                  <td colSpan="1"><i>S:</i> {pfcp.s_flag ? "1" : "0"}</td>
+                  <td colSpan="3" className="field"><i>Version:</i> {pfcp.version}</td>
+                  <td colSpan="2" className="field"><i>Spare</i> </td>
+                  <td colSpan="1" className="field"><i>FO:</i> {pfcp.fo_flag ? "1" : "0"}</td>
+                  <td colSpan="1" className="field"><i>MP:</i> {pfcp.mp_flag ? "1" : "0"}</td>
+                  <td colSpan="1" className="field"><i>S:</i> {pfcp.s_flag ? "1" : "0"}</td>
 
-                  <td colSpan="8"><i>Message Type: </i> {pfcp.msg_type_str}[{pfcp.msg_type}] </td>
-                  <td colSpan="16"><i>Length: </i>{pfcp.msg_len} </td>
+                  <td colSpan="8" className="field"><i>Message Type: </i> {pfcp.msg_type_str}[{pfcp.msg_type}] </td>
+                  <td colSpan="16" className="field"><i>Length: </i>{pfcp.msg_len} </td>
                 </tr>
 
                 { pfcp.s_flag ? (
                   <>
                   <tr>
-                    <td colSpan="32">
+                    <td colSpan="32" className="field">
                       <i>SEID[63:32]</i> : 0x{high.toString(16).padStart(8,'0')}
                     </td>
                   </tr>
 
                   <tr>
-                    <td colSpan="32">
+                    <td colSpan="32" className="field">
                       <i>SEID[31:0]</i> : 0x{low.toString(16).padStart(8,'0')}
                     </td>
                   </tr>
@@ -113,14 +114,14 @@ export default function PfcpHeader({ pfcp }) {
 
                 <tr>
                     <>
-                      <td colSpan="24"><i>Sequence Number:0x</i>
+                      <td colSpan="24" className="field"><i>Sequence Number:0x</i>
                         {pfcp.seq != null ? pfcp.seq.toString(16).padStart(8, "0")
                         // .toUpperCase()
                         : "-"}
                         {/* {pfcp.seq} */}
                       </td>
                       {/* <td colSpan="8"><i>Sequence Number</i> </td> */}
-                      <td colSpan="8"><i>Spare</i> </td>
+                      <td colSpan="8" className="field"><i>Spare</i> </td>
                     </>
                 </tr>
                 <PfcpIeTable ies={pfcp.ies} />

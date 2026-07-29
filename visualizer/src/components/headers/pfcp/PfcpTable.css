@@ -6,6 +6,7 @@
   border-right: none; /* 테이블 전체 외곽선과 겹치지 않게 하거나 굵게 조절 */
 }
 
+
 .value-row td {
   height: 35px;
   vertical-align: middle;

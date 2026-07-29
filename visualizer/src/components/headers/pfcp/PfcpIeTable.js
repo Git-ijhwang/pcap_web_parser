@@ -53,13 +53,20 @@ function PfcpIeTable({ ies, level = 0 })
               </th>
             )}
 
-            <td colSpan="16" style={{ textAlign:"center"}} className="ie_header">
-              Type: {ie.type_str} [{ie.ie_type}]
-            </td>
+            {
+            (
+              <>
+                <td colSpan="16" style={{ textAlign:"center"}}
+                  className={`${level === 0 ? "ie_header":"sub_ies"} field`}>
+                  Type: {ie.type_str} [{ie.ie_type}]
+                </td>
                   
-            <td colSpan="16" style={{ textAlign: "center" }} className="ie_header">
-              Length: {ie.ie_len}
-            </td>
+                <td colSpan="16" style={{ textAlign: "center" }} 
+                  className={`${level === 0 ? "ie_header":"sub_ies"} field`}>
+                  Length: {ie.ie_len}
+                </td>
+              </>
+            )}
 
           </tr>
 

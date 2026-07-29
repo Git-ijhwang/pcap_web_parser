@@ -1,11 +1,14 @@
 /* GTP Analyzer Professional Table Style */
-
+.pfcp-card-body {
+  background-color: #f4f7fb;
+}
 .pfcp-table {
   table-layout: fixed; /* 모든 셀 너비를 고정된 비율로 강제 */
   border-collapse: collapse;
   width: 100%;
   margin-top: 10px;
   font-size: 14px;
+  border: 1px solid var(--border-color);
 }
 
 .pfcp-table th,

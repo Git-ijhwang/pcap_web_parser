@@ -80,28 +80,28 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
       if (ietype == 73) {
         return (
           <>
-            <td colSpan="4"><span> Spare </span> </td>
-            <td colSpan="4"> <span>{data}</span> </td>
+            <td colSpan="4" className="field"><span> Spare </span> </td>
+            <td colSpan="4" className="field"> <span>{data}</span> </td>
           </>
         );
       } else {
         return (
           <>
-            <td colSpan="8"> <span>{data}</span> </td>
+            <td colSpan="8" className="field"> <span>{data}</span> </td>
           </>
         );
       }
     case "Uint16":
       return (
-        <td colSpan="16"> <span>{data}</span> </td>
+        <td colSpan="16" className="field"> <span>{data}</span> </td>
       );
 
     case "Uint32":
       return (
-        <td colSpan="32"> <span>{data}</span> </td>
+        <td colSpan="32" className="field"> <span>{data}</span> </td>
       );
     case "Ipv4":
-      return( <td colSpan="32"> <span>{data}</span>; </td>);
+      return( <td colSpan="32" className="field"> <span>{data}</span>; </td>);
 
     case "Ambr":
       return (
@@ -120,17 +120,17 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   /* 만약 데이터가 딱 한 줄인데 4바이트가 안 되는 경우 */
                   <>
                     <td colSpan={lastRowBytes * 8}
-                      className="text-center font-mono font-bold text-blue-700 bg-white">
+                      className="text-center font-mono font-bold text-blue-700 bg-white field">
                         <div><strong>UL: </strong>{data.ul}</div>
                         <div><strong>DL: </strong>{data.dl}</div>
                     </td>
-                    <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center">
+                    <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center field">
                       Spare
                     </td>
                   </>
                 ) : (
                   /* 일반적인 첫 번째 줄 (전체 너비 사용) */
-                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white">
+                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white field">
                     {typeof data === 'object' ?(
                     // JSON.stringify(data)
                     <>
@@ -144,15 +144,15 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
               ) : isLast && lastRowBytes < 4 ? (
                 /* 2. 마지막 줄: 데이터가 남은 만큼만 Continuation을 그리고 나머지는 Spare */
                 <>
-                  <td colSpan={lastRowBytes * 8} className="text-center text-[10px] text-gray-400  italic">
+                  <td colSpan={lastRowBytes * 8} className="text-center text-[10px] text-gray-400 italic field">
                     Continuation
                   </td>
-                  <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center">
+                  <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-cente field">
                   </td>
                 </>
               ) : (
                 /* 3. 중간 줄 혹은 딱 떨어지는 마지막 줄: 전체 너비 Continuation */
-                <td colSpan="32" className="text-center text-[10px] text-gray-400  italic">
+                <td colSpan="32" className="text-center text-[10px] text-gray-400  italic field">
                   Continuation
                 </td>
               )}
@@ -180,30 +180,30 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                 /* 만약 데이터가 딱 한 줄인데 4바이트가 안 되는 경우 */
                 <>
                   <td colSpan={lastRowBytes * 8}
-                    className="text-center font-mono font-bold text-blue-700 bg-white">
+                    className="text-center font-mono font-bold text-blue-700 bg-white field">
                     {JSON.stringify(data)}
                   </td>
-                  <td colSpan={(4 - lastRowBytes) * 8} className=" text-gray-900 italic text-[9px] text-center">
+                  <td colSpan={(4 - lastRowBytes) * 8} className=" text-gray-900 italic text-[9px] text-center field">
                   </td>
                 </>
               ) : (
                 /* 일반적인 첫 번째 줄 (전체 너비 사용) */
-                <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white">
+                <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white field">
                   {typeof data === 'object' ? JSON.stringify(data) : data}
                 </td>
               )
             ) : isLast && lastRowBytes < 4 ? (
               /* 2. 마지막 줄: 데이터가 남은 만큼만 Continuation을 그리고 나머지는 Spare */
               <>
-                <td colSpan={lastRowBytes * 8} className="text-center text-[10px] text-gray-900  italic">
+                <td colSpan={lastRowBytes * 8} className="text-center text-[10px] text-gray-900  italic field">
                   Continuation
                 </td>
-                <td colSpan={(4 - lastRowBytes) * 8} className=" text-gray-400 italic text-[9px] text-center">
+                <td colSpan={(4 - lastRowBytes) * 8} className=" text-gray-400 italic text-[9px] text-center field">
                 </td>
               </>
             ) : (
               /* 3. 중간 줄 혹은 딱 떨어지는 마지막 줄: 전체 너비 Continuation */
-              <td colSpan="32" className="text-center text-[10px] text-gray-900  italic">
+              <td colSpan="32" className="text-center text-[10px] text-gray-900  italic field">
                 Continuation
               </td>
             )}
@@ -250,7 +250,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   /* 만약 데이터가 딱 한 줄인데 4바이트가 안 되는 경우 */
                   <>
                     <td colSpan={lastRowBytes * 8}
-                      className="text-center font-mono font-bold text-blue-700 bg-white">
+                      className="text-center font-mono font-bold text-blue-700 bg-white field">
                       {/* {JSON.stringify(data)} */}
                         <div>QCI: {data.qci}</div>
                         <div>Max UL: {data.max_ul?  data.max_ul : "-" }</div>
@@ -258,13 +258,13 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                         <div>Guaranteed UL: {data.gbr_ul}</div>
                         <div>Guaranteed DL: {data.gbr_dl}</div>
                     </td>
-                    <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center">
+                    <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center field">
                       Spare
                     </td>
                   </>
                 ) : (
                   /* 일반적인 첫 번째 줄 (전체 너비 사용) */
-                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white">
+                  <td colSpan="32" className="p-2 text-center font-mono font-bold text-blue-700 bg-white field">
                     {typeof data === 'object' ?(
                     // JSON.stringify(data)
                     <>
@@ -281,15 +281,15 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
               ) : isLast && lastRowBytes < 4 ? (
                 /* 2. 마지막 줄: 데이터가 남은 만큼만 Continuation을 그리고 나머지는 Spare */
                 <>
-                  <td colSpan={lastRowBytes * 8} className="text-center text-[10px] text-gray-400  italic">
+                  <td colSpan={lastRowBytes * 8} className="text-center text-[10px] text-gray-400  italic field">
                     Continuation
                   </td>
-                  <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center">
+                  <td colSpan={(4 - lastRowBytes) * 8} className="bg-gray-100 text-gray-400 italic text-[9px] text-center field">
                   </td>
                 </>
               ) : (
                 /* 3. 중간 줄 혹은 딱 떨어지는 마지막 줄: 전체 너비 Continuation */
-                <td colSpan="32" className="text-center text-[10px] text-gray-400  italic">
+                <td colSpan="32" className="text-center text-[10px] text-gray-400  italic field">
                   Continuation
                 </td>
               )}
@@ -362,7 +362,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   {renderTftDetails()}
                 </td>
                 {isLast && lastRowBytes < 4 && (
-                  <td colSpan={(4 - lastRowBytes) * 8} className="spare-cell">Spare</td>
+                  <td colSpan={(4 - lastRowBytes) * 8} className="spare-cell field">Spare</td>
                 )}
               </>
             ) : (
@@ -375,7 +375,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
                   Continuation
                 </td>
                 {isLast && lastRowBytes < 4 && (
-                  <td colSpan={(4 - lastRowBytes) * 8} className="spare-cell"></td>
+                  <td colSpan={(4 - lastRowBytes) * 8} className="spare-cell field"></td>
                 )}
               </>
             )}
@@ -510,7 +510,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
           {Array.from({ length: numrow -2 }).map((_, index) => (
             <tr key={index}>
               <td colSpan="32"
-                  className="text-center  text-gray-300 italic">
+                  className="text-center  text-gray-300 italic field">
                 Continuation
               </td>
             </tr>
@@ -524,7 +524,9 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
       return(
         <>
           <tr>
-            <td colSpan="32" className="text-center font-mono bg-white">
+            <td colSpan="32" className="
+            text-center text-gray-300 italic continuation-cell
+             field">
               {typeof data === 'object' ? JSON.stringify(data) : data}
             </td>
           </tr>
@@ -532,7 +534,7 @@ function IeDecoder(value, ietype, numrow=1, ieLength=0 ) {
           {Array.from({ length: numrow -2 }).map((_, index) => (
             <tr key={index}>
               <td colSpan="32"
-                  className="text-center text-gray-300 italic continuation-cell">
+                  className="text-center text-gray-300 italic continuation-cell field">
                 Continuation
               </td>
             </tr>

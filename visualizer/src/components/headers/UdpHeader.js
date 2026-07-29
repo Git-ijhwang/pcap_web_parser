@@ -119,21 +119,21 @@ export default function UdpHeader({ udp }) {
               </tr> */}
 
               <tr>
-                <th colSpan="2">0</th>
-                <td colSpan="16"><i>Source Port:</i> {udp.str_src_port} [{udp.src_port}] </td>
-                <td colSpan="16"><i>Destination Port:</i> {udp.str_dst_port} [{udp.dst_port}] </td>
+                <th colSpan="2" className="field">0</th>
+                <td colSpan="16" className="field"><i>Source Port:</i> {udp.str_src_port} [{udp.src_port}] </td>
+                <td colSpan="16" className="field"><i>Destination Port:</i> {udp.str_dst_port} [{udp.dst_port}] </td>
               </tr>
 
               <tr>
-                <th colSpan="2">32</th>
-                <td colSpan="16"><i>Length:</i> {udp.length}</td>
-                <td colSpan="16"><i>Checksum:0x</i>
+                <th colSpan="2" className="field">32</th>
+                <td colSpan="16" className="field"><i>Length:</i> {udp.length}</td>
+                <td colSpan="16" className="field"><i>Checksum:0x</i>
                   {/* {udp.checksum} */}
                   {udp.checksum != null ? udp.checksum.toString(16).toUpperCase().padStart(4, "0") : "-"}
                 </td>
               </tr>
 
-              {udp.payload ? (
+              {/* {udp.payload ? (
                 <>
                   <tr>
                     <th colSpan="2">64</th>
@@ -143,7 +143,7 @@ export default function UdpHeader({ udp }) {
                 </>
               ) : (
                 <></>
-              )}
+              )} */}
 
             </tbody>
           </table>

@@ -100,7 +100,7 @@ const IpHeader = ({ ip, depth }) => {
                   <td colSpan="4" className="field">IHL: {ip.ihl}</td>
                   <td colSpan="6" className="field">DSCP: {ip.dscp}</td>
                   <td colSpan="2" className="field">ECN: {ip.ecn}</td>
-                  <td colSpan="16" className="field highlight-field">Total Length: {ip.total_length}</td>
+                  <td colSpan="16" className="field">Total Length: {ip.total_length}</td>
                 </tr>
                 <tr>
                   <th colSpan="2">4</th>
@@ -116,11 +116,11 @@ const IpHeader = ({ ip, depth }) => {
                 </tr>
                 <tr>
                   <th colSpan="2">12</th>
-                  <td colSpan="32" className="field address-field">Source Address: {ip.src_addr}</td>
+                  <td colSpan="32" className="field">Source Address: {ip.src_addr}</td>
                 </tr>
                 <tr>
                   <th colSpan="2">16</th>
-                  <td colSpan="32" className="field address-field">Destination Address: {ip.dst_addr}</td>
+                  <td colSpan="32" className="field">Destination Address: {ip.dst_addr}</td>
                 </tr>
               </tbody>
             </table>

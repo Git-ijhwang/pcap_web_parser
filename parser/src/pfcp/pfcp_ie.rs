@@ -133,6 +133,50 @@ fn parse_ie(input: &[u8])
         let ie_value = match ie_type {
             PFCP_IE_F_SEID => 
                 decode_fseid::<PfcpIe>(raw_value).unwrap_or(IeValue::None),
+
+            PFCP_IE_PDR_ID if raw_value.len() >= 2 => {
+                IeValue::Uint16(u16::from_be_bytes([raw_value[0], raw_value[1]]))
+            },
+
+            PFCP_IE_FAR_ID | PFCP_IE_URR_ID | PFCP_IE_PRECEDENCE if raw_value.len() >= 4 => {
+                IeValue::Uint32(u32::from_be_bytes([
+                    raw_value[0], raw_value[1], raw_value[2], raw_value[3]
+                ]))
+            },
+
+            // Node ID (IPv4 / IPv6 / FQDN 형태일 수 있음)
+            PFCP_IE_NODE_ID if !raw_value.is_empty() => {
+                match raw_value[0] & 0x0F { // Node ID Type (bits 1-4)
+                    0 => { // IPv4
+                        if raw_value.len() >= 5 {
+                            let ip = std::net::Ipv4Addr::new(
+                                raw_value[1], raw_value[2],
+                                raw_value[3], raw_value[4]
+                            );
+                            IeValue::Ipv4(ip.to_string())
+                        } else {
+                            IeValue::Raw(raw_value.to_vec())
+                        }
+                    },
+                    1 => { // IPv6
+                        if raw_value.len() >= 17 {
+                            let mut octets = [0u8; 16];
+                            octets.copy_from_slice(&raw_value[1..17]);
+                            let ip = std::net::Ipv6Addr::from(octets);
+                            IeValue::Ipv6(ip.to_string())
+                        } else {
+                            IeValue::Raw(raw_value.to_vec())
+                        }
+                    },
+                    2 => { // FQDN
+                        String::from_utf8(raw_value[1..].to_vec())
+                            .map(IeValue::Utf8String)
+                            .unwrap_or_else(|_| IeValue::Raw(raw_value.to_vec()))
+                    },
+                    _ => IeValue::Raw(raw_value.to_vec()),
+                }
+            },
+
             _ =>
                 match ie_len {
                     1 => IeValue::Uint8(raw_value[0]),

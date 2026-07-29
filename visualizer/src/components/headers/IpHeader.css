@@ -1,5 +1,5 @@
 :root {
-  --ip-header-bg: #f4f7fb;
+  --ip-header-bg: #ebf3fd;
   --ip-accent: #2c5cc5;
   --border-color: #c0c9d9;
   --field-bg: #ffffff;
@@ -41,7 +41,10 @@
 .depth-tag { font-size: 12px; color: var(--text-muted); font-weight: normal; }
 
 /* View Selector Switch */
-.view-selector { display: flex; align-items: center; font-size: 12px; font-weight: 600; }
+.view-selector {
+  display: flex;
+  align-items: center;
+}
 .view-label {
     color: #ccc;
     transition: color 0.2s;
@@ -51,7 +54,10 @@
 .view-label.active { color: var(--ip-accent); }
 
 /* Body Content */
-.protocol-card__body { padding: 12px; background-color: #ffffff; }
+.protocol-card__body {
+  padding: 12px;
+  background-color: #f4f7fb;
+}
 
 /* Raw View Layout */
 .raw-view-container { display: flex; gap: 20px; align-items: flex-start; }
@@ -94,7 +100,7 @@
 .bit-indices th span { display: block; margin-top: -4px; }
 
 .field {
-  background: var(--field-bg);
+  background: #ffffff;
   transition: background 0.2s;
   cursor: default;
 }
