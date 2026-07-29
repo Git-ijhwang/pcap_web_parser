@@ -32,7 +32,7 @@ export default function PfcpHeader({ pfcp }) {
       <div className="card-header pfcp-header d-flex justify-content-between align-items-center">
         <div className="d-flex align-items-center">
           <span className="protocol-badge">L7</span>
-        <strong>Application Layer</strong>
+        <strong>PFCP</strong>
         </div>
 
         <div className="form-check form-switch d-inline-flex align-items-center ms-3"
@@ -63,11 +63,107 @@ export default function PfcpHeader({ pfcp }) {
 
               <table className="table table-bordered table-sm" style={{ fontSize: "14px" }}>
                 <tbody>
+                  <tr>
+                    <th colSpan="2" style={{textAlign: "Center"}}>
+                      <b>GTP Header</b>
+                    </th>
+                  </tr>
+
+                  <tr>
+                    <th>Version</th>
+                    <td>{pfcp.version}</td>
+                  </tr>
+                  
+                  <tr>
+                    <th>FO Flag</th>
+                    <td>{ pfcp.fo_flag?  "1":"0" }</td>
+                  </tr>
+                  
+                  <tr>
+                    <th>MP Flag</th>
+                    <td>{ pfcp.mp_flag?  "1":"0" }</td>
+                  </tr>
+                  
+                  <tr>
+                    <th>S Flag</th>
+                    <td>{ pfcp.s_flag?  "1":"0" }</td>
+                  </tr>
+                  
+                  <tr>
+                    <th>Message Type</th>
+                    <td>{pfcp.msg_type_str} [{pfcp.msg_type}]</td>
+                  </tr>
+                  
+                  <tr>
+                    <th>Message Length</th>
+                    <td>{pfcp.msg_len}</td>
+                  </tr>
+                  
+                  { pfcp.s_flag ? (
+                    <tr>
+                      <th>SEID</th>
+                      <td>
+                        0x{ pfcp.seid }
+                      </td>
+                    </tr>
+                  ) : (
+                    <></>
+                  )}
+
+                  <tr>
+                    <th>Sequence</th>
+                    <td>
+                      0x{ pfcp.seq }
+                    </td>
+                  </tr>
+
+                  <tr >
+                    <td colSpan="2" style={{backgroundColor:"#a3b2c3"}}>
+                      PFCP IEs
+                      <PfcpIeViewer ies={pfcp.ies} onHoverRaw={setHoveredRaw} />  {/* 여기서 호출 */}
+                    </td>
+                  </tr>
+
                 </tbody>
               </table>
 
             </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: "0 0 400px" }}>
+
+              <div 
+                ref={fullHexRef}
+                style={{
+                  position: "sticky",
+                  top: "10px",
+                  height: "fit-content",
+                  overflowX: "auto",
+                  overflowY: "auto",
+                  background: "#111a23",
+                  borderRadius: "10px",
+                  padding: "8px"
+                }} >
+                <HexDump raw={pfcp.raw} />
+              </div>
+
+              {/* Hovered IE HexDump */}
+              <div
+                style={{
+                  position: "sticky",
+                  top: `${hoverTop}px`, 
+                  // maxHeight: "400px",
+                  height: "fit-content",
+                  overflowX: "auto",
+                  overflowY: "auto",
+                  background: "#1b1f27",
+                  borderRadius: "10px",
+                  padding: "8px"
+                }}
+              >
+                {hoveredRaw ? <HexDump raw={hoveredRaw} /> : <div style={{ color: "#888" }}>Hover an IE to see raw data</div>}
+              </div>
+            </div>
           </div>
+
         ):(
           <div>
             {/* <table className="pfcp-table "> */}

@@ -64,11 +64,7 @@ function PfcpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
 
                 <tr >
                   <th> Len </th>
-                  <td> {ie.length} <i>bytes</i></td>
-                </tr>
-                <tr >
-                  <th> Instance </th>
-                  <td> {ie.instance} </td>
+                  <td> {ie.ie_len} <i>bytes</i></td>
                 </tr>
 
                 {!isGrouped && (
@@ -80,6 +76,16 @@ function PfcpIeSimpleTable({ ies, level = 0,onHoverRaw= () => {} })
                   </tr>
                 )}
 
+                {isGrouped && (
+                  <tr>
+                    <td className="ie-group" colSpan="2"
+                      style={{ paddingLeft: "10px", paddingRight: "10px", background:"#a4b1fa" }}>
+                      <b>Grouped IE Contents</b>
+                      <PfcpIeSimpleTable ies={subIes} level={level + 1}
+                                          onHoverRaw={onHoverRaw} />
+                      </td>
+                  </tr>
+                )}
                 </>
               )}
 

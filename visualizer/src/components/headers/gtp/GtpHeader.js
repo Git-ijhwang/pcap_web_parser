@@ -296,7 +296,7 @@ export default function GtpHeader({ gtp }) {
       <div className="card-header gtp-header d-flex justify-content-between align-items-center">
         <div className="d-flex align-items-center">
           <span className="protocol-badge">L7</span>
-        <strong>Application Layer</strong>
+        <strong>GTPv2-C</strong>
         </div>
 
         <div className="form-check form-switch d-inline-flex align-items-center ms-3"
@@ -382,13 +382,13 @@ export default function GtpHeader({ gtp }) {
                     </td>
                   </tr>
 
-
                   <tr >
                     <td colSpan="2" style={{backgroundColor:"#a3b2c3"}}>
                       GTP IEs
                       <GtpIeViewer ies={gtp.ies} onHoverRaw={setHoveredRaw} />  {/* 여기서 호출 */}
                     </td>
                   </tr>
+
                 </tbody>
               </table>
             </div>
