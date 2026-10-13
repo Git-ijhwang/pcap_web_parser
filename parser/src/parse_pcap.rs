@@ -80,8 +80,8 @@ pub fn parse_sll2(data: &[u8]) -> usize
 
 
 async fn parse_l3( next_type: usize, ip_hdr: &[u8],
-    parsed_packet: &mut PacketDetail)
--> (usize, usize)
+                    parsed_packet: &mut PacketDetail)
+    -> (usize, usize)
 {
     let mut ip= IpInfo::new();
     let mut ip6= Ip6Info::new();
@@ -107,9 +107,9 @@ async fn parse_l3( next_type: usize, ip_hdr: &[u8],
 
 
 async fn parse_l4( next_type: usize,
-    data_buf: &[u8],
-    parsed_packet: &mut PacketDetail)
--> (u16, usize)
+                    data_buf: &[u8],
+                    parsed_packet: &mut PacketDetail)
+    -> (u16, usize)
 {
     match next_type {
         PROTO_TYPE_TCP =>  {
@@ -184,9 +184,8 @@ async fn parse_app(port_number: u16,
 }
 
 
-pub async fn
-parse_single_packet(path: &PathBuf, id: usize)
--> Result<ParsedDetail, String>
+pub async fn parse_single_packet(path: &PathBuf, id: usize)
+    -> Result<ParsedDetail, String>
 {
     let mut offset: usize = 0;
     let mut cap = Capture::from_file(path)
@@ -264,7 +263,7 @@ parse_single_packet(path: &PathBuf, id: usize)
 
 
 pub async fn simple_parse_pcap(path: &Path)
--> Result<ParsedResult, String> 
+    -> Result<ParsedResult, String> 
 {
     //read pcap file line by line
     let mut cap = match Capture::from_file(path) {
@@ -296,13 +295,12 @@ pub async fn simple_parse_pcap(path: &Path)
             // next_type = parse_ethernet(&packet.data);
         // }
         let (next_type, l2_len) = match linktype {
-            Linktype(1) => {(
-                parse_ethernet(&packet.data),
-                MIN_ETH_HDR_LEN
-            )}
-            Linktype(276) => {(
-                parse_sll2(&packet.data), 20
-            )}
+            Linktype(1) => {
+                (parse_ethernet(&packet.data), MIN_ETH_HDR_LEN)
+            }
+            Linktype(276) => {
+                (parse_sll2(&packet.data), 20)
+            }
             _ => {
                 idx += 1;
                 continue;
@@ -321,15 +319,26 @@ pub async fn simple_parse_pcap(path: &Path)
         let next_type= match next_type {
             //IPv4
             NEXT_HDR_IPV4 => {
+                if packet.data.len() < hdr_len + IP_HDR_LEN {
+                    idx += 1;
+                    continue;
+                }
+
                 parse_ipv4_simple(&packet.data[hdr_len..], &mut parsed_packet)
             },
 
             //IPv6
             NEXT_HDR_IPV6 => {
+                if packet.data.len() < hdr_len + IP6_HDR_LEN {
+                    idx += 1;
+                    continue;
+                }
+
                 parse_ipv6_simple(&packet.data[hdr_len..], &mut parsed_packet)
             }
-            _       => {
-                idx+=1;
+
+            _ => {
+                idx += 1;
                 continue;
             },
         };
@@ -345,27 +354,18 @@ pub async fn simple_parse_pcap(path: &Path)
         let (port_number, l4_hdr_len) =
             match next_type {
                 PROTO_TYPE_TCP   => {
-                    (
-                        parse_tcp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
-                        TCP_HDR_LEN
-                    )
+                    ( parse_tcp_simple ( &packet.data[hdr_len..], &mut parsed_packet), TCP_HDR_LEN)
                 },
 
                 PROTO_TYPE_UDP   => {
-                    (
-                        parse_udp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
-                        UDP_HDR_LEN
-                    )
+                    ( parse_udp_simple ( &packet.data[hdr_len..], &mut parsed_packet), UDP_HDR_LEN)
                 },
 
                 PROTO_TYPE_ICMP   => {
-                    (
-                        parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet),
-                        ICMP_HDR_LEN
-                    )
+                    ( parse_icmp_simple ( &packet.data[hdr_len..], &mut parsed_packet), ICMP_HDR_LEN)
                 },
 
-                _       => {
+                _ => {
                     idx+=1;
                     packets.push(parsed_packet);
                     continue;
@@ -381,6 +381,7 @@ pub async fn simple_parse_pcap(path: &Path)
         hdr_len += l4_hdr_len;
 
         parsed_packet.length = tot_len - hdr_len;
+
         // --- Parse Application Layer ---
         match port_number {
             L4_PORT_GTPV2   => {

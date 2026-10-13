@@ -2,7 +2,7 @@ use std::net::Ipv4Addr;
 use crate::ip::port::*;
 use crate::types::*;
 
-pub fn parse_ipv4_simple(ip_hdr: &[u8], mut packet: &mut PacketSummary) -> usize
+pub fn parse_ipv4_simple(ip_hdr: &[u8], packet: &mut PacketSummary) -> usize
 {
     let mut offset: usize = 0;
 

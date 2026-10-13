@@ -1,7 +1,7 @@
 use crate::ip::port::*;
 use crate::types::*;
 
-pub fn parse_udp_simple (udp: &[u8], mut packet: &mut PacketSummary) -> u16
+pub fn parse_udp_simple (udp: &[u8], packet: &mut PacketSummary) -> u16
 {
     let mut pos = 0;
 

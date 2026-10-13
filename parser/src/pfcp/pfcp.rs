@@ -1,7 +1,6 @@
-use serde::Serialize;
 use nom::{
     IResult,
-    number::complete::{be_u8, be_u16, be_u32, be_u64},
+    number::complete::{be_u8, be_u16, be_u64},
     bytes::complete::take,
 };
 use crate::types::*;
@@ -24,6 +23,7 @@ pub struct PfcpHeader {
     pub mp: Option<u8>,
     // pub payload: &'a [u8],
 }
+
 impl PfcpHeader {
     pub fn new() -> Self {
         PfcpHeader {
@@ -41,8 +41,7 @@ impl PfcpHeader {
     }
 }
 
-fn head_parser<'a>(input: &'a[u8])
-    -> IResult<&[u8], PfcpHeader>
+fn head_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], PfcpHeader>
 {
     let (input, flags) = be_u8(input)?;
     let version = (flags >> 5) & 0x07;
@@ -105,8 +104,7 @@ pub fn parse_pfcp<'a>(input: &'a[u8], packet: &mut PacketSummary)
 }
 
 
-pub fn parse_pfcp_detail<'a>(input: &'a[u8])
-    -> IResult<&'a[u8], PfcpInfo>
+pub fn parse_pfcp_detail<'a>(input: &'a[u8]) -> IResult<&'a[u8], PfcpInfo>
 {
     let (rest, head) = head_parser(input)?;
 
