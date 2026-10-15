@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::process;
 use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, NaiveDateTime, TimeZone};

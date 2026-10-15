@@ -1,3 +1,4 @@
+#![allow(unused)]
 use nom::{
     IResult,
     number::complete::{be_u8, be_u16, be_u64},
@@ -62,8 +63,8 @@ fn head_parser<'a>(input: &'a[u8]) -> IResult<&'a [u8], PfcpHeader>
 
     let (input, seq_bytes) = take(3usize)(input)?;
     let seq = ((seq_bytes[0] as u32) << 16) |
-                    ((seq_bytes[1] as u32) << 8) |
-                    (seq_bytes[2] as u32);
+                   ((seq_bytes[1] as u32) << 8) |
+                   (seq_bytes[2] as u32);
 
     let (input, mp) = if mp_flag {
         let (input, m) = be_u8(input)?;

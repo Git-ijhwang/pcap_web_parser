@@ -14,7 +14,7 @@ fn parse_ipv6_ext(mut next_hdr: usize, packet: &[u8]) {
             return;
         }
 
-        let ext_hdr_type = packet[offset];
+        let _ext_hdr_type = packet[offset];
         // 실제 헤더 길이 가져오기 (필드는 offset+1 위치에 있음)
         let hdr_len = packet[offset + 1] as usize;
         let hdr_total = (hdr_len + 1) * 8;

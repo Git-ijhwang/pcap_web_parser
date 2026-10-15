@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use serde::Serialize;
 use tokio::sync::RwLock;

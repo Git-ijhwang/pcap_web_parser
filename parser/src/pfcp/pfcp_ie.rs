@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::net::{Ipv4Addr, Ipv6Addr};
 use serde::Serialize;
 use nom::{
@@ -27,6 +28,7 @@ pub struct FSeidValue {
     pub ipv4: Option<String>,
     pub ipv6: Option<String>,
 }
+
 impl FSeidValue {
     pub fn new() -> Self {
         FSeidValue {
@@ -72,7 +74,7 @@ fn decode_fseid<T>(input: &[u8])
 
     let ipv6 = if v6 {
         let addr = Ipv6Addr::from_octets(
-                input[pos..pos+4].try_into().unwrap());
+                input[pos..pos+16].try_into().unwrap());
         pos += 16;
         Some(addr.to_string())
     }
